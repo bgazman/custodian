@@ -1,0 +1,3 @@
+{
+  "/login": "/users?username=:username&password=:password"
+}

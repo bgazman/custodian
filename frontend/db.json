@@ -1,0 +1,88 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "admin123",
+      "token": "mock-token"
+    }
+  ],
+  "login": {
+    "message": "SUCCESS",
+    "status": "SUCCESS",
+    "data": {
+      "id": 1,
+      "username": "admin",
+      "token": "mock-token"
+    }
+  },
+  "wallets": {
+    "message": "SUCCESS",
+    "status": "SUCCESS",
+    "data": [
+      {
+        "id": "1",
+        "address": "0x123456789abcdef",
+        "type": "hot",
+        "currency": "USD",
+        "balance": 4562.5,
+        "status": "active",
+        "createdAt": "2023-12-01T10:00:00Z",
+        "updatedAt": "2023-12-01T12:00:00Z"
+      },
+      {
+        "id": "2",
+        "address": "0xabcdef123456789",
+        "type": "cold",
+        "currency": "USD",
+        "balance": 8091.78,
+        "status": "active",
+        "createdAt": "2023-12-01T10:00:00Z",
+        "updatedAt": "2023-12-01T12:00:00Z"
+      }
+    ]
+  },
+
+  "transactions": {
+    "message": "SUCCESS",
+    "status": "SUCCESS",
+    "data": [
+      {
+        "id": "101",
+        "walletId": "1",
+        "type": "deposit",
+        "asset": "ETH",
+        "amount": 2.5,
+        "currency": "USD",
+        "status": "completed",
+        "createdAt": "2023-12-01T08:30:00Z",
+        "updatedAt": "2023-12-01T09:00:00Z"
+      },
+      {
+        "id": "102",
+        "walletId": "2",
+        "type": "withdrawal",
+        "asset": "BTC",
+        "amount": 0.75,
+        "currency": "USD",
+        "status": "pending",
+        "createdAt": "2023-12-02T10:45:00Z",
+        "updatedAt": "2023-12-02T11:15:00Z"
+      },
+      {
+        "id": "103",
+        "walletId": "1",
+        "type": "transfer",
+        "asset": "USDT",
+        "amount": 500,
+        "currency": "USD",
+        "status": "failed",
+        "createdAt": "2023-12-03T14:00:00Z",
+        "updatedAt": "2023-12-03T14:30:00Z"
+      }
+    ]
+  }
+
+
+}
+

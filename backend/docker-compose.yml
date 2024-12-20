@@ -1,0 +1,18 @@
+version: '3.8'
+name: custodian-infra
+services:
+  postgres:
+    image: postgres:15
+    container_name: custodian-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: custodian-db
+      POSTGRES_USER: custodian
+      POSTGRES_PASSWORD: custodian123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+volumes:
+  postgres_data:
+    name: custodian-postgres-data
