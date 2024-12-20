@@ -1,4 +1,4 @@
-package consulting.gazman.security.dto;
+package common.dto;
 
 import lombok.*;
 

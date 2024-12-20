@@ -1,26 +1,20 @@
 package consulting.gazman.security.service;
 
-import consulting.gazman.security.dto.ApiResponse;
+import consulting.gazman.security.ApiResponse;
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
-import consulting.gazman.security.dto.ErrorResponse;
 import consulting.gazman.security.entity.User;
-import consulting.gazman.security.exception.InvalidRefreshTokenException;
 import consulting.gazman.security.exception.ResourceNotFoundException;
-import consulting.gazman.security.exception.UserAlreadyExistsException;
 import consulting.gazman.security.repository.UserRepository;
-import consulting.gazman.security.exception.UnauthorizedException;
 import consulting.gazman.security.utils.JwtUtils;
 import consulting.gazman.security.utils.ResponseMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -88,37 +82,48 @@ public class AuthService {
 ;
 
 
+    @Transactional
     public ApiResponse<AuthResponse> register(@RequestBody AuthRequest registerRequest) {
-        User user = userRepository.findByEmail(registerRequest.getEmail())
-                .orElse(null); // Return null if user not found
+        try {
+            // Check if email already exists
+            if (userRepository.existsByEmail(registerRequest.getEmail())) {
+                return ResponseMapper.badRequest("Email already exists.");
+            }
 
-        // Check if user exists
-        if (user != null) {
-            return ResponseMapper.badRequest("Email already exists");
 
+            // Create new user
+            User newUser = new User();
+            newUser.setEmail(registerRequest.getEmail());
+            newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+            newUser.setRole("USER"); // Assign the default role as a string
+            newUser.setEnabled(true); // Default enabled for new users
+
+            // Save user
+            User savedUser = userRepository.save(newUser);
+
+            // Generate auth response
+            AuthResponse authResponse = createAuthResponse(savedUser);
+            return ResponseMapper.success(authResponse, "User registered successfully.");
+
+        } catch (DataIntegrityViolationException ex) {
+            // Handle database constraint violations (e.g., unique constraint)
+            return ResponseMapper.badRequest("Database error: " + ex.getMostSpecificCause().getMessage());
+        } catch (Exception ex) {
+            // Handle other unexpected exceptions
+            return ResponseMapper.internalServerError("An unexpected error occurred: " , ex.getMessage());
         }
-        User newUser = new User();
-        newUser.setEmail(registerRequest.getEmail());
-        newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        newUser.setRole("USER");
-
-        // Save user
-        User savedUser = userRepository.save(newUser);
-        AuthResponse authResponse = createAuthResponse(savedUser);
-
-        return ResponseMapper.success(authResponse, "Token refreshed successfully.");
     }
 
 
     public ApiResponse<Object> refresh(@RequestBody AuthRequest refreshRequest) {
         String refreshToken = refreshRequest.getRefreshToken();
 
-        if (!jwtUtils.validateRefreshToken(refreshToken)) {
+        if (!jwtUtils.validateRefreshToken(refreshToken,"GLOBAL")) {
             return ResponseMapper.badRequest("Invalid refresh token");
         }
 
         // Extract user email from refresh token
-        String userEmail = jwtUtils.extractSubjectFromRefresh(refreshToken);
+        String userEmail = jwtUtils.extractSubject(refreshToken,"GLOBAL");
 
         // Find user
         User user = userRepository.findByEmail(userEmail).orElse(null);
@@ -151,8 +156,8 @@ public class AuthService {
     }
     private AuthResponse createAuthResponse(User user) {
         return new AuthResponse(
-                jwtUtils.generateAccessToken(user),
-                jwtUtils.generateRefreshToken(user),
+                jwtUtils.generateAccessToken(user,"GLOBAL"),
+                jwtUtils.generateRefreshToken(user,"GLOBAL"),
                 user.getEmail(),
                 user.getRole()
         );

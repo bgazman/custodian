@@ -1,13 +1,11 @@
 package consulting.gazman.security.exception;
 
-import consulting.gazman.security.dto.ApiResponse;
+import consulting.gazman.security.ApiResponse;
 import consulting.gazman.security.utils.ResponseMapper;
 import org.apache.coyote.BadRequestException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import consulting.gazman.security.dto.ErrorResponse;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

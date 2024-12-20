@@ -40,12 +40,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
-        userEmail = jwtUtils.extractSubject(jwt);
+        userEmail = jwtUtils.extractSubject(jwt,"GLOBAL");
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             User user = authService.findByEmail(userEmail);
 
-            if (user != null && jwtUtils.validateAccessToken(jwt)) { // Remove the user email parameter
+            if (user != null && jwtUtils.validateAccessToken(jwt,"GLOBAL")) { // Remove the user email parameter
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         user,
                         null,

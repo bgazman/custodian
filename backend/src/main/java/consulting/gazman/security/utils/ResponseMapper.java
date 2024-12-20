@@ -1,8 +1,8 @@
 package consulting.gazman.security.utils;
 
-import consulting.gazman.security.dto.ApiResponse;
+import consulting.gazman.security.ApiResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+
 public class ResponseMapper {
 
     public static <T> ApiResponse<T> success(T data, String message) {

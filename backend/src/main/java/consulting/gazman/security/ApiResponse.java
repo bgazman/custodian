@@ -1,4 +1,4 @@
-package consulting.gazman.security.dto;
+package consulting.gazman.security;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

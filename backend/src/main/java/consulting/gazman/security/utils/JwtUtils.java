@@ -1,7 +1,9 @@
 package consulting.gazman.security.utils;
 
+import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
 
+import consulting.gazman.security.repository.TokenConfigRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -16,35 +18,40 @@ import com.nimbusds.jwt.*;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.text.ParseException;
+import java.util.function.Function;
 
 @Component
 public class JwtUtils {
 
-    @Value("${jwt.access.secret}")
-    private String accessTokenSecret;
+    private final TokenConfigRepository tokenConfigRepository;
 
-    @Value("${jwt.refresh.secret}")
-    private String refreshTokenSecret;
-
-    @Value("${jwt.expiration.access}")
-    private long accessTokenExpiration;
-
-    @Value("${jwt.expiration.refresh}")
-    private long refreshTokenExpiration;
-
-    public String generateAccessToken(User user) {
-        return generateToken(user, accessTokenSecret, accessTokenExpiration);
+    public JwtUtils(TokenConfigRepository tokenConfigRepository) {
+        this.tokenConfigRepository = tokenConfigRepository;
     }
 
-    public String generateRefreshToken(User user) {
-        return generateToken(user, refreshTokenSecret, refreshTokenExpiration);
+    public String generateAccessToken(User user, String appName) {
+        return generateToken(user, appName, true); // true for access token
     }
+
+    public String generateRefreshToken(User user, String appName) {
+        return generateToken(user, appName, false); // false for refresh token
+    }
+
     private Key getKey(String secret) {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private String generateToken(User user, String secret, Long expiration) {
+    private String generateToken(User user, String appName, boolean isAccessToken) {
+        // Fetch token configuration from the database
+        TokenConfiguration config = tokenConfigRepository.findByAppName(appName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid app name"));
+
+        String secret = config.getSecretKey();
+        Long expiration = isAccessToken
+                ? config.getAccessTokenExpirationMinutes() * 60L
+                : config.getRefreshTokenExpirationMinutes() * 60L;
+
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("roles", user.getRole())
@@ -54,16 +61,21 @@ public class JwtUtils {
                 .compact();
     }
 
-    public boolean validateAccessToken(String token) {
-        return validateToken(token,accessTokenSecret);
+    public boolean validateAccessToken(String token, String appName) {
+        return validateToken(token, appName, true); // true for access token
     }
 
-    public boolean validateRefreshToken(String token) {
-        return validateToken(token,refreshTokenSecret);
+    public boolean validateRefreshToken(String token, String appName) {
+        return validateToken(token, appName, false); // false for refresh token
     }
 
-    public boolean validateToken(String token,String secret) {
+    private boolean validateToken(String token, String appName, boolean isAccessToken) {
         try {
+            // Fetch the correct secret for the token
+            TokenConfiguration config = tokenConfigRepository.findByAppName(appName)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid app name"));
+
+            String secret = config.getSecretKey();
 
             Jwts.parserBuilder()
                     .setSigningKey(getKey(secret))
@@ -80,46 +92,31 @@ public class JwtUtils {
         }
     }
 
-    public String extractSubject(String token) {
+    public String extractSubject(String token, String appName) {
+        return extractClaim(token, appName, Claims::getSubject);
+    }
+
+    public String extractEmail(String token, String appName) {
+        return extractClaim(token, appName, claims -> claims.get("email", String.class));
+    }
+
+    public String extractRoles(String token, String appName) {
+        return extractClaim(token, appName, claims -> claims.get("roles", String.class));
+    }
+
+    private <T> T extractClaim(String token, String appName, Function<Claims, T> claimsResolver) {
+        TokenConfiguration config = tokenConfigRepository.findByAppName(appName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid app name"));
+
+        String secret = config.getSecretKey();
 
         Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getKey(accessTokenSecret))
+                .setSigningKey(getKey(secret))
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
 
-        return claims.getSubject();
+        return claimsResolver.apply(claims);
     }
-    public String extractSubjectFromRefresh(String token) {
-
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getKey(refreshTokenSecret))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getSubject();
-    }
-    public String extractEmail(String token) {
-        try {
-            SignedJWT signedJWT = SignedJWT.parse(token);
-            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-            return claimsSet.getStringClaim("sub");
-        } catch (ParseException e) {
-            throw new RuntimeException("Error parsing token", e);
-        }
-    }
-
-    public String extractUsername(String jwt) {
-        try {
-            SignedJWT signedJWT = SignedJWT.parse(jwt);
-            String userEmail = signedJWT.getJWTClaimsSet().getStringClaim("email");
-            return userEmail;
-        } catch (java.text.ParseException e) {
-            throw new RuntimeException("Invalid JWT token", e);
-        }
-    }
-
-
-
 }
+

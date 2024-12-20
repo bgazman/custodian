@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
 
     Optional<User> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 //    void updateFailedLoginAttemptsById(Long userId, Integer attempts);
 //    void updateLockedUntilById(Long userId, LocalDateTime lockedUntil);
 //@Modifying

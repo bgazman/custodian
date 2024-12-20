@@ -57,7 +57,7 @@ public class User implements UserDetails {
 
     @Column(name = "credentials_non_expired")
     private boolean credentialsNonExpired = true;
-    @Column(name="role")
+    @Column(name = "role", nullable = false)
     private String role;
     @Column(name = "failed_login_attempts")
     private int failedLoginAttempts;
@@ -80,7 +80,6 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(this.role));
     }
-
 
 
     @Override
