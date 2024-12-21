@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { User } from '../types/User';
 import {useNavigate} from "react-router-dom";
+import {ApiResponse} from "../api/common/ApiResponse.ts";
+import {ApiClient} from "../api/common/ApiClient.ts";
 
 export const useUsers = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -18,15 +20,30 @@ export const useUsers = () => {
     }, [navigate]);
     const fetchUsers = async () => {
         try {
+            setLoading(true); // Start loading
+
             const token = localStorage.getItem('access-token');
-            const response = await axios.get('http://localhost:8080/api/users', {
-                headers: { Authorization: `Bearer ${token}` }
+            if (!token) {
+                setError('User is not authenticated');
+                return;
+            }
+
+            // Use ApiClient to make the GET request with Authorization header
+            const response: ApiResponse<User[]> = await ApiClient.get<ApiResponse<User[]>>('/users', {
+                headers: { Authorization: `Bearer ${token}` },
             });
-            setUsers(response.data);
-        } catch (err) {
-            setError('Failed to fetch users');
+
+            // Check if the response status is success
+            if (response.status === 'success' && response.data) {
+                setUsers(response.data); // Update users state
+            } else {
+                setError(response.message || 'Failed to fetch users');
+            }
+        } catch (err: any) {
+            console.error('Error fetching users:', err);
+            setError(err.message || 'Failed to fetch users');
         } finally {
-            setLoading(false);
+            setLoading(false); // End loading
         }
     };
 

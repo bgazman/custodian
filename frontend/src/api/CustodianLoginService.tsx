@@ -1,20 +1,30 @@
 import axios from "axios";
-import {ApiResponse, handleApiResponse} from "../utils/ApiUtils.ts";
+import { handleApiResponse} from "../utils/ApiUtils.ts";
+import {createApiRequest} from "./common/RequestHandler.ts";
+import {ApiClient} from "./common/ApiClient";
+import {ApiResponse} from "./common/ApiResponse.ts";
+interface LoginRequestData {
+    email: string;
+    password: string;
+}
+export interface LoginResponseData {
+    accessToken: string;
+    refreshToken: string;
+    email: string;
+    roles: string;
+}
+
+
 
 export const CustodianLoginService = {
-    baseUrl: "http://localhost:8080/api/auth/login",
+    async login(email: string, password: string): Promise<LoginResponseData> {
+        const payload = createApiRequest<LoginRequestData>({ email, password });
+        console.log('Payload:', payload);
 
-    async login(email, password) {
-        try {
-            const response = await axios.post(this.baseUrl, { email, password });
-            return handleApiResponse(response.data);
-        } catch (error) {
-            console.log('Error response:', error.response?.data); // Debug log
-            throw error.response?.data || {
-                status: 'error',
-                message: 'Network error',
-                statusCode: 500
-            };
-        }
-    }
+        // Raw response logging
+        const response = await ApiClient.post<ApiResponse<LoginResponseData>>('/auth/login', payload);
+        console.log('Raw Response:', response);
+
+        return handleApiResponse(response);
+    },
 };

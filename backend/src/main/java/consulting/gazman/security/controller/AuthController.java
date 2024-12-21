@@ -32,9 +32,12 @@ public class AuthController {
     public ApiResponse<AuthResponse> register(@RequestBody ApiRequest<AuthRequest> request) {
         return authService.register(request.getData());
     }
+
     @PostMapping("/refresh")
     public ApiResponse<AuthResponse> refresh(@RequestBody ApiRequest<AuthRequest> request) {
         return authService.refresh(request.getData());
+
+
     }
 
 }

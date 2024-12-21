@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {CustodianLoginService} from "../api/CustodianLoginService.tsx";
+import {CustodianLoginService, LoginResponseData} from "../api/CustodianLoginService.tsx";
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -13,24 +13,24 @@ const Login = () => {
             navigate("/dashboard", { replace: true });
         }
     }, []);
-
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         try {
-            const response = await CustodianLoginService.login(email, password);
-            console.log('Login response:', response); // Debug log
-            if (response.success && response.data) {
-                localStorage.setItem("access-token", response.data.accessToken);
-                localStorage.setItem("refresh-token", response.data.refreshToken);
-                localStorage.setItem("role", response.data.roles);
-                navigate("/dashboard", { replace: true }); // Added replace:true
-            } else {
-                setError(response.message);
-            }
-        } catch (err) {
-            console.error('Login error:', err); // Debug log
-            setError(err.message);
+            // Use the login service and ensure response conforms to LoginResponseData
+            const response: LoginResponseData = await CustodianLoginService.login(email, password);
+            console.log("Login response:", response);
+
+            // Store tokens and roles in localStorage
+            localStorage.setItem("access-token", response.accessToken);
+            localStorage.setItem("refresh-token", response.refreshToken);
+            localStorage.setItem("role", response.roles);
+
+            // Navigate to dashboard
+            navigate("/dashboard", { replace: true });
+        } catch (err: any) {
+            console.error("Login error:", err);
+            setError(err.message || "An unexpected error occurred.");
         }
     };
 
