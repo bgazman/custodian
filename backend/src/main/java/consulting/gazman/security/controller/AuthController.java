@@ -1,5 +1,9 @@
 package consulting.gazman.security.controller;
 
+import org.springframework.http.HttpStatus;
+
+import common.dto.ApiRequest;
+import common.dto.ApiResponse;
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
 import consulting.gazman.security.service.AuthService;
@@ -20,16 +24,17 @@ public class AuthController {
     private JwtUtils jwtUtils;
 
     @PostMapping("/login")
-        public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
-            return ResponseEntity.ok(authService.login(authRequest));
+    public ApiResponse<AuthResponse> login(@RequestBody ApiRequest<AuthRequest> request) {
+        return authService.login(request.getData());
         }
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequest registerRequest) throws BadRequestException {
-            return ResponseEntity.ok(authService.register(registerRequest));
-        }
+    public ApiResponse<AuthResponse> register(@RequestBody ApiRequest<AuthRequest> request) {
+        return authService.register(request.getData());
+    }
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody AuthRequest refreshRequest) throws BadRequestException {
-        return ResponseEntity.ok(authService.refresh(refreshRequest));
+    public ApiResponse<AuthResponse> refresh(@RequestBody ApiRequest<AuthRequest> request) {
+        return authService.refresh(request.getData());
     }
 
 }

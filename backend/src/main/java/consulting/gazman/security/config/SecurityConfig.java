@@ -1,10 +1,15 @@
 package consulting.gazman.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import common.dto.ApiError;
+import common.dto.ApiResponse;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.filter.JwtAuthFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -28,12 +33,19 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final ObjectMapper objectMapper;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder, JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService, CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(PasswordEncoder passwordEncoder,
+                          JwtAuthFilter jwtAuthFilter,
+                          UserDetailsService userDetailsService,
+                          CorsConfigurationSource corsConfigurationSource,
+                          ObjectMapper objectMapper) {
         this.passwordEncoder = passwordEncoder;
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.corsConfigurationSource = corsConfigurationSource;
+        this.objectMapper = objectMapper;  // Add this
+
     }
 
     @Bean
@@ -41,6 +53,21 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource)) // Add CORS config here
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, ex) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                    objectMapper.writeValueAsString(
+                                            ApiResponse.error(
+                                                    HttpStatus.UNAUTHORIZED,
+                                                    "Authentication failed",
+                                                    ApiError.of("UNAUTHORIZED", ex.getMessage())
+                                            )
+                                    )
+                            );
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/**").hasAuthority("ADMIN")

@@ -1,8 +1,10 @@
 package consulting.gazman.security.controller;
 
+import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,11 +17,14 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userService.findAll();
+//    @GetMapping
+//    public List<User> getAllUsers() {
+//        return userService.findAll();
+//    }
+    @GetMapping()
+    public ResponseEntity<?> getAllUsers(@RequestBody String str) {
+        return ResponseEntity.ok(str);
     }
-
     @GetMapping("/{id}")
     public User getUser(@PathVariable Long id) {
         return userService.findById(id);
