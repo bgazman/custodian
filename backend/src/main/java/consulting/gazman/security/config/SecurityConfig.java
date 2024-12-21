@@ -1,12 +1,12 @@
 package consulting.gazman.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import common.dto.ApiError;
-import common.dto.ApiResponse;
-import consulting.gazman.security.entity.User;
+import consulting.gazman.common.dto.ApiError;
+import consulting.gazman.common.dto.ApiResponse;
+import consulting.gazman.common.filter.CustomHeaderFilter;
+import consulting.gazman.common.filter.LoggingFilter;
 import consulting.gazman.security.filter.JwtAuthFilter;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -17,12 +17,13 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @EnableWebSecurity
@@ -52,7 +53,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // Add CORS config here
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, ex) -> {
                             response.setContentType("application/json");
@@ -60,7 +61,7 @@ public class SecurityConfig {
                             response.getWriter().write(
                                     objectMapper.writeValueAsString(
                                             ApiResponse.error(
-                                                    HttpStatus.UNAUTHORIZED,
+                                                    "unauthorized",
                                                     "Authentication failed",
                                                     ApiError.of("UNAUTHORIZED", ex.getMessage())
                                             )
@@ -68,6 +69,7 @@ public class SecurityConfig {
                             );
                         })
                 )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/**").hasAuthority("ADMIN")
@@ -77,7 +79,9 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new LoggingFilter(), AuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, AuthenticationFilter.class)
+                .addFilterAfter(new CustomHeaderFilter(), SecurityContextHolderFilter.class);
 
         return http.build();
     }

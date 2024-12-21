@@ -1,6 +1,7 @@
 package consulting.gazman.security.controller;
 
-import consulting.gazman.security.dto.AuthRequest;
+import consulting.gazman.common.controller.ApiController;
+import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,38 +11,58 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
+
 @RestController
 @RequestMapping("/api/users")
 @PreAuthorize("hasRole('ADMIN')")
-public class UserController {
+public class UserController extends ApiController {
+
     @Autowired
     private UserService userService;
 
-//    @GetMapping
-//    public List<User> getAllUsers() {
-//        return userService.findAll();
-//    }
-    @GetMapping()
-    public ResponseEntity<?> getAllUsers(@RequestBody String str) {
-        return ResponseEntity.ok(str);
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        logRequest("GET", "/api/users");
+
+        // Call the service and handle the response
+        ApiResponse<List<User>> serviceResponse = userService.getAllUsers();
+        return handleApiResponse(serviceResponse);
     }
+
     @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
-        return userService.findById(id);
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+        logRequest("GET", "/api/users/" + id);
+
+        // Call the service and handle the response
+        ApiResponse<User> serviceResponse = userService.findById(id);
+        return handleApiResponse(serviceResponse);
     }
 
     @PostMapping
-    public User createUser( @RequestBody User user) {
-        return userService.save(user);
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        logRequest("POST", "/api/users");
+
+        // Call the service and handle the response
+        ApiResponse<User> serviceResponse = userService.save(user);
+        return handleApiResponse(serviceResponse);
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id,  @RequestBody User user) {
-        return userService.update(id, user);
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+        logRequest("PUT", "/api/users/" + id);
+
+        // Call the service and handle the response
+        ApiResponse<User> serviceResponse = userService.update(id, user);
+        return handleApiResponse(serviceResponse);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.delete(id);
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        logRequest("DELETE", "/api/users/" + id);
+
+        // Call the service and handle the response
+        ApiResponse<Void> serviceResponse = userService.delete(id);
+        return handleApiResponse(serviceResponse);
     }
 }

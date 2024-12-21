@@ -1,43 +1,56 @@
 package consulting.gazman.security.controller;
 
-import org.springframework.http.HttpStatus;
-
-import common.dto.ApiRequest;
-import common.dto.ApiResponse;
+import consulting.gazman.common.controller.ApiController;
+import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
 import consulting.gazman.security.service.AuthService;
-import consulting.gazman.security.utils.JwtUtils;
-import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import consulting.gazman.common.utils.StatusMapper;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private JwtUtils jwtUtils;
+public class AuthController extends ApiController {
+
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
 
     @PostMapping("/login")
-    public ApiResponse<AuthResponse> login(@RequestBody ApiRequest<AuthRequest> request) {
-        return authService.login(request.getData());
-        }
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        logRequest("POST", "/api/auth/login");
+
+        // Call AuthService and handle response
+        ApiResponse<AuthResponse> serviceResponse = authService.login(request);
+        return handleApiResponse(serviceResponse);
+    }
 
     @PostMapping("/register")
-    public ApiResponse<AuthResponse> register(@RequestBody ApiRequest<AuthRequest> request) {
-        return authService.register(request.getData());
+    public ResponseEntity<?> register(@RequestBody AuthRequest request) {
+        logRequest("POST", "/api/auth/register");
+
+        // Call AuthService and handle response
+        ApiResponse<AuthResponse> serviceResponse = authService.register(request);
+        return handleApiResponse(serviceResponse);
     }
 
     @PostMapping("/refresh")
-    public ApiResponse<AuthResponse> refresh(@RequestBody ApiRequest<AuthRequest> request) {
-        return authService.refresh(request.getData());
+    public ResponseEntity<?> refresh(@RequestBody AuthRequest request) {
+        logRequest("POST", "/api/auth/refresh");
 
-
+        // Call AuthService and handle response
+        ApiResponse<AuthResponse> serviceResponse = authService.refresh(request);
+        return handleApiResponse(serviceResponse);
     }
-
 }
+
+
+
+

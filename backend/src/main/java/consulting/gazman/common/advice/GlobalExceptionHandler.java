@@ -1,7 +1,10 @@
-package consulting.gazman.security.exception;
+package consulting.gazman.common.advice;
 
-import common.dto.ApiError;
-import common.dto.ApiResponse;
+import consulting.gazman.common.dto.ApiError;
+import consulting.gazman.common.dto.ApiResponse;
+import consulting.gazman.common.utils.StatusMapper;
+import consulting.gazman.security.exception.UnauthorizedException;
+import consulting.gazman.security.exception.UserAlreadyExistsException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.apache.coyote.BadRequestException;
@@ -16,9 +19,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<Object>> handleUnauthorized(UnauthorizedException ex) {
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+                .status(StatusMapper.toHttpStatus("unauthorized"))
                 .body(ApiResponse.error(
-                        HttpStatus.UNAUTHORIZED,
+                        "unauthorized",
                         "Authentication failed",
                         ApiError.of("UNAUTHORIZED", ex.getMessage())
                 ));
@@ -27,9 +30,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadRequest(BadRequestException ex) {
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(StatusMapper.toHttpStatus("error"))
                 .body(ApiResponse.error(
-                        HttpStatus.BAD_REQUEST,
+                        "BAD_REQUEST",
                         "Invalid request",
                         ApiError.of("BAD_REQUEST", ex.getMessage())
                 ));
@@ -38,9 +41,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<Object>> handleUserExists(UserAlreadyExistsException ex) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
+                .status(StatusMapper.toHttpStatus("conflict"))
                 .body(ApiResponse.error(
-                        HttpStatus.CONFLICT,
+                        "USER_EXISTS",
                         "User already exists",
                         ApiError.of("USER_EXISTS", ex.getMessage())
                 ));
@@ -52,9 +55,9 @@ public class GlobalExceptionHandler {
         String message = ex instanceof ExpiredJwtException ? "Token has expired" : "Invalid token";
 
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+                .status(StatusMapper.toHttpStatus("unauthorized"))
                 .body(ApiResponse.error(
-                        HttpStatus.UNAUTHORIZED,
+                        code,
                         message,
                         ApiError.of(code, ex.getMessage())
                 ));
@@ -63,9 +66,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneral(Exception ex) {
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(StatusMapper.toHttpStatus("server_error"))
                 .body(ApiResponse.error(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "SERVER_ERROR",
                         "Internal server error",
                         ApiError.of("SERVER_ERROR", ex.getMessage())
                 ));

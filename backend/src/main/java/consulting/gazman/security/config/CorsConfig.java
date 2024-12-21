@@ -26,10 +26,12 @@ public class CorsConfig {
         String[] allowedOrigins = environment.getProperty("cors.allowed.origins", "").split(",");
         String[] allowedMethods = environment.getProperty("cors.allowed.methods", "").split(",");
         String[] allowedHeaders = environment.getProperty("cors.allowed.headers", "").split(",");
+        String[] exposedHeaders = environment.getProperty("cors.exposed.headers", "").split(",");
 
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
         configuration.setAllowedMethods(Arrays.asList(allowedMethods));
         configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
+        configuration.setExposedHeaders(Arrays.asList(exposedHeaders)); // Add this line
         configuration.setAllowCredentials(true); // Enable if needed
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

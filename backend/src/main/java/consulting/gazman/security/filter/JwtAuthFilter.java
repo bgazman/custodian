@@ -4,12 +4,14 @@ import consulting.gazman.security.entity.User;
 import consulting.gazman.security.repository.UserRepository;
 import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.service.UserService;
+import consulting.gazman.security.service.impl.AuthServiceImpl;
 import consulting.gazman.security.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -20,8 +22,9 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class JwtAuthFilter extends OncePerRequestFilter {
-    private final AuthService authService;
+    private final AuthServiceImpl authService;
     private final JwtUtils jwtUtils;
 
     @Override
