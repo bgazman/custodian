@@ -3,7 +3,7 @@ package consulting.gazman.security.utils;
 import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
 
-import consulting.gazman.security.repository.TokenConfigRepository;
+import consulting.gazman.security.repository.TokenConfigurationRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -23,9 +23,9 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    private final TokenConfigRepository tokenConfigRepository;
+    private final TokenConfigurationRepository tokenConfigRepository;
 
-    public JwtUtils(TokenConfigRepository tokenConfigRepository) {
+    public JwtUtils(TokenConfigurationRepository tokenConfigRepository) {
         this.tokenConfigRepository = tokenConfigRepository;
     }
 

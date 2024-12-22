@@ -35,6 +35,7 @@ public class JacksonConfig {
         return JsonMapper.builder()
                 .addModule(javaTimeModule)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // Disable array-like timestamps
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // Avoid serialization errors for lazy-loaded proxies
                 .build();
     }
 }

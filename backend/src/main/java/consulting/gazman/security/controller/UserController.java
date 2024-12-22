@@ -65,4 +65,60 @@ public class UserController extends ApiController {
         ApiResponse<Void> serviceResponse = userService.delete(id);
         return handleApiResponse(serviceResponse);
     }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+        logRequest("GET", "/api/users/email/" + email);
+
+        ApiResponse<User> serviceResponse = userService.findByEmail(email);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PostMapping("/enable/{id}")
+    public ResponseEntity<?> enableUser(@PathVariable Long id) {
+        logRequest("POST", "/api/users/enable/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.enableUser(id);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PostMapping("/disable/{id}")
+    public ResponseEntity<?> disableUser(@PathVariable Long id) {
+        logRequest("POST", "/api/users/disable/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.disableUser(id);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PutMapping("/password/{id}")
+    public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody String newPassword) {
+        logRequest("PUT", "/api/users/password/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.changePassword(id, newPassword);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PostMapping("/verify-email/{id}")
+    public ResponseEntity<?> verifyEmail(@PathVariable Long id) {
+        logRequest("POST", "/api/users/verify-email/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.verifyEmail(id);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PostMapping("/reset-failed-attempts/{id}")
+    public ResponseEntity<?> resetFailedLoginAttempts(@PathVariable Long id) {
+        logRequest("POST", "/api/users/reset-failed-attempts/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.resetFailedLoginAttempts(id);
+        return handleApiResponse(serviceResponse);
+    }
+
+    @PostMapping("/track-login/{id}")
+    public ResponseEntity<?> trackLogin(@PathVariable Long id) {
+        logRequest("POST", "/api/users/track-login/" + id);
+
+        ApiResponse<Void> serviceResponse = userService.trackLogin(id);
+        return handleApiResponse(serviceResponse);
+    }
 }

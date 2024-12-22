@@ -6,7 +6,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+
+
 @Repository
-public interface TokenConfigRepository extends JpaRepository<TokenConfiguration, Long> {
+public interface TokenConfigurationRepository extends JpaRepository<TokenConfiguration, Long> {
+
+    // Find configuration by application name
     Optional<TokenConfiguration> findByAppName(String appName);
+
+    // Check if a configuration exists for a specific app name
+    boolean existsByAppName(String appName);
 }
