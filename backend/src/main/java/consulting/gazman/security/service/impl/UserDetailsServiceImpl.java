@@ -1,4 +1,4 @@
-package consulting.gazman.security.service;
+package consulting.gazman.security.service.impl;
 
 import consulting.gazman.security.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

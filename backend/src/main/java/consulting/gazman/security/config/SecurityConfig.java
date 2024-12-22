@@ -6,6 +6,8 @@ import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.common.filter.CustomHeaderFilter;
 import consulting.gazman.common.filter.LoggingFilter;
 import consulting.gazman.security.filter.JwtAuthFilter;
+import consulting.gazman.security.filter.MethodNotAllowedExceptionFilter;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,11 +22,15 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.security.web.authentication.AuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @EnableWebSecurity
 @Configuration
@@ -63,7 +69,7 @@ public class SecurityConfig {
                                     objectMapper.writeValueAsString(
                                             ApiResponse.error(
                                                     "unauthorized",
-                                                    "Authentication failed",
+                                                    "Authentication WWWWW",
                                                     ApiError.of("UNAUTHORIZED", ex.getMessage())
                                             )
                                     )
@@ -86,16 +92,16 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated()                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(new LoggingFilter(), AuthenticationFilter.class)
-                .addFilterBefore(jwtAuthFilter, AuthenticationFilter.class)
+                .addFilterBefore(new MethodNotAllowedExceptionFilter(), AuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CustomHeaderFilter(), SecurityContextHolderFilter.class);
 
         return http.build();
