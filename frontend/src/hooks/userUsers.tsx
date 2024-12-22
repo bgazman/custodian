@@ -29,16 +29,12 @@ export const useUsers = () => {
             }
 
             // Use ApiClient to make the GET request with Authorization header
-            const response: ApiResponse<User[]> = await ApiClient.get<ApiResponse<User[]>>('/users', {
+            const users: User[] = await ApiClient.get<User[]>('/users', {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            // Check if the response status is success
-            if (response.status === 'success' && response.data) {
-                setUsers(response.data); // Update users state
-            } else {
-                setError(response.message || 'Failed to fetch users');
-            }
+            // Update users state directly
+            setUsers(users);
         } catch (err: any) {
             console.error('Error fetching users:', err);
             setError(err.message || 'Failed to fetch users');

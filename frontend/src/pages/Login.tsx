@@ -12,7 +12,7 @@ const Login = () => {
         if (token) {
             navigate("/dashboard", { replace: true });
         }
-    }, []);
+    }, [navigate]);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 

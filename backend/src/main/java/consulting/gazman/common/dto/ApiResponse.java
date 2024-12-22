@@ -30,7 +30,7 @@ public class ApiResponse<T> {
     // Factory method for error response with ApiError
     public static <T> ApiResponse<T> error(String code, String message, ApiError apiError) {
         ApiResponse<T> response = new ApiResponse<>();
-        response.status = "error";
+        response.status = code;
         response.message = message;
         response.error = apiError;
         return response;

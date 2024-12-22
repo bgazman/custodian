@@ -1,8 +1,5 @@
 export interface ApiResponse<T> {
-    id: string;                   // Unique identifier
-    timestamp: number;            // Timestamp of the response
-    status: 'success' | 'error';  // Indicates success or error
-    statusCode: number;           // HTTP status code
+    status: string;  // Indicates success or error
     message: string;              // Response message
     data: T | null;               // Generic payload for success
     error?: {

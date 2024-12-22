@@ -55,6 +55,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .exceptionHandling(exception -> exception
+                        // Handle AuthenticationException (unauthorized access)
                         .authenticationEntryPoint((request, response, ex) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -64,6 +65,20 @@ public class SecurityConfig {
                                                     "unauthorized",
                                                     "Authentication failed",
                                                     ApiError.of("UNAUTHORIZED", ex.getMessage())
+                                            )
+                                    )
+                            );
+                        })
+                        // Handle AccessDeniedException (forbidden access)
+                        .accessDeniedHandler((request, response, ex) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write(
+                                    objectMapper.writeValueAsString(
+                                            ApiResponse.error(
+                                                    "forbidden",
+                                                    "Access is denied",
+                                                    ApiError.of("FORBIDDEN", ex.getMessage())
                                             )
                                     )
                             );

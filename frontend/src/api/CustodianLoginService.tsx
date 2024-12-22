@@ -17,14 +17,27 @@ export interface LoginResponseData {
 
 
 export const CustodianLoginService = {
+    /**
+     * Logs in a user using email and password.
+     * @param email - The user's email.
+     * @param password - The user's password.
+     * @returns A promise resolving to the login response data.
+     */
     async login(email: string, password: string): Promise<LoginResponseData> {
-        const payload = createApiRequest<LoginRequestData>({ email, password });
-        console.log('Payload:', payload);
+        const payload: LoginRequestData = { email, password };
 
-        // Raw response logging
-        const response = await ApiClient.post<ApiResponse<LoginResponseData>>('/auth/login', payload);
-        console.log('Raw Response:', response);
+        // Make a POST request using ApiClient
+        try {
+            const response = await ApiClient.post<LoginResponseData>('/auth/login', payload);
 
-        return handleApiResponse(response);
+            // Log the successful response
+            console.log('Login successful:', response);
+
+            return response;
+        } catch (error: any) {
+            // Log and re-throw the error for the caller to handle
+            console.error('Login failed:', error.message || error);
+            throw error;
+        }
     },
 };
