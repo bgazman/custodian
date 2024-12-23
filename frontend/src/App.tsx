@@ -7,6 +7,7 @@ import LandingPage from "./pages/LandingPage";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import AdminPage from './pages/Admin';
+import UsersPage from "./pages/Users.tsx";
 
 // In your router configuration
 
@@ -17,6 +18,7 @@ const PrivateRoute = ({ children }) => {
 
 
 const AppLayout = () => (
+
     <div className="min-h-screen bg-gray-100">
         <Navbar />
         <main className="pt-16 h-full">
@@ -26,6 +28,8 @@ const AppLayout = () => (
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/users" element={<UsersPage />} />
+
                 <Route path="/" element={<Navigate to="/dashboard" />} /> {/* Default authenticated route */}
 
             </Routes>

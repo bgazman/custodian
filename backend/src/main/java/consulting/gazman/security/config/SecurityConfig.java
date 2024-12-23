@@ -5,9 +5,11 @@ import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.common.filter.CustomHeaderFilter;
 import consulting.gazman.common.filter.LoggingFilter;
+import consulting.gazman.security.exception.JwtAuthenticationException;
 import consulting.gazman.security.filter.JwtAuthFilter;
-import consulting.gazman.security.filter.MethodNotAllowedExceptionFilter;
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -58,49 +61,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // Disable CSRF as we're using JWT tokens
                 .csrf(AbstractHttpConfigurer::disable)
+                // Configure CORS using the provided configuration source
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .exceptionHandling(exception -> exception
-                        // Handle AuthenticationException (unauthorized access)
-                        .authenticationEntryPoint((request, response, ex) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write(
-                                    objectMapper.writeValueAsString(
-                                            ApiResponse.error(
-                                                    "unauthorized",
-                                                    "Authentication WWWWW",
-                                                    ApiError.of("UNAUTHORIZED", ex.getMessage())
-                                            )
-                                    )
-                            );
-                        })
-                        // Handle AccessDeniedException (forbidden access)
-                        .accessDeniedHandler((request, response, ex) -> {
+                // Configure exception handling for various HTTP status codes
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write(
-                                    objectMapper.writeValueAsString(
-                                            ApiResponse.error(
-                                                    "forbidden",
-                                                    "Access is denied",
-                                                    ApiError.of("FORBIDDEN", ex.getMessage())
-                                            )
-                                    )
-                            );
-                        })
-                )
+                            response.getWriter().write(objectMapper.writeValueAsString(
+                                    ApiResponse.error("forbidden", "Access Denied",
+                                            ApiError.of("ACCESS_DENIED", accessDeniedException.getMessage()))
+                            ));
+                        }))
 
+                // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
-                                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated()                )
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll() // Allow error dispatchers
+                        .requestMatchers("/api/auth/**").permitAll() // Public authentication endpoints
+                        .requestMatchers("/api/users/**").hasAuthority("ADMIN") // Admin-only endpoints
+                        .anyRequest().authenticated() // All other endpoints require authentication
+                )
+                // Configure session management to be stateless (no sessions)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // Add the authentication provider
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(new MethodNotAllowedExceptionFilter(), AuthenticationFilter.class)
+                // Add filters in the correct order
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CustomHeaderFilter(), SecurityContextHolderFilter.class);
 

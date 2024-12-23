@@ -20,15 +20,24 @@ export class ApiClient {
         timeout: 10000, // Set a default timeout of 10 seconds
     });
 
-    // Attach an interceptor to add the traceId header
+
     static init() {
         this.instance.interceptors.request.use((config) => {
+            const token = localStorage.getItem("access-token");
             const traceId = getTraceId();
+
             config.headers = {
                 ...config.headers,
-                'X-B3-TraceId': traceId, // Include the traceId in every request
+                'X-B3-TraceId': traceId,
             };
-            console.log(`Request TraceId: ${traceId}`);
+
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+
+            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+            console.log(`[TraceID] ${traceId}`);
+
             return config;
         });
     }
@@ -77,6 +86,43 @@ export class ApiClient {
             return response.data;
         } catch (error: any) {
             console.error(`GET Error: ${url}`, error.response?.data || error.message); // Log error
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Sends a PUT request.
+     * @param url - The endpoint URL.
+     * @param data - The request payload.
+     * @param config - Optional Axios configuration.
+     * @returns The response data.
+     */
+    static async put<T, U = any>(url: string, data: U, config?: AxiosRequestConfig): Promise<T> {
+        try {
+            console.log(`PUT Request: ${url}`, data);
+            const response = await this.instance.put<T>(url, data, config);
+            console.log(`PUT Response: ${url}`, response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error(`PUT Error: ${url}`, error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Sends a DELETE request.
+     * @param url - The endpoint URL.
+     * @param config - Optional Axios configuration.
+     * @returns The response data.
+     */
+    static async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        try {
+            console.log(`DELETE Request: ${url}`);
+            const response = await this.instance.delete<T>(url, config);
+            console.log(`DELETE Response: ${url}`, response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error(`DELETE Error: ${url}`, error.response?.data || error.message);
             throw this.handleError(error);
         }
     }

@@ -1,6 +1,10 @@
 package consulting.gazman.security.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import consulting.gazman.common.dto.ApiError;
+import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.User;
+import consulting.gazman.security.exception.JwtAuthenticationException;
 import consulting.gazman.security.repository.UserRepository;
 import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.service.UserService;
@@ -13,50 +17,64 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
-@Order(1)
+//@Order(1)
 public class JwtAuthFilter extends OncePerRequestFilter {
+
     private final AuthServiceImpl authService;
     private final JwtUtils jwtUtils;
+    private final ObjectMapper objectMapper;
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String jwt = authHeader.substring(7);
-
-        if (jwtUtils.validateAccessToken(jwt, "GLOBAL")) {
-            String userEmail = jwtUtils.extractSubject(jwt, "GLOBAL");
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = authService.findByEmail(userEmail);
-                if (user != null) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            user.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+            String jwt = extractJwtFromRequest(request);
+            if (jwt != null && jwtUtils.validateAccessToken(jwt, "GLOBAL")) {
+                authenticateUser(jwt, request);
+            } else if (jwt != null) {
+                // Token exists but is invalid
+                sendErrorResponse(response, "Invalid token");
+                return;
             }
-        }
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+
     }
+
+    private String extractJwtFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    private void authenticateUser(String jwt, HttpServletRequest request) {
+        String userEmail = jwtUtils.extractSubject(jwt, "GLOBAL");
+        User user = authService.findByEmail(userEmail);
+        if (user == null) {
+            throw new JwtAuthenticationException("User not found for the given token");
+        }
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                user, null, user.getAuthorities());
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, String errorMessage) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getWriter().write(objectMapper.writeValueAsString(
+                ApiResponse.error("unauthorized", "Authentication failed", ApiError.of("UNAUTHORIZETTT", errorMessage))
+        ));
+    }
+
 }

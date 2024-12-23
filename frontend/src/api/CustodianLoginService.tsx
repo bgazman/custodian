@@ -1,8 +1,5 @@
-import axios from "axios";
-import { handleApiResponse} from "../utils/ApiUtils.ts";
-import {createApiRequest} from "./common/RequestHandler.ts";
-import {ApiClient} from "./common/ApiClient";
-import {ApiResponse} from "./common/ApiResponse.ts";
+
+import {AuthApiClient} from "./common/AuthApiClients";
 interface LoginRequestData {
     email: string;
     password: string;
@@ -28,7 +25,7 @@ export const CustodianLoginService = {
 
         // Make a POST request using ApiClient
         try {
-            const response = await ApiClient.post<LoginResponseData>('/auth/login', payload);
+            const response = await AuthApiClient.post<LoginResponseData>('/auth/login', payload);
 
             // Log the successful response
             console.log('Login successful:', response);

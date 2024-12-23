@@ -1,45 +1,29 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { User } from '../types/User';
-import {useNavigate} from "react-router-dom";
-import {ApiResponse} from "../api/common/ApiResponse.ts";
-import {ApiClient} from "../api/common/ApiClient.ts";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ApiClient } from "../api/common/ApiClient";
+import { User } from "../types/User";
 
 export const useUsers = () => {
     const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const token = localStorage.getItem('access-token');
-        if (!token) {
-            navigate('/login', { replace: true });
-            return;
-        }
-    }, [navigate]);
     const fetchUsers = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            setLoading(true); // Start loading
-
-            const token = localStorage.getItem('access-token');
-            if (!token) {
-                setError('User is not authenticated');
-                return;
-            }
-
-            // Use ApiClient to make the GET request with Authorization header
-            const users: User[] = await ApiClient.get<User[]>('/users', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            // Update users state directly
-            setUsers(users);
+            const fetchedUsers = await ApiClient.get<User[]>("/users");
+            setUsers(fetchedUsers);
         } catch (err: any) {
-            console.error('Error fetching users:', err);
-            setError(err.message || 'Failed to fetch users');
+            console.error("Error fetching users:", err);
+            if (err.statusCode === 401) {
+                navigate("/login", { replace: true });
+            } else {
+                setError(err.message || "Failed to fetch users.");
+            }
         } finally {
-            setLoading(false); // End loading
+            setLoading(false);
         }
     };
 
@@ -47,5 +31,32 @@ export const useUsers = () => {
         fetchUsers();
     }, []);
 
-    return { users, loading, error, refetch: fetchUsers };
+    // Optimistic delete
+    const deleteUser = async (id: number) => {
+        try {
+            await ApiClient.delete(`/users/${id}`);
+            setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
+        } catch (err) {
+            console.error("Failed to delete user:", err);
+            throw err;
+        }
+    };
+
+    // Optimistic toggle
+    const toggleUserEnabled = async (id: number, enabled: boolean) => {
+        try {
+            const endpoint = enabled ? `/users/disable/${id}` : `/users/enable/${id}`;
+            await ApiClient.post(endpoint, {});
+            setUsers((prevUsers) =>
+                prevUsers.map((user) =>
+                    user.id === id ? { ...user, enabled: !enabled } : user
+                )
+            );
+        } catch (err) {
+            console.error(`Failed to ${enabled ? "disable" : "enable"} user:`, err);
+            throw err;
+        }
+    };
+
+    return { users, loading, error, refetch: fetchUsers, deleteUser, toggleUserEnabled };
 };
