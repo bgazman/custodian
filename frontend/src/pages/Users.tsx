@@ -1,21 +1,36 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../hooks/userUsers";
 import CreateUserDialog from "../components/Users/CreateUserDialog";
+import UserDetails from "../components/Users/UserDetails";
+import {User} from "@/types/User.ts";
 
-const UsersPage = () => {
+const UsersPage: React.FC = () => {
     const navigate = useNavigate();
     const { users, loading, error, deleteUser, toggleUserEnabled, refetch } = useUsers();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    const handleViewDetails = (user: User) => {
+        setSelectedUser(user);
+    };
+
+    const closeUserDetails = () => {
+        setSelectedUser(null);
+    };
+
     useEffect(() => {
         const isAdmin = localStorage.getItem("role") === "ADMIN";
         if (!isAdmin) {
             navigate("/", { replace: true });
         }
     }, [navigate]);
-    const handleCreateUser = (newUser) => {
+
+    const handleCreateUser = (newUser: User) => {
+        setIsCreateDialogOpen(false);
         refetch(); // Refetch the users list to include the new user
     };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -40,16 +55,18 @@ const UsersPage = () => {
 
     return (
         <div className="p-6">
+            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Manage Users</h1>
                 <button
-                    variant="contained"
-                    color="primary"
                     onClick={() => setIsCreateDialogOpen(true)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
                 >
                     Create User
                 </button>
             </div>
+
+            {/* Users Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
                     <thead className="bg-gray-50">
@@ -68,18 +85,14 @@ const UsersPage = () => {
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                {user.enabled ? "Yes" : "No"}
-                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.enabled ? "Yes" : "No"}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {new Date(user.createdAt).toLocaleDateString()}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex space-x-2">
                                     <button
-                                        onClick={() =>
-                                            toggleUserEnabled(user.id, user.enabled)
-                                        }
+                                        onClick={() => toggleUserEnabled(user.id, user.enabled)}
                                         className={`text-sm ${
                                             user.enabled
                                                 ? "text-red-500 hover:underline"
@@ -94,6 +107,12 @@ const UsersPage = () => {
                                     >
                                         Delete
                                     </button>
+                                    <button
+                                        onClick={() => handleViewDetails(user)}
+                                        className="text-blue-500 hover:underline text-sm"
+                                    >
+                                        View Details
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -101,11 +120,28 @@ const UsersPage = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Create User Dialog */}
             <CreateUserDialog
                 open={isCreateDialogOpen}
                 onClose={() => setIsCreateDialogOpen(false)}
                 onUserCreated={handleCreateUser}
             />
+
+            {/* User Details Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                    <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+                        <UserDetails user={selectedUser} />
+                        <button
+                            className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
+                            onClick={closeUserDetails}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

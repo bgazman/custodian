@@ -64,9 +64,18 @@ public class AuthServiceImpl implements AuthService {
         // Validate password
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             handleFailedLoginAttempt(user);
-            int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
-            return buildErrorResponse("INVALID_CREDENTIALS",
-                    "Invalid credentials. " + remainingAttempts + " attempts remaining.");
+            int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts() ;
+            if (remainingAttempts > 0) {
+                return buildErrorResponse("INVALID_CREDENTIALS",
+                        "Invalid credentials. " + remainingAttempts + " attempts remaining.");
+            } else {
+                return buildErrorResponse("ACCOUNT_LOCKED",
+                        "Account is locked due to too many failed attempts. Try again later.");
+            }
+
+
+//            return buildErrorResponse("INVALID_CREDENTIALS",
+//                    "Invalid credentials. " + remainingAttempts + " attempts remaining.");
         }
 
         // Reset failed attempts and update login time
@@ -134,7 +143,6 @@ public class AuthServiceImpl implements AuthService {
 
         if (newFailedAttempts >= MAX_ATTEMPTS) {
             user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
-            user.setFailedLoginAttempts(0); // Reset after lock
             log.warn("User account locked due to too many failed attempts: {}", user.getEmail());
         }
 
