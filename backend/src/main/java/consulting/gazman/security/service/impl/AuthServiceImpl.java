@@ -8,6 +8,7 @@ import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.ResourceNotFoundException;
 import consulting.gazman.security.repository.UserRepository;
 import consulting.gazman.security.service.AuthService;
+import consulting.gazman.security.service.JwtService;
 import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -36,7 +37,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
-
+    @Autowired
+    private JwtServiceImpl jwtService;
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
@@ -160,8 +162,8 @@ public class AuthServiceImpl implements AuthService {
     // Helper: Create AuthResponse
     private AuthResponse createAuthResponse(User user) {
         return new AuthResponse(
-                jwtUtils.generateAccessToken(user, "GLOBAL"),
-                jwtUtils.generateRefreshToken(user, "GLOBAL"),
+                jwtService.generateAccessToken(user, "GLOBAL"),
+                jwtService.generateRefreshToken(user, "GLOBAL"),
                 user.getEmail(),
                 user.getRole()
         );

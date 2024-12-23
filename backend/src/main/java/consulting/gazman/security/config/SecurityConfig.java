@@ -81,6 +81,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll() // Allow error dispatchers
                         .requestMatchers("/api/auth/**").permitAll() // Public authentication endpoints
                         .requestMatchers("/api/users/**").hasAuthority("ADMIN") // Admin-only endpoints
+                        .requestMatchers("/.well-known/jwks.json").permitAll() // Public JWKS endpoint
                         .anyRequest().authenticated() // All other endpoints require authentication
                 )
                 // Configure session management to be stateless (no sessions)

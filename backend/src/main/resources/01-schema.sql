@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN DEFAULT FALSE,
     failed_login_attempts INTEGER DEFAULT 0,
     locked_until TIMESTAMP,
+    mfa_enabled BOOLEAN DEFAULT FALSE,
+    mfa_secret VARCHAR(255), -- TOTP secret key
+    mfa_backup_codes JSONB DEFAULT '[]',
     last_login_time TIMESTAMP,
     last_password_change TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     account_non_expired BOOLEAN DEFAULT TRUE,
@@ -57,17 +60,43 @@ CREATE TABLE IF NOT EXISTS group_permissions (
 );
 
 
+CREATE TABLE IF NOT EXISTS secrets (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE, -- Secret name
+    value TEXT NOT NULL, -- Encrypted secret value
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB -- Optional: Additional metadata about the secret
+);
+
 CREATE TABLE IF NOT EXISTS token_configuration (
     id BIGSERIAL PRIMARY KEY,
     app_name VARCHAR(100) NOT NULL UNIQUE, -- "GLOBAL", "APP1", "APP2", etc.
     access_token_expiration_minutes INT DEFAULT 15, -- Default access token validity
     refresh_token_expiration_minutes INT DEFAULT 10080, -- Default refresh token validity (7 days)
-    secret_key VARCHAR(255) NOT NULL, -- Secret for signing tokens
+    secret_id BIGINT , -- Foreign key reference to `secrets`
+    key_id VARCHAR(100) NOT NULL UNIQUE, -- Unique identifier for the key
+    public_key TEXT,                     -- Public key (PEM format)
+    private_key_id BIGINT, -- Foreign key reference to `secrets` for private key
+    algorithm VARCHAR(10) NOT NULL DEFAULT 'HS256',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_secret_id FOREIGN KEY (secret_id) REFERENCES secrets (id) ON DELETE CASCADE,
+    CONSTRAINT fk_private_key_id FOREIGN KEY (private_key_id) REFERENCES secrets (id) ON DELETE CASCADE
+    );
+
+
+CREATE TABLE IF NOT EXISTS oauth_clients (
+    id BIGSERIAL PRIMARY KEY,
+    client_id VARCHAR(100) NOT NULL UNIQUE,
+    client_secret VARCHAR(255) NOT NULL, -- Encrypted client secret
+    redirect_uris JSONB NOT NULL, -- List of redirect URIs
+    grant_types JSONB NOT NULL, -- Allowed grant types (e.g., "authorization_code", "client_credentials")
+    scopes JSONB, -- Allowed scopes for the client
+    token_endpoint_auth_method VARCHAR(50) DEFAULT 'client_secret_basic', -- Auth method for the token endpoint
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
 -- If you want to add indexes (recommended):
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_locked_until ON users(locked_until);
