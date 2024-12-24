@@ -1,5 +1,6 @@
 package consulting.gazman.security.service;
 
+import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,9 @@ public interface JwtService {
 
     String generateToken(User user, TokenConfiguration config, int expirationMinutes);
 
-    boolean validateToken(String token, Key key, String algorithm);
+
+
+    String validateToken(String token);
 
     Map<String, Object> parseHeader(String token);
 }

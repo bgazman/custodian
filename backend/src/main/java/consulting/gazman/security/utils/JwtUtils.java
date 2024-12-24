@@ -1,5 +1,7 @@
 package consulting.gazman.security.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.entity.Secret;
 import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.TokenId;
@@ -8,6 +10,7 @@ import consulting.gazman.security.entity.User;
 import consulting.gazman.security.repository.TokenConfigurationRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -21,8 +24,8 @@ import com.nimbusds.jwt.*;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.text.ParseException;
+import java.util.Map;
 import java.util.function.Function;
-
 @Component
 public class JwtUtils {
 
@@ -44,21 +47,23 @@ public class JwtUtils {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-//    private Key generateKey(String secret, SignatureAlgorithm algorithm) {
-//        switch (algorithm) {
-//            case HS256:
-//            case HS384:
-//            case HS512:
-//                return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-//            case RS256:
-//            case RS384:
-//            case RS512:
-//                return ""; // Example for RSA
-//            default:
-//                throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
-//        }
-//    }
+    public static String extractAppName(String token) {
+        return (String) parseTokenPayload(token).get("appName");
+    }
 
+    public static String extractSubject(String token) {
+        return (String) parseTokenPayload(token).get("sub");
+    }
+
+    public static Map<String, Object> parseTokenPayload(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+            return new ObjectMapper().readValue(payload, Map.class);
+        } catch (IllegalArgumentException | JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to parse token payload", e);
+        }
+    }
 
     private String generateToken(User user, String appName, boolean isAccessToken) {
         // Fetch token configuration from the database

@@ -9,6 +9,7 @@ import consulting.gazman.security.repository.UserRepository;
 import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.service.UserService;
 import consulting.gazman.security.service.impl.AuthServiceImpl;
+import consulting.gazman.security.service.impl.JwtServiceImpl;
 import consulting.gazman.security.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,27 +25,32 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Objects;
+
 @Component
 @RequiredArgsConstructor
 //@Order(1)
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthServiceImpl authService;
-    private final JwtUtils jwtUtils;
+    private final JwtServiceImpl jwtService;
     private final ObjectMapper objectMapper;
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
             String jwt = extractJwtFromRequest(request);
-            if (jwt != null && jwtUtils.validateAccessToken(jwt, "GLOBAL")) {
-                authenticateUser(jwt, request);
-            } else if (jwt != null) {
+            if (jwt != null ) {
+                String jwtValidation =  jwtService.validateToken(jwt);
+                if(!Objects.equals(jwtValidation, "success")){
+
+                    sendErrorResponse(response, jwtValidation);
+                    return;
+                }
                 // Token exists but is invalid
-                sendErrorResponse(response, "Invalid token");
-                return;
+                authenticateUser(jwt, request);
+
             }
-            filterChain.doFilter(request, response);
+        filterChain.doFilter(request, response);
 
     }
 
@@ -57,7 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void authenticateUser(String jwt, HttpServletRequest request) {
-        String userEmail = jwtUtils.extractSubject(jwt, "GLOBAL");
+        String userEmail = JwtUtils.extractSubject(jwt);
         User user = authService.findByEmail(userEmail);
         if (user == null) {
             throw new JwtAuthenticationException("User not found for the given token");

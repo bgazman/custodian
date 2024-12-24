@@ -23,14 +23,14 @@ public class TokenConfiguration {
     @Column(name = "refresh_token_expiration_minutes", nullable = false)
     private Integer refreshTokenExpirationMinutes = 10080; // Default: 7 days
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "secret_id", referencedColumnName = "id")
     private Secret secretKey; // Reference to the `Secret` entity
 
     @Column(name = "public_key", nullable = false, columnDefinition = "TEXT")
     private String publicKey; // Public key in PEM format
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "private_key_id", referencedColumnName = "id")
     private Secret privateKey;
     @Column(name = "algorithm", nullable = false)

@@ -1,11 +1,16 @@
 package consulting.gazman.security.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import consulting.gazman.common.dto.ApiError;
+import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
+import consulting.gazman.security.exception.ResourceNotFoundException;
 import consulting.gazman.security.repository.TokenConfigurationRepository;
 import consulting.gazman.security.service.JwtService;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import consulting.gazman.security.utils.JwtUtils;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,12 +24,15 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class JwtServiceImpl implements JwtService {
 
     @Autowired
     private TokenConfigurationRepository tokenConfigurationRepository;
+
 
 
     @Override
@@ -55,11 +63,36 @@ public class JwtServiceImpl implements JwtService {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("roles", user.getRole())
+                .claim("appName", config.getTokenId().getAppName()) // Add appName as a claim
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(expirationMinutes * 60L)))
                 .signWith(signingKey, SignatureAlgorithm.forName(config.getAlgorithm()))
                 .setHeaderParam("kid", config.getTokenId().getKeyId()) // Include key ID for JWKS lookup
                 .compact();
+    }
+
+
+
+
+
+    public String extractSubject(String token, String appName) {
+        // Fetch the app configuration to get the signing key
+        TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
+
+        try {
+            // Parse the token
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey(config)) // Use the correct signing key
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            // Extract and return the subject
+            return claims.getSubject();
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("Invalid token: " + e.getMessage(), e);
+        }
     }
     private Key getSigningKey(TokenConfiguration config) {
         String algorithm = config.getAlgorithm();
@@ -99,24 +132,48 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public boolean validateToken(String token, Key key, String algorithm) {
+    public String validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (Exception e) {
-            return false; // Handle specific exceptions if needed
-        }
-    }
+            String appName = JwtUtils.extractAppName(token);
 
+
+            TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
+                    .orElseThrow(() -> new ResourceNotFoundException("App configuration not found for: " + appName));
+            Key signingKey = getSigningKey(config);
+
+
+            // Fetch configuration for the app
+
+            // Validate the token
+            Jwts.parserBuilder()
+                    .setSigningKey(signingKey) // Use app-specific key
+                    .build()
+                    .parseClaimsJws(token); // Throws exception if invalid
+
+            // If successful, return a success response
+            return "success";
+        } catch (ExpiredJwtException ex) {
+            return "token_expired";
+        } catch (MalformedJwtException ex) {
+            return "malformed_token";
+        } catch (SignatureException ex) {
+            return "invalid_signature";
+        }
+        catch (Exception ex){
+            return "token_validation_error";
+        }
+
+
+    }
 
     @Override
     public Map<String, Object> parseHeader(String token) {
-        return Jwts.parserBuilder()
-                .build()
-                .parseClaimsJwt(token)
-                .getHeader();
+        return Map.of();
     }
 }
+
+
+
+
+
+
