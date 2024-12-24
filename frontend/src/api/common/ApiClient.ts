@@ -126,6 +126,21 @@ export class ApiClient {
             throw this.handleError(error);
         }
     }
+    static async patch<T>(
+        url: string,
+        data: unknown,
+        config?: AxiosRequestConfig
+    ): Promise<T> {
+        try {
+            console.log(`PATCH Request: ${url}`, data);
+            const response = await this.instance.patch<T>(url, data, config);
+            console.log(`PATCH Response: ${url}`, response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error(`PATCH Error: ${url}`, error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
 
     /**
      * Processes and standardizes error responses.

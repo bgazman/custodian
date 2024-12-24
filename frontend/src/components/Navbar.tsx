@@ -22,6 +22,8 @@ const Navbar = () => {
     const adminLinks = [
         // { path: "/admin", label: "Admin Settings" },
         { path: "/users", label: "Users" },
+        {path: "/groups", label: "Groups"},
+        {path: "/group-membership", label: "Group Members"},
     ];
 
     const links = isAdmin ? [...commonLinks, ...adminLinks] : commonLinks;

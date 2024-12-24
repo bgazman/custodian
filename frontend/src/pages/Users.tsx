@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUsers } from "../hooks/userUsers";
 import CreateUserDialog from "../components/Users/CreateUserDialog";
 import UserDetails from "../components/Users/UserDetails";
-import {User} from "@/types/User.ts";
+import {User} from "../types/User";
 
 const UsersPage: React.FC = () => {
     const navigate = useNavigate();

@@ -7,7 +7,9 @@ import LandingPage from "./pages/LandingPage";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import AdminPage from './pages/Admin';
-import UsersPage from "./pages/Users.tsx";
+import UsersPage from "./pages/Users";
+import GroupsPage from "./pages/Groups";
+import GroupMembershipsPage from "./pages/GroupMembership.tsx";
 
 // In your router configuration
 
@@ -29,6 +31,8 @@ const AppLayout = () => (
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/groups" element={<GroupsPage />} />
+                <Route path="/groups-membership" element={<GroupMembershipsPage />} />
 
                 <Route path="/" element={<Navigate to="/dashboard" />} /> {/* Default authenticated route */}
 

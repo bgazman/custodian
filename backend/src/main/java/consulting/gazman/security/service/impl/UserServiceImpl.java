@@ -75,6 +75,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public ApiResponse<User> save(User user) {
         try {
+            userRepository.existsByEmail(user.getEmail());
+            if(userRepository.existsByEmail(user.getEmail())){
+                return ApiResponse.error(
+                        "bad_request",
+                        "Email exists");
+
+            }
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
             User savedUser = userRepository.save(user);
             return ApiResponse.success(savedUser, "User created successfully.");
         } catch (Exception ex) {
