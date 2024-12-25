@@ -15,38 +15,33 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
-        String message = "The requested mshod is not allowed for this endpoint";
-        ApiResponse apiResponse = ApiResponse.error("method_not_allowed", message,
-                ApiError.of("METHOD_NOT_ALLOWED", ex.getMessage()));
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(apiResponse);
+    public ResponseEntity<?> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiError.builder()
+                        .code("METHOD_NOT_ALLOWED")
+                        .message("The requested method is not allowed for this endpoint")
+                        .build());
     }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> handleInternalServerError(Exception ex) {
-        // Log the full error details for server-side tracking
+    public ResponseEntity<?> handleInternalServerError(Exception ex) {
         log.error("Unexpected error occurred", ex);
-
-        // Create a generic error response
-        ApiResponse apiResponse = ApiResponse.error(
-                "internal_server_error",
-                "An unexpected error occurred",
-                ApiError.of("INTERNAL_ERROR", "Please contact support if the problem persists")
-        );
-
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(apiResponse);
+                .body(ApiError.builder()
+                        .code("INTERNAL_ERROR")
+                        .message("Please contact support if the problem persists")
+                        .build());
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ApiResponse> handleNotFound(NoHandlerFoundException ex) {
-        ApiResponse apiResponse = ApiResponse.error(
-                "not_found",
-                "The requested resource could not be found",
-                ApiError.of("RESOURCE_NOT_FOUND", ex.getMessage())
-        );
+    public ResponseEntity<?> handleNotFound(NoHandlerFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(apiResponse);
+                .body(ApiError.builder()
+                        .code("RESOURCE_NOT_FOUND")
+                        .message("The requested resource could not be found")
+                        .build());
     }
 }

@@ -1,16 +1,20 @@
 package consulting.gazman.security.service;
 
 import consulting.gazman.security.entity.GroupMembership;
+import consulting.gazman.security.entity.Role;
 
 import java.util.List;
 
 public interface GroupMembershipService {
 
     // Add a user to a group with a specific role
-    void addMembership(Long userId, Long groupId, String role);
+
+
+    void addMembership(Long userId, Long groupId, Long roleId);
 
     // Update a user's role in a group
-    void updateRole(Long userId, Long groupId, String newRole);
+
+    void updateRole(Long userId, Long groupId, Long  newRoleId);
 
     // Remove a user from a group
     void removeMembership(Long userId, Long groupId);

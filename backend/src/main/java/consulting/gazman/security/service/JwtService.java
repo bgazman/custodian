@@ -2,7 +2,6 @@ package consulting.gazman.security.service;
 
 
 import consulting.gazman.security.entity.GroupMembership;
-import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
 
 
@@ -13,9 +12,9 @@ public interface JwtService {
 
 
 
-    String generateAccessToken(User user, String appName, List<GroupMembership> groups, Map<Long, List<String>> permissions);
+    String generateAccessToken(User user, String clientId, List<GroupMembership> groups, Map<Long, List<String>> permissions);
 
-    String generateRefreshToken(User user, String appName);
+    String generateRefreshToken(User user, String clientId);
 
 
 

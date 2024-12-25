@@ -9,23 +9,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "groups")
+@Table(name = "roles")
 @Getter
 @Setter
-public class Group {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "name", nullable = false, unique = true, length = 50)
-    private String name; // Example: "Engineering", "HR"
+    private String name; // Example: "ADMIN", "USER"
 
     @Column(name = "description", length = 255)
     private String description;
-
-    @Column(name = "parent_group_id")
-    private Long parentGroupId; // Optional: Parent group reference
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp

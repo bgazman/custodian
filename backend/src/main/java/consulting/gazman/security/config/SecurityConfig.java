@@ -64,8 +64,10 @@ public class SecurityConfig {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.getWriter().write(objectMapper.writeValueAsString(
-                                    ApiResponse.error("forbidden", "Access Denied",
-                                            ApiError.of("ACCESS_DENIED", accessDeniedException.getMessage()))
+                                    ApiError.builder()
+                                            .code("ACCESS_DENIED")
+                                            .message("Access Denied")
+                                            .build()
                             ));
                         }))
 

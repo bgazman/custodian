@@ -2,6 +2,7 @@ package consulting.gazman.security.service;
 
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
+import consulting.gazman.security.dto.AuthResponseWrapper;
 
 public interface AuthService {
 
@@ -11,7 +12,7 @@ public interface AuthService {
      * @param loginRequest The login request containing email and password.
      * @return ApiResponse<AuthResponse> containing the authentication response or an error.
      */
-    AuthResponse login(AuthRequest loginRequest);
+    AuthResponseWrapper login(AuthRequest loginRequest);
 
     /**
      * Registers a new user with the given details.

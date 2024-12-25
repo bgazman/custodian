@@ -3,10 +3,8 @@ package consulting.gazman.security.service.impl;
 
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
-import consulting.gazman.security.entity.GroupMembership;
-import consulting.gazman.security.entity.TokenConfiguration;
-import consulting.gazman.security.entity.User;
-import consulting.gazman.security.exception.*;
+import consulting.gazman.security.dto.AuthResponseWrapper;
+import consulting.gazman.security.entity.*;
 
 import consulting.gazman.security.service.AuthService;
 
@@ -24,16 +22,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import consulting.gazman.security.config.PasswordConfig;
 import consulting.gazman.security.exception.AppException;
-
 @Slf4j
 @Service
 @Transactional
 public class AuthServiceImpl implements AuthService {
-
     @Autowired
-    UserServiceImpl userService;
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private  UserServiceImpl userService;
+    @Autowired
+    RoleServiceImpl roleService;
     @Autowired
     GroupPermissionServiceImpl groupPermissionService;
     @Autowired
@@ -41,9 +41,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     GroupMembershipServiceImpl groupMembershipService;
     @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    TokenConfigurationServiceImpl tokenConfigService;
+    OAuthClientServiceImpl oAuthClientService;
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -51,33 +49,26 @@ public class AuthServiceImpl implements AuthService {
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
-    @Override
-    public AuthResponse login(AuthRequest loginRequest) {
-        log.info("Attempting login for email: {}", loginRequest.getEmail());
 
-        // Find user by email
+
+    public AuthResponseWrapper login(AuthRequest loginRequest) {
         User user = userService.findByEmail(loginRequest.getEmail());
 
-        // Check if account is locked
         if (isAccountLocked(user)) {
             Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
-            throw AppException.accountLocked("Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.");
+            return  AuthResponseWrapper.message("locked","Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.");
         }
 
-        // Validate password
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             handleFailedLoginAttempt(user);
             int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
-            if (remainingAttempts > 0) {
-                throw  AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.");
-            } else {
-                throw  AppException.accountLocked("Account is locked due to too many failed attempts. Try again later.");
-            }
+            return remainingAttempts > 0
+                    ? AuthResponseWrapper.message("invalid_credentials","Invalid credentials. " + remainingAttempts + " attempts remaining.")
+                    : AuthResponseWrapper.message("locked","Account locked due to attempts");
         }
 
-        // Reset failed attempts and update login time
         resetLoginAttempts(user);
-        return createAuthResponse(user, loginRequest.getAppName());
+        return AuthResponseWrapper.success(createAuthResponse(user, loginRequest.getClientId()));
     }
 
 
@@ -90,16 +81,21 @@ public class AuthServiceImpl implements AuthService {
         if (userService.existsByEmail(registerRequest.getEmail())) {
             throw  AppException.userAlreadyExists("Email is already registered.");
         }
+        Role userRole = roleService.findByName("USER")
+                .orElseThrow(() ->  AppException.userNotFound("Role 'USER' does not exist"));
 
         // Create and save the user
         User newUser = new User();
         newUser.setEmail(registerRequest.getEmail());
-        newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        newUser.setRole("USER");
+        log.info("Password before encoding: {}", registerRequest.getPassword());
+        String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
+        log.info("Password after encoding: {}", encodedPassword);
+        newUser.setPassword(encodedPassword);
+        newUser.setRole(userRole);
         newUser.setEnabled(true);
 
         User savedUser = userService.save(newUser);
-        return createAuthResponse(savedUser,registerRequest.getAppName());
+        return createAuthResponse(savedUser,registerRequest.getClientId());
     }
 
     // Refresh token implementation
@@ -117,10 +113,10 @@ public class AuthServiceImpl implements AuthService {
         try {
             // Extract user email from token
             String userEmail = JwtUtils.extractSubject(refreshToken);
-            String appName = JwtUtils.extractAppName(refreshToken);
+            String clientId = JwtUtils.extractClientId(refreshToken);
             User user = userService.findByEmail(userEmail);
             // Create and return the new auth response
-            return createAuthResponse(user,appName);
+            return createAuthResponse(user,clientId);
         } catch (ExpiredJwtException e) {
             throw AppException.tokenExpired("Refresh token expired.");
         } catch (JwtException e) {
@@ -154,9 +150,10 @@ public class AuthServiceImpl implements AuthService {
         userService.save(user);
     }
 
-    private AuthResponse createAuthResponse(User user, String appName) {
+    private AuthResponse createAuthResponse(User user, String clientId) {
         // 1. Retrieve token configuration for the app
-        TokenConfiguration config = tokenConfigService.findByAppName(appName);
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.resourceNotFound("Couldn't find oauth config for:  " + clientId));
 
         // 2. Get user's groups
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
@@ -170,8 +167,8 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. Generate tokens and return the response
         return new AuthResponse(
-                jwtService.generateAccessToken(user, appName, groupMemberships, permissions), // Access token
-                jwtService.generateRefreshToken(user, appName)// Refresh token
+                jwtService.generateAccessToken(user, oAuthClient.getClientId(), groupMemberships, permissions), // Access token
+                jwtService.generateRefreshToken(user, oAuthClient.getClientId())// Refresh token
         );
     }
 

@@ -1,10 +1,7 @@
 package consulting.gazman.security.service.impl;
 
-import consulting.gazman.security.entity.GroupMembership;
-import consulting.gazman.security.entity.TokenConfiguration;
-import consulting.gazman.security.entity.User;
+import consulting.gazman.security.entity.*;
 import consulting.gazman.security.exception.AppException;
-import consulting.gazman.security.repository.TokenConfigurationRepository;
 import consulting.gazman.security.service.JwtService;
 import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.*;
@@ -12,72 +9,80 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
 
 @Service
 public class JwtServiceImpl implements JwtService {
 
     @Autowired
-    private TokenConfigurationRepository tokenConfigurationRepository;
+    private OAuthClientServiceImpl oAuthClientService;
 
 
 
     @Override
-    public String generateAccessToken(User user, String appName, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
+    public String generateAccessToken(User user, String clientId, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
         // Fetch the token configuration for the app
-        TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
-        // Prepare the claims specific to access tokens
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRole());
-        claims.put("groups", groups.stream().map(group -> Map.of(
-                "id", group.getGroup().getId(),
-                "name", group.getGroup().getName(),
-                "role", group.getRole(),
-                "permissions", permissions.get(group.getGroup().getId())
-        )).collect(Collectors.toList()));
-        claims.put("appName", appName);
+        claims.put("roles", user.getRole().toString()); // Convert role to string
+        List<Map<String, Object>> groupsList = groups.stream()
+                .map(group -> {
+                    Map<String, Object> groupMap = new HashMap<>();
+                    groupMap.put("id", group.getGroup().getId().toString());
+                    groupMap.put("name", group.getGroup().getName());
+                    groupMap.put("role", group.getRole().toString());
+                    groupMap.put("permissions", permissions.get(group.getGroup().getId()));
+                    return groupMap;
+                })
+                .collect(Collectors.toList());
+
+        claims.put("client-id", clientId);
 
         // Generate and return the access token
-        return generateToken(user, config, claims, config.getAccessTokenExpirationMinutes());
+        return generateToken(user.getEmail(),oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
 
     @Override
-    public String generateRefreshToken(User user, String appName) {
+    public String generateRefreshToken(User user, String clientId) {
         // Fetch the token configuration for the app
-        TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
         // Prepare claims specific to refresh tokens
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
         claims.put("email", user.getEmail());
-        claims.put("appName", appName);
+        claims.put("client-id", clientId);
 
         // Generate and return the refresh token
-        return generateToken(user, config, claims, config.getRefreshTokenExpirationMinutes());
+        return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getRefreshTokenExpirySeconds());
     }
 
-    private String generateToken(User user, TokenConfiguration config, Map<String, Object> claims, int expirationMinutes) {
-        // Fetch the signing key based on the algorithm
-        Key signingKey = getSigningKey(config);
+    private String generateToken(String subject, OAuthClient oAuthClient, Map<String, Object> claims, int expirationSeconds) {
+        Key signingKey = getSigningKey(oAuthClient);
 
-        // Generate the token
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getEmail()) // Use email as the subject
-                .setIssuedAt(new Date()) // Issue time
-                .setExpiration(Date.from(Instant.now().plusSeconds(expirationMinutes * 60L))) // Expiry
-                .signWith(signingKey, SignatureAlgorithm.forName(config.getAlgorithm())) // Sign with key and algorithm
-                .setHeaderParam("kid", config.getTokenId().getKeyId()) // Include key ID for JWKS lookup
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(Date.from(Instant.now().plusSeconds(expirationSeconds)))
+                .signWith(signingKey, SignatureAlgorithm.forName(oAuthClient.getAlgorithm()))
+                .setHeaderParam("kid", oAuthClient.getSecret().getId())
                 .compact();
     }
 
@@ -86,26 +91,31 @@ public class JwtServiceImpl implements JwtService {
 
 
 
-    private Key getSigningKey(TokenConfiguration config) {
-        String algorithm = config.getAlgorithm();
+//    private Key getSigningKey(OAuthClient oAuthClient) {
+//        // Retrieve the secret associated with the OAuth client
+//        Secret secret = oAuthClient.getSecret();
+//        String encodedKey = secret.getValue();
+//        byte[] keyBytes = Base64.getDecoder().decode(encodedKey);
+//
+//        // Determine key type and generate the corresponding key
+//        return switch (secret.getType()) {
+//            case "SYMMETRIC" -> Keys.hmacShaKeyFor(keyBytes); // For HMAC keys
+//            case "RSA_PRIVATE" -> generatePrivateKey(keyBytes); // Generate RSA private key
+//            case "RSA_PUBLIC" -> generatePublicKey(keyBytes); // Generate RSA public key (if needed)
+//            default -> throw new IllegalArgumentException("Invalid key type: " + secret.getType());
+//        };
+//    }
+private Key getSigningKey(OAuthClient oAuthClient) {
+    // Retrieve the list of secrets associated with the OAuth client
+    Secret secret = oAuthClient.getSecret();
 
-        switch (algorithm) {
-            case "HS256":
-            case "HS384":
-            case "HS512":
-                // Use symmetric key (secret)
-                String secret = config.getSecretKey().getValue(); // From the `Secret` entity
-                return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-            case "RS256":
-            case "RS384":
-            case "RS512":
-                // Use asymmetric private key
-                return getPrivateKey(config.getPrivateKey().getValue());
-            default:
-                throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
-        }
-    }
-    private PrivateKey getPrivateKey(String privateKeyPem) {
+   return getPrivateKeyFromPem(secret.getPrivatekey());
+
+
+
+
+            }
+    private PrivateKey getPrivateKeyFromPem(String privateKeyPem) {
         try {
             // Remove PEM headers and decode Base64
             String privateKeyBase64 = privateKeyPem
@@ -123,14 +133,67 @@ public class JwtServiceImpl implements JwtService {
         }
     }
 
+    // Helper method to generate RSA private key from PEM
+    private PrivateKey generatePrivateKeyFromPem(String pemKey) {
+        try {
+            // Remove PEM headers and decode the Base64 content
+            String keyContent = pemKey
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
+
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            return keyFactory.generatePrivate(spec);
+        } catch (Exception e) {
+            throw new RuntimeException("Error loading RSA private key", e);
+        }
+    }
+
+    // Helper method to generate RSA public key from PEM
+    private PublicKey generatePublicKeyFromPem(String pemKey) {
+        try {
+            // Remove PEM headers and decode the Base64 content
+            String keyContent = pemKey
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replace("-----END PUBLIC KEY-----", "")
+                    .replaceAll("\\s", "");
+            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
+
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            return keyFactory.generatePublic(spec);
+        } catch (Exception e) {
+            throw new RuntimeException("Error loading RSA public key", e);
+        }
+    }
+
+    // Optional: Handle symmetric keys (if needed)
+    private SecretKey generateSymmetricKeyFromPem(String pemKey) {
+        try {
+            // Remove PEM headers and decode the Base64 content
+            String keyContent = pemKey
+                    .replace("-----BEGIN SECRET KEY-----", "")
+                    .replace("-----END SECRET KEY-----", "")
+                    .replaceAll("\\s", "");
+            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
+
+            return new SecretKeySpec(keyBytes, "HmacSHA256");
+        } catch (Exception e) {
+            throw new RuntimeException("Error loading symmetric key", e);
+        }
+    }
+
     @Override
     public String validateToken(String token) {
         try {
-            String appName = JwtUtils.extractAppName(token);
+            String clientId = JwtUtils.extractClientId(token);
 
 
-            TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
-                    .orElseThrow(() -> AppException.resourceNotFound("App configuration not found for: " + appName));
+            OAuthClient config = oAuthClientService.getClientByClientId(clientId)
+                    .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
+
             Key signingKey = getSigningKey(config);
 
 

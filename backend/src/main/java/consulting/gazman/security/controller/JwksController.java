@@ -4,10 +4,8 @@ package consulting.gazman.security.controller;
 
 import consulting.gazman.common.controller.ApiController;
 import consulting.gazman.common.dto.ApiResponse;
-import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.exception.AppException;
-import consulting.gazman.security.repository.TokenConfigurationRepository;
-import consulting.gazman.security.service.TokenConfigurationService;
+import consulting.gazman.security.service.impl.OAuthClientServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,12 +24,12 @@ public class JwksController extends ApiController {
 
 
     @Autowired
-    private TokenConfigurationService tokenConfigurationService;
+    private OAuthClientServiceImpl oAuthClientService;
     @GetMapping("/jwks.json")
     public ResponseEntity<?> getJwks() {
         logRequest("GET", "/.well-known/jwks.json");
         try {
-            Map<String, Object> serviceResponse = tokenConfigurationService.getJwks();
+            Map<String, Object> serviceResponse = oAuthClientService.getJwks();
             return wrapSuccessResponse(serviceResponse, "Groups retrieved successfully for the permission");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);

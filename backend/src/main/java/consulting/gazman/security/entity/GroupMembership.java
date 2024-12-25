@@ -12,10 +12,7 @@ import lombok.Setter;
 public class GroupMembership {
 
     @EmbeddedId
-    private GroupMembershipId id;
-
-    @Column(name = "role", nullable = false)
-    private String role; // Example: "ADMIN", "MEMBER"
+    private GroupMembershipId id = new GroupMembershipId();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
@@ -27,5 +24,7 @@ public class GroupMembership {
     @JoinColumn(name = "group_id", nullable = false)
     private Group group;
 
-    // Additional fields or methods, if needed, can go here
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 }

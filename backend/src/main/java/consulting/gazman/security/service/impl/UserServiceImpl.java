@@ -18,9 +18,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    PasswordEncoder passwordEncoder;
+
 
     @Override
     public List<User> getAllUsers() {
@@ -38,10 +38,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw AppException.userAlreadyExists("Email is already registered.");
-        }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+;
         return userRepository.save(user);
     }
 

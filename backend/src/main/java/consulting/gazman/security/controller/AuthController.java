@@ -1,9 +1,10 @@
 package consulting.gazman.security.controller;
 
 import consulting.gazman.common.controller.ApiController;
-import consulting.gazman.common.dto.ApiResponse;
+import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
+import consulting.gazman.security.dto.AuthResponseWrapper;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.AuthService;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import consulting.gazman.common.utils.StatusMapper;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,18 +26,25 @@ public class AuthController extends ApiController {
 
 
 
-        @PostMapping("/login")
-        public ResponseEntity<?> login(@RequestBody AuthRequest request) {
-            logRequest("POST", "/api/auth/login");
-            try {
-                AuthResponse authResponse = authService.login(request);
-                return wrapSuccessResponse(authResponse, "Login successful");
-            } catch (AppException e) {
-                return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-            } catch (Exception e) {
-                return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        logRequest("POST", "/api/auth/login");
+
+        AuthResponseWrapper result = authService.login(request);
+
+        if ("locked".equals(result.getResult())) {
+            return wrapErrorResponse("ACCOUNT_LOCKED",result.getMessage() , HttpStatus.BAD_REQUEST);
+
+
+
         }
+        if("invalid_credentials".equals(result.getResult())){
+            return wrapErrorResponse("INVALID_CREDENTIALS",result.getMessage() , HttpStatus.BAD_REQUEST);
+
+        }
+
+        return wrapSuccessResponse(result.getAuthResponse(), "Login successful");
+    }
 
         @PostMapping("/register")
         public ResponseEntity<?> register(@RequestBody AuthRequest request) {

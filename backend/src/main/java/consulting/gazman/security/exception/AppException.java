@@ -62,9 +62,13 @@ public class AppException extends RuntimeException {
     }
 
     public static AppException invalidCredentials(String message) {
-        return new AppException("USER_NOT_FOUND", message);
+        return new AppException("INVALID_CREDENTIALS", message);
     }
     public static AppException accountLocked(String message) {
-        return new AppException("USER_NOT_FOUND", message);
+        return new AppException("ACCOUNT_LOCKED", message);
+    }
+
+    public static AppException invalidClientId(String message) {
+        return new AppException("INVALID_CLIENT_ID", message);
     }
 }

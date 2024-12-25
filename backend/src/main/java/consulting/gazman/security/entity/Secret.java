@@ -17,21 +17,32 @@ public class Secret {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(name = "name", nullable = false, unique = true, length = 255)
-    private String name; // Secret name
+    private String name; // Example: "dashboard-private-key"
 
-    @Column(name = "value", nullable = false, columnDefinition = "TEXT")
-    private String value; // Encrypted secret value
+    @Column(name = "public_key", nullable = false, columnDefinition = "TEXT")
+    private String publicKey; // Encrypted value for private keys or raw for public keys
 
-    @Column(name = "metadata", columnDefinition = "JSONB")
-    private String metadata; // Optional metadata about the secret
+    @Column(name = "private_key", nullable = false, columnDefinition = "TEXT")
+    private String privatekey; // Encrypted value for private keys or raw for public keys
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "type", nullable = false, length = 50)
+    private String type;
+
+    @Column(name = "last_rotated_at", nullable = false)
+    private LocalDateTime lastRotatedAt;
+
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }

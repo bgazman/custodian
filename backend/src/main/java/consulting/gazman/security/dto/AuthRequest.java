@@ -11,5 +11,5 @@ public class AuthRequest {
     private String email;
     private String password;
     private String refreshToken;
-    private String appName;
+    private String clientId;
 }

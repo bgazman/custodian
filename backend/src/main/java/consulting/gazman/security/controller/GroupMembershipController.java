@@ -23,7 +23,7 @@ public class GroupMembershipController extends ApiController {
     private GroupMembershipService groupMembershipService;
 
     @PostMapping
-    public ResponseEntity<?> addMembership(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam String role) {
+    public ResponseEntity<?> addMembership(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam Long role) {
         logRequest("POST", "/api/group-memberships?userId=" + userId + "&groupId=" + groupId + "&role=" + role);
         try {
             groupMembershipService.addMembership(userId, groupId, role);
@@ -36,7 +36,7 @@ public class GroupMembershipController extends ApiController {
     }
 
     @PutMapping
-    public ResponseEntity<?> updateRole(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam String newRole) {
+    public ResponseEntity<?> updateRole(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam Long newRole) {
         logRequest("PUT", "/api/group-memberships?userId=" + userId + "&groupId=" + groupId + "&newRole=" + newRole);
         try {
             groupMembershipService.updateRole(userId, groupId, newRole);

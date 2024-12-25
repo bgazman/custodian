@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface SecretRepository extends JpaRepository<Secret, Long> {
 
     Optional<Secret> findByName(String name); // Find a secret by its name
-
+    Optional<Secret> findById(Long id);
     boolean existsByName(String name); // Check if a secret exists by its name
 }

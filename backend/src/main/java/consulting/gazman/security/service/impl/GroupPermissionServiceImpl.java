@@ -37,7 +37,7 @@ public class GroupPermissionServiceImpl implements GroupPermissionService {
 
         // Create and save the association
         GroupPermission groupPermission = new GroupPermission();
-        groupPermission.setId(new GroupPermissionId(groupId, permissionId));
+        groupPermission.setId(new GroupPermissionId());
         groupPermission.setGroup(group);
         groupPermission.setPermission(permission);
 
@@ -54,7 +54,7 @@ public class GroupPermissionServiceImpl implements GroupPermissionService {
 
     @Override
     public void removePermissionFromGroup(Long groupId, Long permissionId) {
-        GroupPermissionId id = new GroupPermissionId(groupId, permissionId);
+        GroupPermissionId id = new GroupPermissionId();
         GroupPermission groupPermission = groupPermissionRepository.findById(id)
                 .orElseThrow(() -> AppException.resourceNotFound(
                         "Permission not associated with group (Group ID: " + groupId + ", Permission ID: " + permissionId + ")"));
