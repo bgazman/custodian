@@ -7,12 +7,35 @@ const Login = () => {
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
+
     useEffect(() => {
         const token = localStorage.getItem("access-token");
         if (token) {
-            navigate("/dashboard", { replace: true });
+            const isValid = isTokenValid(token);
+            if (isValid) {
+                navigate("/dashboard", { replace: true });
+            } else {
+                localStorage.removeItem("access-token"); // Remove expired token
+            }
         }
     }, [navigate]);
+
+    const isTokenValid = (token) => {
+        try {
+            const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT
+            return Date.now() < payload.exp * 1000; // Check expiry
+        } catch {
+            return false; // Invalid token format
+        }
+    };
+
+
+    // useEffect(() => {
+    //     const token = localStorage.getItem("access-token");
+    //     if (token) {
+    //         navigate("/dashboard", { replace: true });
+    //     }
+    // }, [navigate]);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 

@@ -3,8 +3,10 @@ package consulting.gazman.security.controller;
 import consulting.gazman.common.controller.ApiController;
 import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.GroupPermission;
+import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.GroupPermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,32 +24,52 @@ public class GroupPermissionController extends ApiController {
     @PostMapping
     public ResponseEntity<?> addPermissionToGroup(@RequestParam Long groupId, @RequestParam Long permissionId) {
         logRequest("POST", "/api/group-permissions?groupId=" + groupId + "&permissionId=" + permissionId);
-
-        ApiResponse<Void> serviceResponse = groupPermissionService.addPermissionToGroup(groupId, permissionId);
-        return handleApiResponse(serviceResponse);
+        try {
+            groupPermissionService.addPermissionToGroup(groupId, permissionId);
+            return wrapSuccessResponse(null, "Permission added to group successfully");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping
     public ResponseEntity<?> removePermissionFromGroup(@RequestParam Long groupId, @RequestParam Long permissionId) {
         logRequest("DELETE", "/api/group-permissions?groupId=" + groupId + "&permissionId=" + permissionId);
-
-        ApiResponse<Void> serviceResponse = groupPermissionService.removePermissionFromGroup(groupId, permissionId);
-        return handleApiResponse(serviceResponse);
+        try {
+            groupPermissionService.removePermissionFromGroup(groupId, permissionId);
+            return wrapSuccessResponse(null, "Permission removed from group successfully");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/group/{groupId}")
     public ResponseEntity<?> getPermissionsForGroup(@PathVariable Long groupId) {
         logRequest("GET", "/api/group-permissions/group/" + groupId);
-
-        ApiResponse<List<GroupPermission>> serviceResponse = groupPermissionService.getPermissionsForGroup(groupId);
-        return handleApiResponse(serviceResponse);
+        try {
+            List<GroupPermission> permissions = groupPermissionService.getPermissionsForGroup(groupId);
+            return wrapSuccessResponse(permissions, "Permissions retrieved successfully for the group");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/permission/{permissionId}")
     public ResponseEntity<?> getGroupsForPermission(@PathVariable Long permissionId) {
         logRequest("GET", "/api/group-permissions/permission/" + permissionId);
-
-        ApiResponse<List<GroupPermission>> serviceResponse = groupPermissionService.getGroupsForPermission(permissionId);
-        return handleApiResponse(serviceResponse);
+        try {
+            List<GroupPermission> groups = groupPermissionService.getGroupsForPermission(permissionId);
+            return wrapSuccessResponse(groups, "Groups retrieved successfully for the permission");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

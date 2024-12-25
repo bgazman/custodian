@@ -1,25 +1,25 @@
 package consulting.gazman.security.service;
 
-import consulting.gazman.common.dto.ApiResponse;
+
 import consulting.gazman.security.entity.User;
 
 import java.util.List;
 
 public interface UserService {
 
-    ApiResponse<List<User>> getAllUsers();
-    ApiResponse<User> findById(Long id);
-    ApiResponse<User> save(User user);
-    ApiResponse<User> update(Long id, User user);
-    ApiResponse<Void> delete(Long id);
-
+    List<User> getAllUsers();
+    User findById(Long id);
+    User save(User user);
+    User update(Long id, User user);
+    void delete(Long id);
+    boolean existsByEmail(String email);
     // Additional methods
-    ApiResponse<User> findByEmail(String email); // Fetch user by email
-    ApiResponse<Void> enableUser(Long id); // Enable a user account
-    ApiResponse<Void> disableUser(Long id); // Disable a user account
-    ApiResponse<Void> changePassword(Long id, String newPassword); // Update user password
-    ApiResponse<Void> verifyEmail(Long id); // Mark a user's email as verified
-    ApiResponse<Void> resetFailedLoginAttempts(Long id); // Reset failed login attempts counter
-    ApiResponse<Void> trackLogin(Long id); // Update last login time
+    User findByEmail(String email); // Fetch user by email
+    void enableUser(Long id); // Enable a user account
+    void disableUser(Long id); // Disable a user account
+    void changePassword(Long id, String newPassword); // Update user password
+    void verifyEmail(Long id); // Mark a user's email as verified
+    void resetFailedLoginAttempts(Long id); // Reset failed login attempts counter
+    void trackLogin(Long id); // Update last login time
 }
 

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUsers } from "../hooks/userUsers";
-import CreateUserDialog from "../components/Users/CreateUserDialog";
-import UserDetails from "../components/Users/UserDetails";
-import {User} from "../types/User";
+import { useUsers } from "../../hooks/userUsers.tsx";
+import CreateUserDialog from "../../components/Users/CreateUserDialog.tsx";
+import UserDetails from "../../components/Users/UserDetails.tsx";
+import {User} from "../../types/User.ts";
 
-const UsersPage: React.FC = () => {
-    const navigate = useNavigate();
+const UsersComponent: React.FC = () => {
     const { users, loading, error, deleteUser, toggleUserEnabled, refetch } = useUsers();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -19,12 +18,6 @@ const UsersPage: React.FC = () => {
         setSelectedUser(null);
     };
 
-    useEffect(() => {
-        const isAdmin = localStorage.getItem("role") === "ADMIN";
-        if (!isAdmin) {
-            navigate("/", { replace: true });
-        }
-    }, [navigate]);
 
     const handleCreateUser = (newUser: User) => {
         setIsCreateDialogOpen(false);
@@ -54,6 +47,8 @@ const UsersPage: React.FC = () => {
     }
 
     return (
+
+
         <div className="p-6">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
@@ -146,4 +141,4 @@ const UsersPage: React.FC = () => {
     );
 };
 
-export default UsersPage;
+export default UsersComponent;

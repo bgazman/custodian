@@ -1,12 +1,9 @@
 package consulting.gazman.security.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import consulting.gazman.common.dto.ApiError;
-import consulting.gazman.common.dto.ApiResponse;
+import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
-import consulting.gazman.security.exception.ResourceNotFoundException;
+import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.repository.TokenConfigurationRepository;
 import consulting.gazman.security.service.JwtService;
 import consulting.gazman.security.utils.JwtUtils;
@@ -21,11 +18,8 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtServiceImpl implements JwtService {
@@ -36,13 +30,24 @@ public class JwtServiceImpl implements JwtService {
 
 
     @Override
-    public String generateAccessToken(User user, String appName) {
+    public String generateAccessToken(User user, String appName, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
         // Fetch the token configuration for the app
         TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
 
-        // Generate the access token
-        return generateToken(user, config, config.getAccessTokenExpirationMinutes());
+        // Prepare the claims specific to access tokens
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", user.getRole());
+        claims.put("groups", groups.stream().map(group -> Map.of(
+                "id", group.getGroup().getId(),
+                "name", group.getGroup().getName(),
+                "role", group.getRole(),
+                "permissions", permissions.get(group.getGroup().getId())
+        )).collect(Collectors.toList()));
+        claims.put("appName", appName);
+
+        // Generate and return the access token
+        return generateToken(user, config, claims, config.getAccessTokenExpirationMinutes());
     }
 
     @Override
@@ -51,22 +56,27 @@ public class JwtServiceImpl implements JwtService {
         TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
 
-        // Generate the access token
-        return generateToken(user, config, config.getAccessTokenExpirationMinutes());
+        // Prepare claims specific to refresh tokens
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", user.getId());
+        claims.put("email", user.getEmail());
+        claims.put("appName", appName);
+
+        // Generate and return the refresh token
+        return generateToken(user, config, claims, config.getRefreshTokenExpirationMinutes());
     }
-    @Override
-    public String generateToken(User user, TokenConfiguration config, int expirationMinutes) {
+
+    private String generateToken(User user, TokenConfiguration config, Map<String, Object> claims, int expirationMinutes) {
         // Fetch the signing key based on the algorithm
         Key signingKey = getSigningKey(config);
 
         // Generate the token
         return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("roles", user.getRole())
-                .claim("appName", config.getTokenId().getAppName()) // Add appName as a claim
-                .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plusSeconds(expirationMinutes * 60L)))
-                .signWith(signingKey, SignatureAlgorithm.forName(config.getAlgorithm()))
+                .setClaims(claims)
+                .setSubject(user.getEmail()) // Use email as the subject
+                .setIssuedAt(new Date()) // Issue time
+                .setExpiration(Date.from(Instant.now().plusSeconds(expirationMinutes * 60L))) // Expiry
+                .signWith(signingKey, SignatureAlgorithm.forName(config.getAlgorithm())) // Sign with key and algorithm
                 .setHeaderParam("kid", config.getTokenId().getKeyId()) // Include key ID for JWKS lookup
                 .compact();
     }
@@ -75,25 +85,7 @@ public class JwtServiceImpl implements JwtService {
 
 
 
-    public String extractSubject(String token, String appName) {
-        // Fetch the app configuration to get the signing key
-        TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid app name: " + appName));
 
-        try {
-            // Parse the token
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey(config)) // Use the correct signing key
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            // Extract and return the subject
-            return claims.getSubject();
-        } catch (JwtException e) {
-            throw new IllegalArgumentException("Invalid token: " + e.getMessage(), e);
-        }
-    }
     private Key getSigningKey(TokenConfiguration config) {
         String algorithm = config.getAlgorithm();
 
@@ -138,7 +130,7 @@ public class JwtServiceImpl implements JwtService {
 
 
             TokenConfiguration config = tokenConfigurationRepository.findByTokenIdAppName(appName)
-                    .orElseThrow(() -> new ResourceNotFoundException("App configuration not found for: " + appName));
+                    .orElseThrow(() -> AppException.resourceNotFound("App configuration not found for: " + appName));
             Key signingKey = getSigningKey(config);
 
 

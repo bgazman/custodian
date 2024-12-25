@@ -8,5 +8,7 @@ export interface User {
     permissions: string[];
     roles: string[];
     status: "active" | "suspended" | "inactive";
+    requiredMFA: boolean;
+
 }
 

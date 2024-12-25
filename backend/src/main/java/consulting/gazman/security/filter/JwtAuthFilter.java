@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.entity.User;
-import consulting.gazman.security.exception.JwtAuthenticationException;
-import consulting.gazman.security.repository.UserRepository;
-import consulting.gazman.security.service.AuthService;
-import consulting.gazman.security.service.UserService;
+import consulting.gazman.security.exception.AppException;
+
 import consulting.gazman.security.service.impl.AuthServiceImpl;
 import consulting.gazman.security.service.impl.JwtServiceImpl;
 import consulting.gazman.security.utils.JwtUtils;
@@ -16,9 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -29,7 +25,6 @@ import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
-//@Order(1)
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthServiceImpl authService;
@@ -66,7 +61,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String userEmail = JwtUtils.extractSubject(jwt);
         User user = authService.findByEmail(userEmail);
         if (user == null) {
-            throw new JwtAuthenticationException("User not found for the given token");
+            throw AppException.userNotFound("User not found for the given token");
         }
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

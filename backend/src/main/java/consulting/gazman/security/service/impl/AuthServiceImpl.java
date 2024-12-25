@@ -1,40 +1,49 @@
 package consulting.gazman.security.service.impl;
 
-import consulting.gazman.common.dto.ApiError;
-import consulting.gazman.common.dto.ApiResponse;
+
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
+import consulting.gazman.security.entity.GroupMembership;
+import consulting.gazman.security.entity.TokenConfiguration;
 import consulting.gazman.security.entity.User;
-import consulting.gazman.security.exception.ResourceNotFoundException;
-import consulting.gazman.security.repository.UserRepository;
+import consulting.gazman.security.exception.*;
+
 import consulting.gazman.security.service.AuthService;
-import consulting.gazman.security.service.JwtService;
+
 import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import consulting.gazman.security.exception.AppException;
+
 @Slf4j
 @Service
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
-    private UserRepository userRepository;
-
+    UserServiceImpl userService;
+    @Autowired
+    GroupPermissionServiceImpl groupPermissionService;
+    @Autowired
+    GroupServiceImpl groupService;
+    @Autowired
+    GroupMembershipServiceImpl groupMembershipService;
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    @Autowired
+    TokenConfigurationServiceImpl tokenConfigService;
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -42,58 +51,44 @@ public class AuthServiceImpl implements AuthService {
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
-    // Login implementation
     @Override
-    public ApiResponse<AuthResponse> login(AuthRequest loginRequest) {
+    public AuthResponse login(AuthRequest loginRequest) {
         log.info("Attempting login for email: {}", loginRequest.getEmail());
 
         // Find user by email
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElse(null);
-
-        // Validate user
-        if (user == null) {
-            return buildErrorResponse("INVALID_CREDENTIALS", "Invalid credentials.");
-        }
+        User user = userService.findByEmail(loginRequest.getEmail());
 
         // Check if account is locked
         if (isAccountLocked(user)) {
             Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
-            return buildErrorResponse("ACCOUNT_LOCKED",
-                    "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.");
+            throw AppException.accountLocked("Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.");
         }
 
         // Validate password
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             handleFailedLoginAttempt(user);
-            int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts() ;
+            int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
             if (remainingAttempts > 0) {
-                return buildErrorResponse("INVALID_CREDENTIALS",
-                        "Invalid credentials. " + remainingAttempts + " attempts remaining.");
+                throw  AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.");
             } else {
-                return buildErrorResponse("ACCOUNT_LOCKED",
-                        "Account is locked due to too many failed attempts. Try again later.");
+                throw  AppException.accountLocked("Account is locked due to too many failed attempts. Try again later.");
             }
-
-
-//            return buildErrorResponse("INVALID_CREDENTIALS",
-//                    "Invalid credentials. " + remainingAttempts + " attempts remaining.");
         }
 
         // Reset failed attempts and update login time
         resetLoginAttempts(user);
-        AuthResponse authResponse = createAuthResponse(user);
-
-        return ApiResponse.success(authResponse, "Login successful.");
+        return createAuthResponse(user, loginRequest.getAppName());
     }
 
-    // Register implementation
+
+
     @Override
-    public ApiResponse<AuthResponse> register(AuthRequest registerRequest) {
+    public AuthResponse register(AuthRequest registerRequest) {
         log.info("Attempting registration for email: {}", registerRequest.getEmail());
 
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            return buildErrorResponse("EMAIL_EXISTS", "Email is already registered.");
+        // Check if the email is already registered
+        if (userService.existsByEmail(registerRequest.getEmail())) {
+            throw  AppException.userAlreadyExists("Email is already registered.");
         }
 
         // Create and save the user
@@ -103,33 +98,33 @@ public class AuthServiceImpl implements AuthService {
         newUser.setRole("USER");
         newUser.setEnabled(true);
 
-        User savedUser = userRepository.save(newUser);
-        AuthResponse authResponse = createAuthResponse(savedUser);
-
-        return ApiResponse.success(authResponse, "User registered successfully.");
+        User savedUser = userService.save(newUser);
+        return createAuthResponse(savedUser,registerRequest.getAppName());
     }
 
     // Refresh token implementation
     @Override
-    public ApiResponse<AuthResponse> refresh(AuthRequest refreshRequest) {
+    public AuthResponse refresh(AuthRequest refreshRequest) {
         log.info("Attempting token refresh");
 
         String refreshToken = refreshRequest.getRefreshToken();
-        if (!jwtUtils.validateRefreshToken(refreshToken, "GLOBAL")) {
-            return buildErrorResponse("INVALID_TOKEN", "Invalid or expired refresh token.");
+
+        // Validate the refresh token
+        if (!jwtService.validateToken(refreshToken).equals("success")) {
+            throw  AppException.invalidToken("Invalid or expired refresh token.");
         }
 
         try {
-            String userEmail = jwtUtils.extractSubject(refreshToken, "GLOBAL");
-            User user = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-            AuthResponse authResponse = createAuthResponse(user);
-            return ApiResponse.success(authResponse, "Token refreshed successfully.");
+            // Extract user email from token
+            String userEmail = JwtUtils.extractSubject(refreshToken);
+            String appName = JwtUtils.extractAppName(refreshToken);
+            User user = userService.findByEmail(userEmail);
+            // Create and return the new auth response
+            return createAuthResponse(user,appName);
         } catch (ExpiredJwtException e) {
-            return buildErrorResponse("TOKEN_EXPIRED", "Refresh token expired.");
+            throw AppException.tokenExpired("Refresh token expired.");
         } catch (JwtException e) {
-            return buildErrorResponse("JWT_ERROR", "Error processing JWT: " + e.getMessage());
+            throw AppException.jwtProcessingFailed("Error processing JWT: " + e.getMessage());
         }
     }
 
@@ -148,7 +143,7 @@ public class AuthServiceImpl implements AuthService {
             log.warn("User account locked due to too many failed attempts: {}", user.getEmail());
         }
 
-        userRepository.save(user);
+        userService.save(user);
     }
 
     // Helper: Reset login attempts
@@ -156,34 +151,36 @@ public class AuthServiceImpl implements AuthService {
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
         user.setLastLoginTime(LocalDateTime.now());
-        userRepository.save(user);
+        userService.save(user);
     }
 
-    // Helper: Create AuthResponse
-    private AuthResponse createAuthResponse(User user) {
+    private AuthResponse createAuthResponse(User user, String appName) {
+        // 1. Retrieve token configuration for the app
+        TokenConfiguration config = tokenConfigService.findByAppName(appName);
+
+        // 2. Get user's groups
+        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
+
+        // 3. Retrieve permissions for each group
+        Map<Long, List<String>> permissions = groupMemberships.stream()
+                .collect(Collectors.toMap(
+                        groupMembership -> groupMembership.getGroup().getId(), // Map group ID
+                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId()) // Retrieve permissions as names
+                ));
+
+        // 4. Generate tokens and return the response
         return new AuthResponse(
-                jwtService.generateAccessToken(user, "GLOBAL"),
-                jwtService.generateRefreshToken(user, "GLOBAL"),
-                user.getEmail(),
-                user.getRole()
+                jwtService.generateAccessToken(user, appName, groupMemberships, permissions), // Access token
+                jwtService.generateRefreshToken(user, appName)// Refresh token
         );
     }
 
-    // Helper: Build error response
-    private ApiResponse<AuthResponse> buildErrorResponse(String code, String message) {
-        return ApiResponse.error(
-                "error",
-                message,
-                ApiError.of(code, message)
-        );
-    }
+
+
 
     public User findByEmail(String email) {
-        try {
-            return userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        } catch (ResourceNotFoundException e) {
-            return null;
-        }
+       return userService.findByEmail(email);
     }
+
+
 }

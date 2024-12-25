@@ -13,17 +13,13 @@ const Navbar = () => {
     };
 
     const commonLinks = [
-        { path: "/dashboard", label: "Dashboard" },
-        // { path: "/wallets", label: "Wallets" },
-        // { path: "/portfolio", label: "Portfolio" },
-        // { path: "/transactions", label: "Transactions" },
+        // { path: "/dashboard", label: "Dashboard" },
     ];
 
     const adminLinks = [
         // { path: "/admin", label: "Admin Settings" },
-        { path: "/users", label: "Users" },
-        {path: "/groups", label: "Groups"},
-        {path: "/group-membership", label: "Group Members"},
+        { path: "/iam-dashboard", label: "IAM Dashboard" },
+
     ];
 
     const links = isAdmin ? [...commonLinks, ...adminLinks] : commonLinks;

@@ -1,6 +1,5 @@
 package consulting.gazman.security.service;
 
-import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.dto.AuthRequest;
 import consulting.gazman.security.dto.AuthResponse;
 
@@ -12,7 +11,7 @@ public interface AuthService {
      * @param loginRequest The login request containing email and password.
      * @return ApiResponse<AuthResponse> containing the authentication response or an error.
      */
-    ApiResponse<AuthResponse> login(AuthRequest loginRequest);
+    AuthResponse login(AuthRequest loginRequest);
 
     /**
      * Registers a new user with the given details.
@@ -20,7 +19,7 @@ public interface AuthService {
      * @param registerRequest The registration request containing email and password.
      * @return ApiResponse<AuthResponse> containing the newly registered user data or an error.
      */
-    ApiResponse<AuthResponse> register(AuthRequest registerRequest);
+    AuthResponse register(AuthRequest registerRequest);
 
     /**
      * Refreshes authentication tokens using a refresh token.
@@ -28,7 +27,7 @@ public interface AuthService {
      * @param refreshRequest The refresh request containing the refresh token.
      * @return ApiResponse<AuthResponse> containing the refreshed tokens or an error.
      */
-    ApiResponse<AuthResponse> refresh(AuthRequest refreshRequest);
+    AuthResponse refresh(AuthRequest refreshRequest);
 }
 
 

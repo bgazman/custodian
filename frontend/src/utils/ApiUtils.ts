@@ -1,6 +1,6 @@
 
 
-import {ApiResponse} from "@/api/common/ApiResponse.ts";
+import {ApiResponse} from "../api/common/ApiResponse"
 
 export function handleApiResponse<T>(response: ApiResponse<T>, rawResponse?: any): T {
     // Log the headers if the raw response is provided
