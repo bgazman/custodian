@@ -136,8 +136,6 @@ private Key getSigningKey(OAuthClient oAuthClient) {
    return getPrivateKeyFromPem(secret.getPrivateKey());
 
 
-
-
             }
     private PrivateKey getPrivateKeyFromPem(String privateKeyPem) {
         try {

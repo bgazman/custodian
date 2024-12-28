@@ -27,5 +27,7 @@ public interface UserService {
     void verifyEmail(Long id); // Mark a user's email as verified
     void resetFailedLoginAttempts(Long id); // Reset failed login attempts counter
     void trackLogin(Long id); // Update last login time
+
+    User createUser(User user);
 }
 

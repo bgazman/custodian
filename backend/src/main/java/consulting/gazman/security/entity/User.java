@@ -64,7 +64,7 @@ public class User implements UserDetails {
     @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired = true;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<UserRole> userRoles = new HashSet<>();
 
     @Column(name = "failed_login_attempts", nullable = false)

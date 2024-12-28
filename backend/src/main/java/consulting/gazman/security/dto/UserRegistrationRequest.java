@@ -8,7 +8,7 @@ import lombok.*;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class UserRegistartionRequest {
+public class UserRegistrationRequest {
     private String name;         // User's full name
     private String email;        // User's email address
     private String password;     // User's password

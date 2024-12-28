@@ -9,6 +9,7 @@ import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,6 +26,8 @@ import consulting.gazman.security.exception.AppException;
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
+    @Autowired
+    EmailVerificationService emailVerificationService;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
@@ -75,28 +78,48 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
         }
         }
+    private void validateUserRegistrationRequest(UserRegistrationRequest request) {
 
+        if (request.getEmail() == null || !request.getEmail().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            throw AppException.badRequest("INVALID_EMAIL_FORMAT");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 8) {
+            throw AppException.badRequest("WEAK_PASSWORD");
+        }
+        if(userService.existsByEmail(request.getEmail())){
+            throw AppException.userAlreadyExists("Email already registered: " + request.getEmail());
+        }
+    }
+    @Transactional
+    public void registerUser(UserRegistrationRequest request) {
+        // Step 1: Validate input
+        validateUserRegistrationRequest(request);
 
+        createUser(request);
+
+        // Step 3: Generate a temporary email verification token using EmailVerificationService
+        String verificationToken = emailVerificationService.generateVerificationToken(request.getEmail());
+
+        // Step 4: Send verification email using EmailVerificationService
+        emailVerificationService.sendVerificationEmail(request.getEmail(), verificationToken);
+    }
 
     @Override
-    public UserRegistrationResponse register(UserRegistartionRequest userRegistartionRequest) {
+    public UserRegistrationResponse createUser(UserRegistrationRequest userRegistartionRequest) {
         log.info("Attempting registration for email: {}", userRegistartionRequest.getEmail());
 
         // Check if the email is already registered
         if (userService.existsByEmail(userRegistartionRequest.getEmail())) {
             throw  AppException.userAlreadyExists("Email is already registered.");
         }
-        Role userRole = roleService.findByName("USER")
-                .orElseThrow(() ->  AppException.userNotFound("Role 'USER' does not exist"));
+        Role userRole = roleService.findByName("VIEWER")
+                .orElseThrow(() ->  AppException.userNotFound("Role 'VIEWER' does not exist"));
 
         // Create and save the user
         User newUser = new User();
         newUser.setName(userRegistartionRequest.getName());
         newUser.setEmail(userRegistartionRequest.getEmail());
-        log.info("Password before encoding: {}", userRegistartionRequest.getPassword());
-        String encodedPassword = passwordEncoder.encode(userRegistartionRequest.getPassword());
-        log.info("Password after encoding: {}", encodedPassword);
-        newUser.setPassword(encodedPassword);
+        newUser.setPassword(passwordEncoder.encode(userRegistartionRequest.getPassword()));
         UserRole newUserRole = new UserRole();
         newUserRole.setUser(newUser);
         newUserRole.setRole(userRole);
@@ -131,6 +154,7 @@ public class AuthServiceImpl implements AuthService {
                         .build())
                 .build();    }
 
+
     // Refresh token implementation
     @Override
     public TokenResponse refresh(RefreshTokenRequest refreshRequest) {
@@ -147,7 +171,7 @@ public class AuthServiceImpl implements AuthService {
             // Extract user email from token
             String userEmail = JwtUtils.extractSubject(refreshToken);
             String clientId = JwtUtils.extractClientId(refreshToken);
-            Optional<User> optionalUser = userService.findByEmail("");
+            Optional<User> optionalUser = userService.findByEmail(userEmail);
             if(optionalUser.isPresent()) {
                 User user = optionalUser.get();            // Create and return the new auth response
                 return createTokenResponse(user, clientId);

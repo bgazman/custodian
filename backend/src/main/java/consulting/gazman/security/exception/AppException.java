@@ -20,6 +20,10 @@ public class AppException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    public static AppException badRequest(String message) {
+        return new AppException("BAD_REQUEST", message);
+    }
+
     public String getErrorCode() {
         return errorCode;
     }

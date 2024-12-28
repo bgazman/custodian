@@ -23,6 +23,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OAuthClient {
 
     @Id
@@ -67,7 +69,7 @@ public class OAuthClient {
     @Column(name = "algorithm", length = 10, nullable = false)
     private String algorithm;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Many clients can use the same secret
+    @ManyToOne(fetch = FetchType.EAGER) // Many clients can use the same secret
     @JoinColumn(name = "key_id", foreignKey = @ForeignKey(name = "fk_key_id"))
     private Secret signingKey; // Association to the Secret entity
 

@@ -118,6 +118,26 @@ public class UserServiceImpl implements UserService {
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
     }
+
+    @Override
+    public User createUser(User user) {
+        // Check if the email already exists
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw AppException.userAlreadyExists("A user with this email already exists");
+        }
+
+        // Hash the password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Set default properties
+        user.setEmailVerified(false); // Default to unverified
+        user.setEnabled(false);       // Default to disabled
+//        user.setRegisteredAt(LocalDateTime.now());
+        user.setLastPasswordChange(LocalDateTime.now());
+
+        // Save the user to the database
+        return userRepository.save(user);
+    }
 }
 
 

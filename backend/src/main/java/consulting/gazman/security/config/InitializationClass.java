@@ -127,18 +127,21 @@ public class InitializationClass implements CommandLineRunner {
                     });
         });
 
-        ClientRegistrationRequest clientRegistrationRequest = ClientRegistrationRequest.builder()
-                .name("iam-dashboard")
-                .applicationType("web")
-                .scopes(List.of("openid", "profile", "email"))
-                .responseTypes(List.of("authorization_code", "refresh_token"))
-                .redirectUris(List.of("https://iam.local/callback"))
-                .grantTypes(List.of("authorization_code", "refresh_token"))
-                .tenantId(defaultTenant.getId())
-                .build();
-
-        clientRegistrationService.registerClient(clientRegistrationRequest);
-
+//        ClientRegistrationRequest clientRegistrationRequest = ClientRegistrationRequest.builder()
+//                .name("iam-dashboard")
+//                .applicationType("web")
+//                .scopes(List.of("openid", "profile", "email"))
+//                .responseTypes(List.of("authorization_code", "refresh_token"))
+//                .redirectUris(List.of("https://iam.local/callback"))
+//                .grantTypes(List.of("authorization_code", "refresh_token"))
+//                .tenantId(defaultTenant.getId())
+//                .build();
+//        try {
+//            clientRegistrationService.registerClient(clientRegistrationRequest);
+//        }catch(Exception e){
+//            System.out.println("Client already initialized");
+//
+//        }
         System.out.println("IAM System default entities initialized successfully!");
     }
 }

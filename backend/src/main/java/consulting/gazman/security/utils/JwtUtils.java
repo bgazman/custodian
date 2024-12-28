@@ -32,7 +32,7 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
     public static String extractClientId(String token) {
-        return (String) parseTokenPayload(token).get("client-id");
+        return (String) parseTokenPayload(token).get("aud");
     }
 
     public static String extractSubject(String token) {
