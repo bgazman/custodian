@@ -10,8 +10,15 @@ const LandingPage = () => {
                     <h1 className="text-xl font-bold">Crypto Custodian</h1>
                     <button
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                        onClick={() => navigate("/login")}
-                    >
+                        onClick={() => {
+                            const authUrl = 'http://localhost:8080/oauth/authorize' +
+                                '?response_type=code' +
+                                '&client_id=iam-dashboard' +
+                                '&scope=openid' +
+                                '&state=' + encodeURIComponent(crypto.randomUUID()) +
+                                '&redirect_uri=' + encodeURIComponent('http://localhost:5173/dashboard');
+                            window.location.href = authUrl;
+                        }}                    >
                         Sign In
                     </button>
                 </div>

@@ -5,13 +5,11 @@ import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.JwtService;
 import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -29,7 +27,8 @@ public class JwtServiceImpl implements JwtService {
 
     @Autowired
     private OAuthClientServiceImpl oAuthClientService;
-
+    @Autowired
+    private UserServiceImpl userService;
 
 
     @Override
@@ -37,9 +36,13 @@ public class JwtServiceImpl implements JwtService {
         // Fetch the token configuration for the app
         OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
                 .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
-
+//        Set<String> roles = user.getUserRoles().stream()
+//                .map(userRole -> userRole.getRole().getName())
+//                .collect(Collectors.toSet());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRole().toString()); // Convert role to string
+        claims.put("roles", user.getUserRoles().stream()  // Fix role extraction
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.toSet()));
         List<Map<String, Object>> groupsList = groups.stream()
                 .map(group -> {
                     Map<String, Object> groupMap = new HashMap<>();
@@ -51,8 +54,23 @@ public class JwtServiceImpl implements JwtService {
                 })
                 .collect(Collectors.toList());
 
-        claims.put("client-id", clientId);
-
+        claims.put("groups",groupsList);
+        claims.put("sub", user.getEmail());
+        claims.put("iss", "http://localhost:8080");
+        claims.put("aud", clientId);
+        claims.put("jti", UUID.randomUUID().toString());
+        claims.put("iat", Instant.now().getEpochSecond());
+        claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
+        claims.put("resource_access", Map.of(
+                clientId, Map.of(
+                        "roles", user.getUserRoles().stream()
+                                .map(userRole -> userRole.getRole().getName())
+                                .collect(Collectors.toSet()),
+                        "permissions", permissions.values().stream()
+                                .flatMap(List::stream)
+                                .collect(Collectors.toList())
+                )
+        ));
         // Generate and return the access token
         return generateToken(user.getEmail(),oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
@@ -68,9 +86,32 @@ public class JwtServiceImpl implements JwtService {
         claims.put("userId", user.getId());
         claims.put("email", user.getEmail());
         claims.put("client-id", clientId);
+        claims.put("sub", user.getEmail());      // Add subject as string
+        claims.put("type", "refresh_token");             // Add token type
 
         // Generate and return the refresh token
         return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getRefreshTokenExpirySeconds());
+    }
+
+
+
+    @Override
+    public String generateIdToken(User user, String clientId) {
+        // Fetch the token configuration for the app
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", user.getEmail());  // Email as subject
+        claims.put("email", user.getEmail());
+        claims.put("email_verified", user.isEmailVerified());
+        claims.put("auth_time", Instant.now().getEpochSecond());
+        claims.put("iat", Instant.now().getEpochSecond());
+        claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
+        claims.put("iss", "http://localhost:8080");
+        claims.put("aud", clientId);
+        claims.put("jti", UUID.randomUUID().toString());
+        return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
 
     private String generateToken(String subject, OAuthClient oAuthClient, Map<String, Object> claims, int expirationSeconds) {
@@ -82,34 +123,17 @@ public class JwtServiceImpl implements JwtService {
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(expirationSeconds)))
                 .signWith(signingKey, SignatureAlgorithm.forName(oAuthClient.getAlgorithm()))
-                .setHeaderParam("kid", oAuthClient.getSecret().getId())
+                .setHeaderParam("kid", oAuthClient.getSigningKey().getId())
                 .compact();
     }
 
 
 
-
-
-
-//    private Key getSigningKey(OAuthClient oAuthClient) {
-//        // Retrieve the secret associated with the OAuth client
-//        Secret secret = oAuthClient.getSecret();
-//        String encodedKey = secret.getValue();
-//        byte[] keyBytes = Base64.getDecoder().decode(encodedKey);
-//
-//        // Determine key type and generate the corresponding key
-//        return switch (secret.getType()) {
-//            case "SYMMETRIC" -> Keys.hmacShaKeyFor(keyBytes); // For HMAC keys
-//            case "RSA_PRIVATE" -> generatePrivateKey(keyBytes); // Generate RSA private key
-//            case "RSA_PUBLIC" -> generatePublicKey(keyBytes); // Generate RSA public key (if needed)
-//            default -> throw new IllegalArgumentException("Invalid key type: " + secret.getType());
-//        };
-//    }
 private Key getSigningKey(OAuthClient oAuthClient) {
     // Retrieve the list of secrets associated with the OAuth client
-    Secret secret = oAuthClient.getSecret();
+    Secret secret = oAuthClient.getSigningKey();
 
-   return getPrivateKeyFromPem(secret.getPrivatekey());
+   return getPrivateKeyFromPem(secret.getPrivateKey());
 
 
 
@@ -184,6 +208,32 @@ private Key getSigningKey(OAuthClient oAuthClient) {
             throw new RuntimeException("Error loading symmetric key", e);
         }
     }
+    @Override
+    public User validateAccessToken(String token) {
+        String result = validateToken(token);
+        if (!"success".equals(result)) {
+            throw AppException.invalidToken("Access token validation failed: " + result);
+        }
+
+        String email = JwtUtils.extractSubject(token);
+        return userService.findByEmail(email)
+                .orElseThrow(() -> AppException.userNotFound("Unable to find user for subject: " + email));
+    }
+
+    @Override
+    public User validateRefreshToken(String token) {
+        String result = validateToken(token);
+        if (!"success".equals(result)) {
+            throw AppException.invalidToken("Refresh token validation failed: " + result);
+        }
+
+        if (!"refresh_token".equals(JwtUtils.extractType(token))) {
+            throw AppException.invalidToken("Invalid token type");
+        }
+
+        String email = JwtUtils.extractSubject(token);
+        return userService.findByEmail(email)
+                .orElseThrow(() -> AppException.userNotFound("Unable to find user for subject: " + email));    }
 
     @Override
     public String validateToken(String token) {

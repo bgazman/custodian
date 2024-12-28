@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -65,9 +66,8 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> AppException.resourceNotFound("User not found with email: " + email));
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email); // Assuming the repository method returns Optional<User>
     }
 
     @Override

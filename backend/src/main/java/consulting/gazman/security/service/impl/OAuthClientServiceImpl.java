@@ -70,7 +70,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         existingClient.setScopes(updatedClient.getScopes());
         existingClient.setTokenEndpointAuthMethod(updatedClient.getTokenEndpointAuthMethod());
         existingClient.setAlgorithm(updatedClient.getAlgorithm());
-        existingClient.setSecret(updatedClient.getSecret());
+        existingClient.setClientSecret(updatedClient.getClientSecret());
 
         if (updatedClient.getClientSecret() != null) {
             existingClient.setClientSecret(passwordEncoder.encode(updatedClient.getClientSecret()));
@@ -104,45 +104,21 @@ public class OAuthClientServiceImpl implements OAuthClientService {
     @Override
     public boolean validateRedirectUri(String clientId, String redirectUri) {
         return getClientByClientId(clientId)
-                .map(client -> {
-                    try {
-                        List<String> redirectUris = objectMapper.readValue(client.getRedirectUris(),
-                                new TypeReference<List<String>>() {});
-                        return redirectUris.contains(redirectUri);
-                    } catch (JsonProcessingException e) {
-                        throw new IllegalStateException("Error parsing redirect URIs", e);
-                    }
-                })
+                .map(client -> client.getRedirectUris().contains(redirectUri))
                 .orElse(false);
     }
 
     @Override
     public boolean validateGrantType(String clientId, String grantType) {
         return getClientByClientId(clientId)
-                .map(client -> {
-                    try {
-                        List<String> grantTypes = objectMapper.readValue(client.getGrantTypes(),
-                                new TypeReference<List<String>>() {});
-                        return grantTypes.contains(grantType);
-                    } catch (JsonProcessingException e) {
-                        throw new IllegalStateException("Error parsing grant types", e);
-                    }
-                })
+                .map(client -> client.getGrantTypes().contains(grantType))
                 .orElse(false);
     }
 
     @Override
     public boolean validateScope(String clientId, String scope) {
         return getClientByClientId(clientId)
-                .map(client -> {
-                    try {
-                        List<String> scopes = objectMapper.readValue(client.getScopes(),
-                                new TypeReference<List<String>>() {});
-                        return scopes.contains(scope);
-                    } catch (JsonProcessingException e) {
-                        throw new IllegalStateException("Error parsing scopes", e);
-                    }
-                })
+                .map(client -> client.getScopes() != null && client.getScopes().contains(scope))
                 .orElse(false);
     }
 
@@ -151,17 +127,19 @@ public class OAuthClientServiceImpl implements OAuthClientService {
             throw new IllegalArgumentException("Client ID cannot be empty");
         }
 
-        try {
-            objectMapper.readValue(client.getRedirectUris(), new TypeReference<List<String>>() {});
-            objectMapper.readValue(client.getGrantTypes(), new TypeReference<List<String>>() {});
-            if (client.getScopes() != null) {
-                objectMapper.readValue(client.getScopes(), new TypeReference<List<String>>() {});
-            }
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Invalid JSON format in client data", e);
+        if (client.getRedirectUris() == null || client.getRedirectUris().isEmpty()) {
+            throw new IllegalArgumentException("Redirect URIs cannot be empty");
+        }
+
+        if (client.getGrantTypes() == null || client.getGrantTypes().isEmpty()) {
+            throw new IllegalArgumentException("Grant types cannot be empty");
+        }
+
+        // Scopes can be null but if present should not be empty
+        if (client.getScopes() != null && client.getScopes().isEmpty()) {
+            throw new IllegalArgumentException("Scopes list cannot be empty if provided");
         }
     }
-
     @Override
     public Map<String, Object> getJwks() {
         // Fetch all token configurations and map to JWKS keys
@@ -188,6 +166,10 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         oAuthClientRepository.delete(oAuthClient);
     }
 
+    @Override
+    public boolean existsByName(String name) {
+        return oAuthClientRepository.existsByName(name);
+    }
 
 
     // Private utility methods
@@ -199,7 +181,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         // Construct the JWK
         return Map.of(
                 "kty", "RSA", // Key type
-                "kid", oAuthClient.getSecret().getId(), // Key ID
+                "kid", oAuthClient.getSigningKey().getId(), // Key ID
                 "use", "sig", // Key usage: signing
                 "alg", oAuthClient.getAlgorithm(), // Algorithm (e.g., RS256)
                 "n", base64UrlEncode(publicKey.getModulus().toByteArray()), // Modulus (Base64URL-encoded)
@@ -210,7 +192,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         OAuthClient oAuthClient = oAuthClientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client not found with ID: " + clientId));
 
-        Secret secret = oAuthClient.getSecret();
+        Secret secret = oAuthClient.getSigningKey();
         return secret.getPublicKey();
     }
     private RSAPublicKey getPublicKeyFromPem(String publicKeyPem) throws Exception {

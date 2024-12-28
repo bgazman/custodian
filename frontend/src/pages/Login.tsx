@@ -41,7 +41,7 @@ const Login = () => {
 
         try {
             // Use the login service and ensure response conforms to LoginResponseData
-            const response: LoginResponseData = await CustodianLoginService.login(email, password);
+            const response: LoginResponseData = await CustodianLoginService.login('iam-dashboard',email, password);
             console.log("Login response:", response);
 
             // Store tokens and roles in localStorage

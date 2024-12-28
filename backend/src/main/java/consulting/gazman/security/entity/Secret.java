@@ -24,12 +24,13 @@ public class Secret {
     private String publicKey; // Encrypted value for private keys or raw for public keys
 
     @Column(name = "private_key", nullable = false, columnDefinition = "TEXT")
-    private String privatekey; // Encrypted value for private keys or raw for public keys
+    private String privateKey; // Encrypted value for private keys or raw for public keys
 
     @Column(name = "type", nullable = false, length = 50)
     private String type;
 
     @Column(name = "last_rotated_at", nullable = false)
+    @UpdateTimestamp
     private LocalDateTime lastRotatedAt;
 
     @Column(name = "active", nullable = false)

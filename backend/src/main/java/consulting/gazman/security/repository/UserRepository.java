@@ -17,15 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
-//    void updateFailedLoginAttemptsById(Long userId, Integer attempts);
-//    void updateLockedUntilById(Long userId, LocalDateTime lockedUntil);
-//@Modifying
-//@Query("UPDATE User u SET u.failedLoginAttempts = :attempts WHERE u.id = :userId")
-//void updateFailedLoginAttempts(@Param("userId") Long userId, @Param("attempts") Integer attempts);
-//
-//    @Modifying
-//    @Query("UPDATE User u SET u.lockedUntil = :lockedUntil WHERE u.id = :userId")
-//    void updateLockedUntil(@Param("userId") Long userId, @Param("lockedUntil") LocalDateTime lockedUntil);
 
 }
 

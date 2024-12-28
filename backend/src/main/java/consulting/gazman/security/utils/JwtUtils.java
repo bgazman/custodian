@@ -39,6 +39,8 @@ public class JwtUtils {
         return (String) parseTokenPayload(token).get("sub");
     }
 
+    public static String extractType(String token) {return (String) parseTokenPayload(token).get("type");}
+
     public static Map<String, Object> parseTokenPayload(String token) {
         try {
             String[] parts = token.split("\\.");

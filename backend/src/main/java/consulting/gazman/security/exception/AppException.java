@@ -71,4 +71,12 @@ public class AppException extends RuntimeException {
     public static AppException invalidClientId(String message) {
         return new AppException("INVALID_CLIENT_ID", message);
     }
+
+    public static AppException invalidRequest(String message) {
+        return new AppException("INVALID_REQUEST", message);
+    }
+
+    public static AppException invalidAuthCode(String message) {
+        return new AppException("INVALID_AUTH_CODE", message);
+    }
 }

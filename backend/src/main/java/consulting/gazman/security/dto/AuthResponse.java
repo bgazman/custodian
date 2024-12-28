@@ -11,7 +11,10 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class AuthResponse {
     private String accessToken;
     private String refreshToken;
+    private String idToken;
+    private Long expiresIn;
 }

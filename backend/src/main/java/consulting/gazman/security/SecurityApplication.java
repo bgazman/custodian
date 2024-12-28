@@ -9,11 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class SecurityApplication {
 
 	public static void main(String[] args) {
-//		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-//		String rawPassword = "testPassword123";
-//		String encodedPassword = passwordEncoder.encode(rawPassword);
-//		System.out.println("Encoded: " + encodedPassword);
-//		System.out.println("Matches: " + passwordEncoder.matches(rawPassword, encodedPassword));
+
 		SpringApplication.run(SecurityApplication.class, args);
 	}
 

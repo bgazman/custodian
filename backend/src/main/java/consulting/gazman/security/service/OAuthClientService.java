@@ -22,4 +22,6 @@ public interface OAuthClientService {
     Map<String, Object> getJwks();
 
     void delete(Long id);
+
+    boolean existsByName(String name);
 }

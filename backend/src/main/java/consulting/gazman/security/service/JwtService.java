@@ -19,6 +19,12 @@ public interface JwtService {
 
 
 
+    String generateIdToken(User user, String clientId);
+
+    User validateAccessToken(String token);
+
+    User validateRefreshToken(String token);
+
     String validateToken(String token);
 
     Map<String, Object> parseHeader(String token);

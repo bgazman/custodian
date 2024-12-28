@@ -39,9 +39,12 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Column(name="name")
+    private String name;
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<TenantUser> tenantUsers = new ArrayList<>();
 
     @Column(name = "password", nullable = false, length = 255)
     private String password;
@@ -61,9 +64,8 @@ public class User implements UserDetails {
     @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired = true;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserRole> userRoles = new HashSet<>();
 
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;
@@ -91,10 +93,12 @@ public class User implements UserDetails {
      * Retrieves the authorities granted to the user.
      * For simplicity, the user's role is used as the granted authority.
      */
-    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(role.getName()));
+        return userRoles.stream()
+                .map(userRole -> new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getName()))
+                .collect(Collectors.toSet());
     }
+
 
     /**
      * Returns the username for authentication (email in this case).

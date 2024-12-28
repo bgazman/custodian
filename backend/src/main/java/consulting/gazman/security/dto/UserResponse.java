@@ -4,6 +4,8 @@ import consulting.gazman.security.entity.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -12,7 +14,7 @@ import java.time.LocalDateTime;
 public class UserResponse {
     private Long id; // User's unique identifier
     private String email; // User's email
-    private String role; // User's role
+    private Set<String> roles; // Changed from single role to Set
     private boolean enabled; // Whether the account is enabled
     private boolean emailVerified; // Whether the email is verified
     private boolean accountNonExpired; // Whether the account is non-expired
@@ -28,7 +30,10 @@ public class UserResponse {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .role(user.getRole().getName())
+                .roles(user.getUserRoles().stream()
+                        .map(userRole -> userRole.getRole().getName())
+                        .collect(Collectors.toSet()))
+
                 .enabled(user.isEnabled())
                 .emailVerified(user.isEmailVerified())
                 .accountNonExpired(user.isAccountNonExpired())

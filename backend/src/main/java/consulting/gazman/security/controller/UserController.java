@@ -93,7 +93,8 @@ public class UserController extends ApiController {
     public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
         logRequest("GET", "/api/users/email/" + email);
         try {
-            User user = userService.findByEmail(email);
+            User user = userService.findByEmail(email)
+                    .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));
             return wrapSuccessResponse(user, "User retrieved successfully");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.NOT_FOUND);
@@ -101,7 +102,6 @@ public class UserController extends ApiController {
             return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @PostMapping("/enable/{id}")
     public ResponseEntity<?> enableUser(@PathVariable Long id) {
         logRequest("POST", "/api/users/enable/" + id);

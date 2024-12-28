@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -50,10 +51,26 @@ public class SecurityConfig {
         this.objectMapper = objectMapper;  // Add this
 
     }
+    @Bean
+    @Order(1)
+    public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/oauth2/**", "/login")
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/oauth2/authorize"))
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        http.securityMatcher("/api/**", "/client/**)")
                 // Disable CSRF as we're using JWT tokens
                 .csrf(AbstractHttpConfigurer::disable)
                 // Configure CORS using the provided configuration source
@@ -74,9 +91,10 @@ public class SecurityConfig {
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll() // Allow error dispatchers
+                        .requestMatchers("/oauth2/client/register").permitAll()
                         .requestMatchers("/api/auth/**").permitAll() // Public authentication endpoints
                         .requestMatchers("/api/users/**").hasAuthority("ADMIN") // Admin-only endpoints
-                        .requestMatchers("/.well-known/jwks.json").permitAll() // Public JWKS endpoint
+                        .requestMatchers("/.well-known/**").permitAll() // Public JWKS endpoint
                         .anyRequest().authenticated() // All other endpoints require authentication
                 )
                 // Configure session management to be stateless (no sessions)
@@ -91,6 +109,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

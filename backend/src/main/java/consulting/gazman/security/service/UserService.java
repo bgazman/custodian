@@ -4,6 +4,7 @@ package consulting.gazman.security.service;
 import consulting.gazman.security.entity.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
 
@@ -15,8 +16,9 @@ public interface UserService {
     User update(Long id, User user);
     void delete(Long id);
     boolean existsByEmail(String email);
-    // Additional methods
-    User findByEmail(String email); // Fetch user by email
+
+    Optional<User> findByEmail(String email);
+
     void enableUser(Long id); // Enable a user account
     void disableUser(Long id); // Disable a user account
 

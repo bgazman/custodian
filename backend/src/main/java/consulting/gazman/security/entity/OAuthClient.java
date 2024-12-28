@@ -1,53 +1,84 @@
 package consulting.gazman.security.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import org.hibernate.type.SqlTypes;
+
+
+import java.util.List;
 
 @Entity
 @Table(name = "oauth_clients")
 @Getter
 @Setter
+@Builder
 public class OAuthClient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;
+
+    @Column(name = "application_type", nullable = false, length = 50)
+    private String applicationType;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "response_types", nullable = false, columnDefinition = "jsonb")
+    private List<String> responseTypes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tenant_id"))
+    private Tenant tenant;
+
     @Column(name = "client_id", nullable = false, unique = true, length = 100)
-    private String clientId; // Unique identifier for the client
+    private String clientId;
 
     @Column(name = "client_secret", nullable = false, length = 255)
-    private String clientSecret; // Hashed client secret
+    private String clientSecret;
 
-    @Column(name = "redirect_uris", nullable = false, columnDefinition = "JSONB")
-    private String redirectUris; // JSON array of allowed redirect URIs
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "redirect_uris", nullable = false, columnDefinition = "jsonb")
+    private List<String> redirectUris;
 
-    @Column(name = "grant_types", nullable = false, columnDefinition = "JSONB")
-    private String grantTypes; // JSON array of allowed grant types (e.g., authorization_code)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "grant_types", nullable = false, columnDefinition = "jsonb")
+    private List<String> grantTypes;
 
-    @Column(name = "scopes", columnDefinition = "JSONB")
-    private String scopes; // JSON array of allowed scopes (e.g., openid, profile, email)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "scopes", columnDefinition = "jsonb", nullable = false)
+    private List<String> scopes;
 
-    @Column(name = "token_endpoint_auth_method", nullable = false, length = 50, columnDefinition = "VARCHAR(50) DEFAULT 'client_secret_basic'")
-    private String tokenEndpointAuthMethod = "client_secret_basic"; // Default auth method
+    @Column(name = "token_endpoint_auth_method", length = 50, nullable = false)
+    private String tokenEndpointAuthMethod;
 
-    @Column(name = "algorithm", nullable = false, length = 10)
-    private String algorithm = "RS256"; // Default signing algorithm
+    @Column(name = "algorithm", length = 10, nullable = false)
+    private String algorithm;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "key_id", referencedColumnName = "id")
-    private Secret secret; // Reference to the secret entity
+    @ManyToOne(fetch = FetchType.LAZY) // Many clients can use the same secret
+    @JoinColumn(name = "key_id", foreignKey = @ForeignKey(name = "fk_key_id"))
+    private Secret signingKey; // Association to the Secret entity
 
     @Column(name = "access_token_expiry_seconds", nullable = false)
-    private Integer accessTokenExpirySeconds = 3600;
+    private Integer accessTokenExpirySeconds;
 
     @Column(name = "refresh_token_expiry_seconds", nullable = false)
-    private Integer refreshTokenExpirySeconds = 86400;
+    private Integer refreshTokenExpirySeconds;
+    @Column(name = "client_secret_last_rotated", nullable = false, updatable = false)
+    private LocalDateTime clientSecretLastRotated;
+
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
