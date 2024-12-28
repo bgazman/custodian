@@ -8,6 +8,7 @@ import AdminPage from './pages/Admin';
 import IamDashboard from "./pages/IamDashboard.tsx";
 import GroupsPage from "./pages/Groups";
 import GroupMembershipsPage from "./pages/GroupMembership";
+import Callback from "./pages/Callback.tsx";
 
 // In your router configuration
 
@@ -33,6 +34,8 @@ const AppLayout = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/iam-dashboard" element={<IamDashboard />} />
+                <Route path="/callback" element={<Callback />} />
+
                 <Route path="/" element={<Navigate to="/dashboard" />} /> {/* Default authenticated route */}
 
             </Routes>

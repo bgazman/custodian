@@ -54,18 +54,23 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/oauth2/**", "/login")
+        http
+                .securityMatcher("/oauth/**", "/login")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/login", "/oauth/authorize").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/oauth2/authorize"))
-                .csrf(csrf -> csrf.disable());
+                        .defaultSuccessUrl("/oauth/authorize", false)
+                )
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/oauth/**")
+                );
         return http.build();
     }
+
 
     @Bean
     @Order(2)

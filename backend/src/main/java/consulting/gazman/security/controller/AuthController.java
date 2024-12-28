@@ -7,6 +7,7 @@ import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.service.UserService;
 import consulting.gazman.security.service.impl.AuthServiceImpl;
 import consulting.gazman.security.service.impl.EmailVerificationService;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,14 +24,19 @@ public class AuthController extends ApiController {
     }
 
 
-
+    @Transactional
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         logRequest("POST", "/api/auth/login");
 
-        TokenResponse result = authService.login(request);
-
-        return wrapSuccessResponse(result, "Login successful");
+        try {
+            TokenResponse result = authService.login(request);
+            return wrapSuccessResponse(result, "Login successful");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
         @PostMapping("/register")

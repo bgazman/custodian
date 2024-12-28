@@ -2,14 +2,115 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Login | IDP</title>
+    <meta charset="UTF-8">
+    <style>
+        /* Basic styles for the error modal */
+        #errorModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #errorModal button {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-<form th:action="@{/api/auth/login}" method="post">
-    <input type="text" name="email"/>
-    <input type="password" name="password"/>
-    <input type="hidden" name="client_id" th:value="${client_id}"/> <!-- Use the model attribute -->
-<!--    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
-    <button type="submit">Login</button>
+<h1>Login</h1>
+<form id="loginForm">
+    <div>
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" required />
+    </div>
+
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+    </div>
+
+    <!-- Store OAuth parameters -->
+    <input type="hidden" id="clientId" th:value="${clientId}" />
+    <input type="hidden" id="state" th:value="${state}" />
+    <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
+
+    <div>
+        <button type="button" onclick="submitLogin()">Login</button>
+    </div>
 </form>
+
+<!-- Error modal for displaying error messages -->
+<div id="errorModal">
+    <p id="errorMessage"></p>
+    <button onclick="closeErrorModal()">Close</button>
+</div>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    function submitLogin() {
+        // Create the JSON payload
+        const loginRequest = {
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            clientId: document.getElementById('clientId').value
+        };
+
+        console.log('Submitting login request:', loginRequest);
+
+        fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(loginRequest)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    // If the response is not OK, throw an error with the server message
+                    throw new Error(err.message || 'Login failed');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Login successful:', data);
+
+            // Redirect to the React application
+            const redirectUri = document.getElementById('redirectUri').value;
+            const state = document.getElementById('state').value;
+
+            // Construct redirect URL
+            const redirectUrl = new URL(redirectUri);
+            redirectUrl.searchParams.append('code', data.code);
+            redirectUrl.searchParams.append('state', state);
+
+            window.location.href = redirectUrl.toString();
+        })
+        .catch(error => {
+            console.error('Error during login:', error);
+            showErrorModal(error.message);
+        });
+    }
+
+    function showErrorModal(message) {
+        const errorModal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = message;
+        errorModal.style.display = 'block';
+    }
+
+    function closeErrorModal() {
+        const errorModal = document.getElementById('errorModal');
+        errorModal.style.display = 'none';
+    }
+    /*]]>*/
+</script>
+
 </body>
 </html>

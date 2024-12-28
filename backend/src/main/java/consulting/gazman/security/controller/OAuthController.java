@@ -7,6 +7,8 @@ import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.impl.ClientRegistrationServiceImpl;
 import consulting.gazman.security.service.impl.OAuthServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @RestController
-@RequestMapping("/oauth2")
+@RequestMapping("/oauth")
 public class OAuthController extends ApiController {
 
     @Autowired
@@ -27,9 +32,24 @@ public class OAuthController extends ApiController {
             @RequestParam String client_id,
             @RequestParam String redirect_uri,
             @RequestParam String scope,
-            @RequestParam String state
+            @RequestParam String state,
+            HttpServletRequest request
     ) {
         logRequest("GET", "/oauth/authorize");
+        // Check if the user is authenticated (example placeholder logic)
+        boolean isAuthenticated = request.getSession().getAttribute("user") != null;
+
+        if (!isAuthenticated) {
+            String loginUrl = "/login?response_type=" + URLEncoder.encode(response_type, StandardCharsets.UTF_8) +
+                    "&client_id=" + URLEncoder.encode(client_id, StandardCharsets.UTF_8) +
+                    "&redirect_uri=" + URLEncoder.encode(redirect_uri, StandardCharsets.UTF_8) +
+                    "&scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8) +
+                    "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+
+
+            log.info("Redirecting to login page: {}", loginUrl); // Add this log
+            return ResponseEntity.status(302).location(URI.create(loginUrl)).build();
+        }
         try {
             AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
                     .responseType(response_type)

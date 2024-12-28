@@ -2,7 +2,6 @@ package consulting.gazman.security.service.impl;
 
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
-import consulting.gazman.security.service.AuthService;
 import consulting.gazman.security.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,7 @@ public class EmailVerificationService {
     UserService userService;
     private final RedisTemplate<String, String> redisTemplate;
     private static final long TOKEN_EXPIRY = 24 * 60 * 60; // 24 hours in seconds
-
+    private static final String VERIFY_EMAIL_URL = "http://localhost:8080/api/auth/verify-email?token=";
     public String generateVerificationToken(String email) {
         // Generate a secure random token
         String token = UUID.randomUUID().toString();
@@ -60,7 +59,7 @@ public class EmailVerificationService {
 
     // Send the verification email
     public void sendVerificationEmail(String email, String token) {
-        String verificationLink = "https://example.com/api/auth/verify-email?token=" + token;
+        String verificationLink = VERIFY_EMAIL_URL + token;
         String subject = "Verify Your Email";
         String message = "Click the link below to verify your email:\n\n" + verificationLink;
 

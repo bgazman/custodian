@@ -11,16 +11,20 @@ const LandingPage = () => {
                     <button
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                         onClick={() => {
-                            const authUrl = 'http://localhost:8080/oauth/authorize' +
+                            const authUrl =
+                                'http://localhost:8080/oauth/authorize' +
                                 '?response_type=code' +
-                                '&client_id=iam-dashboard' +
+                                '&client_id=c2ea9a3d-9ad8-42e5-a73f-488c1bc817db' +
                                 '&scope=openid' +
                                 '&state=' + encodeURIComponent(crypto.randomUUID()) +
-                                '&redirect_uri=' + encodeURIComponent('http://localhost:5173/dashboard');
+                                '&redirect_uri=' + encodeURIComponent('http://localhost:5173/callback');
+                            console.log("Redirecting to:", authUrl); // Debug log
                             window.location.href = authUrl;
-                        }}                    >
+                        }}
+                    >
                         Sign In
                     </button>
+
                 </div>
             </nav>
             <main className="max-w-7xl mx-auto px-4 py-16">

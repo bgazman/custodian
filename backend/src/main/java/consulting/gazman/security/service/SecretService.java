@@ -1,4 +1,4 @@
-package consulting.gazman.security.service.impl;
+package consulting.gazman.security.service;
 
 import consulting.gazman.security.entity.Secret;
 

@@ -41,13 +41,12 @@ const Login = () => {
 
         try {
             // Use the login service and ensure response conforms to LoginResponseData
-            const response: LoginResponseData = await CustodianLoginService.login('iam-dashboard',email, password);
+            const response: LoginResponseData = await CustodianLoginService.login('c2ea9a3d-9ad8-42e5-a73f-488c1bc817db',email, password);
             console.log("Login response:", response);
 
             // Store tokens and roles in localStorage
             localStorage.setItem("access-token", response.accessToken);
             localStorage.setItem("refresh-token", response.refreshToken);
-            localStorage.setItem("role", response.roles);
 
             // Navigate to dashboard
             navigate("/dashboard", { replace: true });
