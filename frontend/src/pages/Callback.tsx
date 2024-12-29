@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-const REDIRECT_URI = import.meta.env.REACT_APP_REDIRECT_URI || 'http://localhost:5173/callback';
+import { AuthApiClient } from '../api/common/AuthApiClients'; // Adjust the import path as necessary
 
 const CallbackPage = () => {
     const navigate = useNavigate();
@@ -19,25 +19,29 @@ const CallbackPage = () => {
             }
 
             try {
-                // Exchange code for tokens
-                const response = await fetch('/oauth/token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ code, redirect_uri: REDIRECT_URI }),
-                });
+                // Prepare the request payload
+                const payload = {
+                    code,
+                    redirectUri: import.meta.env.VITE_REDIRECT_URI || "http://localhost:5173/callback",
+                    clientId: import.meta.env.VITE_CLIENT_ID || "c2ea9a3d-9ad8-42e5-a73f-488c1bc817db", // Ensure this matches your backend client ID
+                    grantType: "authorization_code",
+                };
 
-                if (!response.ok) {
-                    throw new Error('Token exchange failed');
-                }
+                // Make the POST request using AuthApiClient
+                const tokens = await AuthApiClient.post('/oauth/token', payload);
 
-                const tokens = await response.json();
                 console.log('Tokens received:', tokens);
 
                 // Save tokens (e.g., to localStorage) and redirect to a protected page
                 localStorage.setItem('accessToken', tokens.accessToken);
-                navigate('/protected'); // Navigate to a protected page
+                if (tokens.refreshToken) {
+                    localStorage.setItem('refreshToken', tokens.refreshToken);
+                }
+                if (tokens.idToken) {
+                    localStorage.setItem('idToken', tokens.idToken);
+                }
+
+                navigate('/dashboard'); // Navigate to a protected page
             } catch (error) {
                 console.error('Error exchanging token:', error);
                 alert('Failed to authenticate. Please try again.');

@@ -8,7 +8,12 @@ export class AuthApiClient {
         },
         timeout: 10000,
     });
-
+    // Configure Axios instance (e.g., retries)
+    static configure() {
+        // Disable automatic retries
+        this.instance.defaults.retry = 0; // Axios does not natively support retries, but middleware might
+        this.instance.defaults.timeout = 10000;
+    }
     static async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
         const response = await this.instance.get<T>(url, config);
         return response.data;
@@ -63,3 +68,4 @@ export class AuthApiClient {
     }
 
 }
+AuthApiClient.configure();

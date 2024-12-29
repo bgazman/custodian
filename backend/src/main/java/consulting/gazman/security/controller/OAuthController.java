@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -47,6 +48,10 @@ public class OAuthController {
         boolean isAuthenticated = request.getSession().getAttribute("user") != null;
 
         if (!isAuthenticated) {
+            // Save state in session
+            request.getSession().setAttribute("state", state);
+
+            // Redirect to login
             String loginUrl = "/login?response_type=" + URLEncoder.encode(response_type, StandardCharsets.UTF_8) +
                     "&client_id=" + URLEncoder.encode(client_id, StandardCharsets.UTF_8) +
                     "&redirect_uri=" + URLEncoder.encode(redirect_uri, StandardCharsets.UTF_8) +
@@ -56,27 +61,24 @@ public class OAuthController {
             return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(loginUrl)).build();
         }
 
-        try {
-            AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                    .responseType(response_type)
-                    .clientId(client_id)
-                    .redirectUri(redirect_uri)
-                    .scope(scope)
-                    .state(state)
-                    .build());
-
-            String redirectUrl = redirect_uri + "?code=" + response.getCode() + "&state=" + state;
-            return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
-        } catch (AppException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+        // Validate state
+        String sessionState = (String) request.getSession().getAttribute("state");
+        if (!state.equals(sessionState)) {
+            throw new AppException("STATE_MISMATCH", "Invalid state parameter");
         }
+
+        // Generate authorization code
+        String code = generateAuthorizationCode(response_type, client_id, redirect_uri, scope, state);
+
+        // Redirect to client with code and state
+        String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
+                .queryParam("code", code)
+                .queryParam("state", state)
+                .build()
+                .toUriString();
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
+
 
     @PostMapping("/authorize")
     public ResponseEntity<?> authorize(@RequestBody AuthorizeRequest request) {
@@ -99,6 +101,7 @@ public class OAuthController {
         }
 
         AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                .email(request.getEmail())
                 .responseType(request.getResponseType())
                 .clientId(request.getClientId())
                 .redirectUri(request.getRedirectUri())
@@ -157,4 +160,15 @@ public class OAuthController {
                     .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
         }
     }
+
+    private String generateAuthorizationCode(String responseType, String clientId, String redirectUri, String scope, String state) {
+        return oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                .responseType(responseType)
+                .clientId(clientId)
+                .redirectUri(redirectUri)
+                .scope(scope)
+                .state(state)
+                .build()).getCode();
+    }
+
 }

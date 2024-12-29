@@ -5,10 +5,8 @@ import consulting.gazman.security.dto.*;
 import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.User;
-import consulting.gazman.security.service.AuthService;
-import consulting.gazman.security.service.JwtService;
-import consulting.gazman.security.service.OAuthClientService;
-import consulting.gazman.security.service.OAuthService;
+import consulting.gazman.security.exception.AppException;
+import consulting.gazman.security.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +25,8 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired private JwtService jwtService;
     @Autowired private GroupMembershipServiceImpl groupMembershipService;
     @Autowired private GroupPermissionServiceImpl groupPermissionService;
+    @Autowired
+    UserService userService;
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
@@ -36,7 +36,7 @@ public class OAuthServiceImpl implements OAuthService {
     @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {
 
-        String code = authCodeService.generateSecureCode();
+        String code = authCodeService.generateCode(request.getEmail(),request.getClientId());
         // Store code with user/client mapping
         return AuthorizeResponse.builder()
                 .code(code)
@@ -44,35 +44,19 @@ public class OAuthServiceImpl implements OAuthService {
                 .build();
     }
 
-//    @Transactional
-//    @Override
-//    public LoginResponse login(LoginRequest request) {
-//        TokenResponse authResult = authService.login(
-//                LoginRequest.builder()
-//                        .email(request.getEmail())
-//                        .password(request.getPassword())
-//                        .build()
-//        );
-//
-//
-//
-//        String code = authCodeService.generateCode(
-//                request.getEmail(),
-//                request.getClientId()
-//
-//        );
-//
-//        return LoginResponse.builder()
-//                .code(code)
-//                .redirectUri(request.getRedirectUri())
-//                .state(request.getState())
-//                .build();
-//    }
 
     @Override
     public TokenResponse exchangeToken(TokenRequest request) {
-        authCodeService.validateCode(request.getCode());
-        User user = authCodeService.getUserFromCode(request.getCode());
+
+        String value = authCodeService.validateCode(request.getCode());
+
+        // Split the value to get email and clientId
+        String[] parts = value.split(":");
+        String email = parts[0];
+        String clientId = parts[1];
+        User user = userService.findByEmail(email)
+                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));
+
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
 
         // 3. Retrieve permissions for each group

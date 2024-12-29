@@ -73,13 +73,9 @@ public class AuthServiceImpl implements AuthService {
             }
 
             resetLoginAttempts(user);
-            String authorizationCode =authCodeService.generateCode(user.getEmail(),loginRequest.getClientId());
+//            String authorizationCode =authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
 
-            return LoginResponse.builder()
-                    .code(authorizationCode)
-                    .state(loginRequest.getState())
-                    .redirectUri(loginRequest.getRedirectUri())
-                    .build();        }
+            return LoginResponse.builder().build();        }
         else {
             // Return response indicating that the user was not found
             throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());

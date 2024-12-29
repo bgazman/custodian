@@ -19,40 +19,51 @@ public class AuthCodeService {
     OAuthClientServiceImpl oAuthClientService;
     private static final long CODE_EXPIRY = 600; // 10 minutes
 
-    public String generateSecureCode() {
-        return UUID.randomUUID().toString();
-    }
-    public String generateCode(String userId, String clientId) {
-        String code = UUID.randomUUID().toString();
+    public String generateCode(String email, String clientId) {
+        String code = UUID.randomUUID().toString(); // Generate the code
+        String redisKey = "authCode:" + code; // Key includes the code itself
+        String redisValue = email + ":" + clientId; // Value contains userId and clientId
+
+        // Store in Redis
         redisTemplate.opsForValue().set(
-                code,
-                userId + ":" + clientId,
-                10, // 10 minute expiry
-                TimeUnit.MINUTES
+                redisKey,
+                redisValue,
+                CODE_EXPIRY,
+                TimeUnit.SECONDS
         );
-        return code;
-    }
-    public void storeCode(String code, String userId, String clientId) {
-        String value = userId + ":" + clientId;
-        redisTemplate.opsForValue().set(code, value, CODE_EXPIRY, TimeUnit.SECONDS);
+
+        System.out.println("Generated authorization code: " + code + " for userId: " + email + ", clientId: " + clientId);
+        return code; // Return the generated code to the caller
     }
 
-    public void validateCode(String code) {
-        String value = redisTemplate.opsForValue().get(code);
+
+
+    public String validateCode(String code) {
+        String redisKey = "authCode:" + code; // Form the Redis key
+
+        // Retrieve and validate the code
+        String value = redisTemplate.opsForValue().get(redisKey);
         if (value == null) {
+            System.out.println("Authorization code not found or expired: " + code);
             throw AppException.invalidAuthCode("Authorization code expired or invalid");
         }
-        redisTemplate.delete(code); // Single use
+
+        // Delete the key to enforce single-use
+        redisTemplate.delete(redisKey);
+
+        System.out.println("Authorization code validated successfully: " + code);
+        return value; // Return the stored value (e.g., email:clientId)
     }
+
 
     public User getUserFromCode(String code) {
         String value = redisTemplate.opsForValue().get(code);
         if (value == null) {
             throw AppException.invalidAuthCode("Code not found");
         }
-        String userId = value.split(":")[0];
-        return userService.findById(Long.parseLong(userId));
-    }
+        String email = value.split(":")[0];
+        return  userService.findByEmail(email)
+                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));    }
 
     private void validateRequest(AuthorizeRequest request) {
         if (!"code".equals(request.getResponseType())) {
