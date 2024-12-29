@@ -93,7 +93,7 @@ public class OAuthController {
         } catch (AppException e) {
             String redirectUrl = "/login?error=invalid_credentials&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
 
-            return ResponseEntity.status(302)
+            return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(redirectUrl))
                     .build();
         }

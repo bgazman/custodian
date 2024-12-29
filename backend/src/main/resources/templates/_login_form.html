@@ -1,13 +1,3 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Login | IDP</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link th:href="@{/css/style.css}" rel="stylesheet">
-</head>
-<body>
-<h1>Login</h1>
 <form id="loginForm">
     <div>
         <label for="email">Email:</label>
@@ -19,23 +9,12 @@
         <input type="password" id="password" name="password" required />
     </div>
 
-    <!-- Store OAuth parameters -->
     <input type="hidden" id="clientId" th:value="${clientId}" />
     <input type="hidden" id="state" th:value="${state}" />
     <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
     <input type="hidden" id="responseType" th:value="${responseType}" />
     <input type="hidden" id="scope" th:value="${scope}" />
     <div>
-        <button type="submit">Login</button>
+        <button type="button" onclick="submitLogin()">Login</button>
     </div>
 </form>
-
-<!-- Error modal -->
-<div id="errorModal">
-    <p id="errorMessage"></p>
-    <button onclick="closeErrorModal()">Close</button>
-</div>
-
-<script th:src="@{/js/login.js}"></script>
-</body>
-</html>
