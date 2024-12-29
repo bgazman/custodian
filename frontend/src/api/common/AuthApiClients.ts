@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
 export class AuthApiClient {
     private static instance: AxiosInstance = axios.create({
-        baseURL: import.meta.env.VITE_CUSTODIAN_BACKEND || "http://localhost:8080/api",
+        baseURL: import.meta.env.VITE_CUSTODIAN_BACKEND || "http://localhost:8080",
         headers: {
             "Content-Type": "application/json",
         },

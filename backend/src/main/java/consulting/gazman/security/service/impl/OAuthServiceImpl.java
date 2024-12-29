@@ -29,6 +29,11 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired private GroupPermissionServiceImpl groupPermissionService;
 
     @Override
+    public LoginResponse login(LoginRequest loginRequest) {
+        return null;
+    }
+
+    @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {
 
         String code = authCodeService.generateSecureCode();
@@ -39,30 +44,30 @@ public class OAuthServiceImpl implements OAuthService {
                 .build();
     }
 
-    @Transactional
-    @Override
-    public LoginResponse login(LoginRequest request) {
-        TokenResponse authResult = authService.login(
-                LoginRequest.builder()
-                        .email(request.getEmail())
-                        .password(request.getPassword())
-                        .build()
-        );
-
-
-
-        String code = authCodeService.generateCode(
-                request.getEmail(),
-                request.getClientId()
-
-        );
-
-        return LoginResponse.builder()
-                .code(code)
-                .redirectUri(request.getRedirectUri())
-                .state(request.getState())
-                .build();
-    }
+//    @Transactional
+//    @Override
+//    public LoginResponse login(LoginRequest request) {
+//        TokenResponse authResult = authService.login(
+//                LoginRequest.builder()
+//                        .email(request.getEmail())
+//                        .password(request.getPassword())
+//                        .build()
+//        );
+//
+//
+//
+//        String code = authCodeService.generateCode(
+//                request.getEmail(),
+//                request.getClientId()
+//
+//        );
+//
+//        return LoginResponse.builder()
+//                .code(code)
+//                .redirectUri(request.getRedirectUri())
+//                .state(request.getState())
+//                .build();
+//    }
 
     @Override
     public TokenResponse exchangeToken(TokenRequest request) {

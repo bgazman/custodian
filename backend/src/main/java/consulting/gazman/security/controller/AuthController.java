@@ -11,6 +11,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,14 +35,28 @@ public class AuthController extends ApiController {
         logRequest("POST", "/api/auth/login");
 
         try {
-            TokenResponse result = authService.login(request);
-            return wrapSuccessResponse(result, "Login successful");
+            LoginResponse result = authService.login(request);
+
+            // Construct the redirect URL with query parameters
+            String redirectUri = UriComponentsBuilder.fromUriString(result.getRedirectUri())
+                    .queryParam("code", result.getCode())
+                    .queryParam("state", result.getState())
+                    .toUriString();
+
+            // Create a custom response object
+            Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("redirectUrl", redirectUri);
+
+            // Use the existing wrapSuccessResponse method
+            return wrapSuccessResponse(responseBody, "Login successful, redirect required");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.CONFLICT);
         } catch (Exception e) {
             return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
         @PostMapping("/register")
         public ResponseEntity<?> register(@RequestBody UserRegistrationRequest request) {

@@ -1,7 +1,28 @@
 import { useNavigate } from "react-router-dom";
+import {buildAuthUrl} from "../utils/AuthUtils.ts";
+
+const CLIENT_ID = import.meta.env.REACT_APP_CLIENT_ID || 'c2ea9a3d-9ad8-42e5-a73f-488c1bc817db';
+const REDIRECT_URI = import.meta.env.REACT_APP_REDIRECT_URI || 'http://localhost:5173/callback';
+const BASE_URL = import.meta.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+
+// Ensure critical environment variables are defined
+if (!CLIENT_ID || !REDIRECT_URI || !BASE_URL) {
+    throw new Error('Missing required environment variables for OAuth configuration.');
+}
 
 const LandingPage = () => {
     const navigate = useNavigate();
+
+    const handleSignIn = () => {
+        try {
+            const authUrl = buildAuthUrl(BASE_URL, CLIENT_ID, REDIRECT_URI); // Redirect to IDP
+            console.log("Redirecting to IDP...");
+            window.location.href = authUrl;
+        } catch (error) {
+            console.error('Error during sign-in redirection:', error);
+            alert('An error occurred. Please try again later.');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -10,21 +31,10 @@ const LandingPage = () => {
                     <h1 className="text-xl font-bold">Crypto Custodian</h1>
                     <button
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                        onClick={() => {
-                            const authUrl =
-                                'http://localhost:8080/oauth/authorize' +
-                                '?response_type=code' +
-                                '&client_id=c2ea9a3d-9ad8-42e5-a73f-488c1bc817db' +
-                                '&scope=openid' +
-                                '&state=' + encodeURIComponent(crypto.randomUUID()) +
-                                '&redirect_uri=' + encodeURIComponent('http://localhost:5173/callback');
-                            console.log("Redirecting to:", authUrl); // Debug log
-                            window.location.href = authUrl;
-                        }}
+                        onClick={handleSignIn}
                     >
                         Sign In
                     </button>
-
                 </div>
             </nav>
             <main className="max-w-7xl mx-auto px-4 py-16">

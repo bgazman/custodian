@@ -1,55 +1,54 @@
-import {useEffect} from "react";
-import {useNavigate} from "react-router-dom";
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+const REDIRECT_URI = import.meta.env.REACT_APP_REDIRECT_URI || 'http://localhost:5173/callback';
 
-function Callback() {
+const CallbackPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const code = queryParams.get('code');
-        const state = queryParams.get('state');
+        const handleTokenExchange = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
 
-        if (code && state) {
-            console.log('Authorization code:', code);
-            console.log('State:', state);
+            if (!code || !state) {
+                console.error('Missing code or state in the callback URL.');
+                alert('Invalid response from the server. Please try again.');
+                navigate('/'); // Redirect back to the landing page
+                return;
+            }
 
-            // Exchange code for tokens
-            fetch('http://localhost:8080/oauth/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    grant_type: 'authorization_code',
-                    code: code,
-                    redirect_uri: 'http://localhost:5173/callback',
-                    client_id: 'c2ea9a3d-9ad8-42e5-a73f-488c1bc817db',
-                }),
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error('Token exchange failed');
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log('Tokens received:', data);
-
-                    // Save tokens in localStorage
-                    localStorage.setItem('accessToken', data.access_token);
-                    localStorage.setItem('refreshToken', data.refresh_token);
-
-                    // Redirect to the dashboard
-                    navigate('/dashboard');
-                })
-                .catch((error) => {
-                    console.error('Error during token exchange:', error);
+            try {
+                // Exchange code for tokens
+                const response = await fetch('/oauth/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code, redirect_uri: REDIRECT_URI }),
                 });
-        } else {
-            console.error('Missing code or state in query parameters.');
-        }
+
+                if (!response.ok) {
+                    throw new Error('Token exchange failed');
+                }
+
+                const tokens = await response.json();
+                console.log('Tokens received:', tokens);
+
+                // Save tokens (e.g., to localStorage) and redirect to a protected page
+                localStorage.setItem('accessToken', tokens.accessToken);
+                navigate('/protected'); // Navigate to a protected page
+            } catch (error) {
+                console.error('Error exchanging token:', error);
+                alert('Failed to authenticate. Please try again.');
+                navigate('/');
+            }
+        };
+
+        handleTokenExchange();
     }, [navigate]);
 
-    return <div>Processing login...</div>;
-}
-export default Callback;
+    return <div>Authenticating...</div>;
+};
+
+export default CallbackPage;

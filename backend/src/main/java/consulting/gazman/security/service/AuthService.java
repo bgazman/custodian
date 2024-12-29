@@ -5,7 +5,7 @@ import consulting.gazman.security.dto.*;
 public interface AuthService {
 
 
-    TokenResponse login(LoginRequest loginRequest);
+    LoginResponse login(LoginRequest loginRequest);
 
 
     void registerUser(UserRegistrationRequest userRegistrationRequest);

@@ -44,4 +44,8 @@ public class GlobalExceptionHandler {
                         .message("The requested resource could not be found")
                         .build());
     }
+
+
+
+
 }

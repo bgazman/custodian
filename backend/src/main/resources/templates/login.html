@@ -38,7 +38,8 @@
     <input type="hidden" id="clientId" th:value="${clientId}" />
     <input type="hidden" id="state" th:value="${state}" />
     <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
-
+    <input type="hidden" id="responseType" th:value="${responseType}" />
+    <input type="hidden" id="scope" th:value="${scope}" />
     <div>
         <button type="button" onclick="submitLogin()">Login</button>
     </div>
@@ -49,6 +50,7 @@
     <p id="errorMessage"></p>
     <button onclick="closeErrorModal()">Close</button>
 </div>
+
 <script th:inline="javascript">
     /*<![CDATA[*/
 
@@ -57,40 +59,36 @@
         const loginRequest = {
             email: document.getElementById('email').value,
             password: document.getElementById('password').value,
-            clientId: document.getElementById('clientId').value
+            clientId: document.getElementById('clientId').value,
+            responseType: document.getElementById('responseType').value,
+            redirectUri: document.getElementById('redirectUri').value,
+            scope: document.getElementById('scope').value,
+            state: document.getElementById('state').value,
         };
 
         console.log('Submitting login request:', loginRequest);
 
-        fetch('/api/auth/login', {
+        fetch('/oauth/authorize', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(loginRequest)
+            body: JSON.stringify(loginRequest),
         })
         .then(response => {
+            if (response.redirected) {
+                console.log('Redirecting to:', response.url);
+                window.location.href = response.url; // Redirect to the final URL
+                return;
+            }
+
             if (!response.ok) {
                 return response.json().then(err => {
-                    // If the response is not OK, throw an error with the server message
                     throw new Error(err.message || 'Login failed');
                 });
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Login successful:', data);
 
-            // Redirect to the React application
-            const redirectUri = document.getElementById('redirectUri').value;
-            const state = document.getElementById('state').value;
-
-            // Construct redirect URL
-            const redirectUrl = new URL(redirectUri);
-            redirectUrl.searchParams.append('code', data.code);
-            redirectUrl.searchParams.append('state', state);
-
-            window.location.href = redirectUrl.toString();
+            return response.json(); // Process JSON if not redirected
         })
         .catch(error => {
             console.error('Error during login:', error);
@@ -109,6 +107,7 @@
         const errorModal = document.getElementById('errorModal');
         errorModal.style.display = 'none';
     }
+
     /*]]>*/
 </script>
 

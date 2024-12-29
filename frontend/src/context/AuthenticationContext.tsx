@@ -1,66 +1,52 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create the authentication context
-const AuthenticationContext = createContext();
-
-// Custom hook for consuming the authentication context
-export const useAuthentication = () => {
-    return useContext(AuthenticationContext);
+type AuthenticationContextType = {
+    user: any; // Replace `any` with your user object type
+    isAuthenticated: boolean;
+    login: (token: string, userInfo: any) => void;
+    logout: () => void;
 };
 
-// AuthenticationProvider Component
-export const AuthenticationProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // User object
-    const [accessToken, setAccessToken] = useState(null); // Access token
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
+const AuthenticationContext = createContext<AuthenticationContextType | null>(null);
 
-    // Login function
-    const login = async (email, password) => {
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
+export const useAuthentication = () => {
+    const context = useContext(AuthenticationContext);
+    if (!context) {
+        throw new Error('useAuthentication must be used within an AuthenticationProvider');
+    }
+    return context;
+};
 
-            if (!response.ok) {
-                throw new Error('Login failed');
-            }
+export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || 'null'));
+    const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem('access-token'));
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!accessToken);
 
-            const data = await response.json();
-            setUser(data.user);
-            setAccessToken(data.accessToken);
-            setIsAuthenticated(true);
-
-            // Optionally save tokens to localStorage/sessionStorage
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('user', JSON.stringify(data.user));
-        } catch (error) {
-            console.error('Error during login:', error);
-            throw error;
-        }
+    const login = (token: string, userInfo: any) => {
+        localStorage.setItem('access-token', token);
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        setAccessToken(token);
+        setUser(userInfo);
+        setIsAuthenticated(true);
     };
 
-    // Logout function
     const logout = () => {
-        setUser(null);
-        setAccessToken(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('accessToken');
+        localStorage.removeItem('access-token');
         localStorage.removeItem('user');
+        setAccessToken(null);
+        setUser(null);
+        setIsAuthenticated(false);
     };
 
-    // Provide context value
-    const value = {
+    const contextValue: AuthenticationContextType = {
         user,
         isAuthenticated,
-        accessToken,
         login,
-        logout,
+        logout
     };
 
     return (
-        <AuthenticationContext.Provider value={value}>
+        <AuthenticationContext.Provider value={contextValue}>
             {children}
         </AuthenticationContext.Provider>
     );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useAuthentication } from './AuthenticationContext';
+import { useAuth } from '../hooks/useAuth';
+import {useAuthentication} from "@/context/AuthenticationContext.tsx";
 
 function LoginButton() {
     const { login } = useAuthentication();

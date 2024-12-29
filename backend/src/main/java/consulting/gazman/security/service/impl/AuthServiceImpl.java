@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import consulting.gazman.security.exception.AppException;
@@ -48,9 +49,10 @@ public class AuthServiceImpl implements AuthService {
     private JwtServiceImpl jwtService;
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
+    @Autowired
+    AuthCodeService authCodeService;
 
-
-    public TokenResponse login(LoginRequest loginRequest) {
+    public LoginResponse login(LoginRequest loginRequest) {
 
         Optional<User> optionalUser = userService.findByEmail(loginRequest.getEmail());
         if (optionalUser.isPresent()) {
@@ -71,13 +73,21 @@ public class AuthServiceImpl implements AuthService {
             }
 
             resetLoginAttempts(user);
-            return createTokenResponse(user, loginRequest.getClientId());
-        }
+            String authorizationCode =authCodeService.generateCode(user.getEmail(),loginRequest.getClientId());
+
+            return LoginResponse.builder()
+                    .code(authorizationCode)
+                    .state(loginRequest.getState())
+                    .redirectUri(loginRequest.getRedirectUri())
+                    .build();        }
         else {
             // Return response indicating that the user was not found
             throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
         }
+
         }
+
+
     private void validateUserRegistrationRequest(UserRegistrationRequest request) {
 
         if (request.getEmail() == null || !request.getEmail().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
