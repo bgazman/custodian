@@ -60,7 +60,7 @@ function submitLogin(event) {
         state: document.getElementById('state').value,
     };
 
-    fetch('/oauth/authorize', {
+    fetch('/oauth/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

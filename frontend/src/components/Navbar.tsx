@@ -5,7 +5,7 @@ import {Menu, X, Bell, User, LogOut, Settings} from 'lucide-react';
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
-    const isAdmin = localStorage.getItem("role") === "ADMIN";
+    const isAdmin = true;
 
     const handleLogout = () => {
         localStorage.clear();

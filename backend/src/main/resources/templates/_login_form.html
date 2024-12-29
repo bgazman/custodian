@@ -9,12 +9,13 @@
         <input type="password" id="password" name="password" required />
     </div>
 
+    <!-- Store OAuth parameters -->
     <input type="hidden" id="clientId" th:value="${clientId}" />
     <input type="hidden" id="state" th:value="${state}" />
     <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
     <input type="hidden" id="responseType" th:value="${responseType}" />
     <input type="hidden" id="scope" th:value="${scope}" />
     <div>
-        <button type="button" onclick="submitLogin()">Login</button>
+        <button type="submit">Login</button>
     </div>
 </form>

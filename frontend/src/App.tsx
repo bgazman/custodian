@@ -15,8 +15,6 @@ const AppLayout = () => (
         <Navbar />
         <main className="pt-16 h-full">
             <Routes>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/admin" element={<AdminPage />} />
                 <Route path="/iam-dashboard" element={<IamDashboard />} />
             </Routes>
         </main>

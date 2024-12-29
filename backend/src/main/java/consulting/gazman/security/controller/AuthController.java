@@ -29,32 +29,32 @@ public class AuthController extends ApiController {
     }
 
 
-    @Transactional
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        logRequest("POST", "/api/auth/login");
-
-        try {
-            LoginResponse result = authService.login(request);
-
-            // Construct the redirect URL with query parameters
-            String redirectUri = UriComponentsBuilder.fromUriString(result.getRedirectUri())
-                    .queryParam("code", result.getCode())
-                    .queryParam("state", result.getState())
-                    .toUriString();
-
-            // Create a custom response object
-            Map<String, String> responseBody = new HashMap<>();
-            responseBody.put("redirectUrl", redirectUri);
-
-            // Use the existing wrapSuccessResponse method
-            return wrapSuccessResponse(responseBody, "Login successful, redirect required");
-        } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @Transactional
+//    @PostMapping("/login")
+//    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+//        logRequest("POST", "/api/auth/login");
+//
+//        try {
+//            LoginResponse result = authService.login(request);
+//
+//            // Construct the redirect URL with query parameters
+//            String redirectUri = UriComponentsBuilder.fromUriString(result.getRedirectUri())
+//                    .queryParam("code", result.getCode())
+//                    .queryParam("state", result.getState())
+//                    .toUriString();
+//
+//            // Create a custom response object
+//            Map<String, String> responseBody = new HashMap<>();
+//            responseBody.put("redirectUrl", redirectUri);
+//
+//            // Use the existing wrapSuccessResponse method
+//            return wrapSuccessResponse(responseBody, "Login successful, redirect required");
+//        } catch (AppException e) {
+//            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.CONFLICT);
+//        } catch (Exception e) {
+//            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
 
 
@@ -84,18 +84,18 @@ public class AuthController extends ApiController {
         }
     }
 
-        @PostMapping("/refresh")
-        public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
-            logRequest("POST", "/api/auth/refresh");
-            try {
-                TokenResponse authResponse = authService.refresh(request);
-                return wrapSuccessResponse(authResponse, "Token refreshed successfully");
-            } catch (AppException e) {
-                return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.UNAUTHORIZED);
-            } catch (Exception e) {
-                return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
+//        @PostMapping("/refresh")
+//        public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
+//            logRequest("POST", "/api/auth/refresh");
+//            try {
+//                TokenResponse authResponse = authService.refresh(request);
+//                return wrapSuccessResponse(authResponse, "Token refreshed successfully");
+//            } catch (AppException e) {
+//                return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.UNAUTHORIZED);
+//            } catch (Exception e) {
+//                return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+//            }
+//        }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody AuthRequest request) {

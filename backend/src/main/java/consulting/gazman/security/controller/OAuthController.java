@@ -7,6 +7,7 @@ import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.AuthService;
+import consulting.gazman.security.service.OAuthService;
 import consulting.gazman.security.service.impl.ClientRegistrationServiceImpl;
 import consulting.gazman.security.service.impl.OAuthServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,9 +80,9 @@ public class OAuthController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
 
-
-    @PostMapping("/authorize")
-    public ResponseEntity<?> authorize(@RequestBody AuthorizeRequest request) {
+    @Transactional
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody AuthorizeRequest request) {
         LoginRequest loginRequest = LoginRequest.builder()
                 .redirectUri(request.getRedirectUri())
                 .clientId(request.getClientId())
@@ -90,15 +91,18 @@ public class OAuthController {
                 .password(request.getPassword())
                 .build();
 
-        try {
-            authService.login(loginRequest);
-        } catch (AppException e) {
-            String redirectUrl = "/login?error=invalid_credentials&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+
+            LoginResponse loginResponse = oAuthService.login(loginRequest);
+        if (loginResponse.getError() != null && !loginResponse.getError().isBlank()) {
+
+            String redirectUrl = "/login?error=invalid_credentials&message=" + URLEncoder.encode(loginResponse.getError(), StandardCharsets.UTF_8);
 
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(redirectUrl))
                     .build();
         }
+
+
 
         AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
                 .email(request.getEmail())
@@ -112,7 +116,7 @@ public class OAuthController {
         String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() + "&state=" + response.getState();
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
-
+    @Transactional
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody TokenRequest request) {
         try {

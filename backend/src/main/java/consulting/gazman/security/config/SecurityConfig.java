@@ -55,28 +55,36 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/oauth/**", "/login")
+                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register") // Matches relevant paths
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/oauth/token").permitAll()
-                        .requestMatchers("/oauth/authorize").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/login").permitAll() // Public login page
+                        .requestMatchers("/oauth/token").permitAll() // Public token endpoint
+                        .requestMatchers("/oauth/authorize").permitAll() // Public for initiating OAuth
+                        .requestMatchers("/oauth/login").permitAll() // Public for initiating OAuth
+                        .requestMatchers("/.well-known/**").permitAll() // Public JWKS and metadata
+                        .requestMatchers("/client/register").permitAll() // Public client registration
+                        .anyRequest().authenticated() // All other requests require authentication
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/oauth/authorize", false)
+                        .loginPage("/login") // Custom login page
+                        .loginProcessingUrl("/login") // Login form submission URL
+                        .defaultSuccessUrl("/oauth/authorize", false) // Redirect here after successful login
                 )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth/**")
-                );
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/oauth/**")); // Disable CSRF for OAuth endpoints
         return http.build();
     }
+
 
 
     @Bean
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/api/**", "/client/**)")
+        http
+                .securityMatcher("/api/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 // Disable CSRF as we're using JWT tokens
                 .csrf(AbstractHttpConfigurer::disable)
                 // Configure CORS using the provided configuration source
@@ -97,11 +105,9 @@ public class SecurityConfig {
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll() // Allow error dispatchers
-                        .requestMatchers("/oauth2/client/register").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll() // Public authentication endpoints
-                        .requestMatchers("/api/users/**").hasAuthority("ADMIN") // Admin-only endpoints
-                        .requestMatchers("/.well-known/**").permitAll() // Public JWKS endpoint
-                        .anyRequest().authenticated() // All other endpoints require authentication
+                        .requestMatchers("/api/public/**").permitAll() // Public endpoints
+                        .requestMatchers("/api/secure/**").authenticated() // Secure endpoints require authentication
+                        .anyRequest().denyAll() // All other endpoints require authentication
                 )
                 // Configure session management to be stateless (no sessions)
                 .sessionManagement(session -> session

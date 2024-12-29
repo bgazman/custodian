@@ -52,36 +52,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     AuthCodeService authCodeService;
 
-    public LoginResponse login(LoginRequest loginRequest) {
 
-        Optional<User> optionalUser = userService.findByEmail(loginRequest.getEmail());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-
-            if (isAccountLocked(user)) {
-                Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
-                String message = "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.";
-                throw AppException.accountLocked(message);
-            }
-
-            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                handleFailedLoginAttempt(user);
-                int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
-                throw remainingAttempts > 0
-                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
-                        : AppException.accountLocked("Account locked due to attempts");
-            }
-
-            resetLoginAttempts(user);
-//            String authorizationCode =authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
-
-            return LoginResponse.builder().build();        }
-        else {
-            // Return response indicating that the user was not found
-            throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
-        }
-
-        }
 
 
     private void validateUserRegistrationRequest(UserRegistrationRequest request) {
@@ -162,63 +133,8 @@ public class AuthServiceImpl implements AuthService {
 
 
     // Refresh token implementation
-    @Override
-    public TokenResponse refresh(RefreshTokenRequest refreshRequest) {
-        log.info("Attempting token refresh");
 
-        String refreshToken = refreshRequest.getRefreshToken();
 
-        // Validate the refresh token
-        if (!jwtService.validateToken(refreshToken).equals("success")) {
-            throw  AppException.invalidToken("Invalid or expired refresh token.");
-        }
-
-        try {
-            // Extract user email from token
-            String userEmail = JwtUtils.extractSubject(refreshToken);
-            String clientId = JwtUtils.extractClientId(refreshToken);
-            Optional<User> optionalUser = userService.findByEmail(userEmail);
-            if(optionalUser.isPresent()) {
-                User user = optionalUser.get();            // Create and return the new auth response
-                return createTokenResponse(user, clientId);
-            }
-             else {
-                // Return response indicating that the user was not found
-                throw AppException.userNotFound("Email doesn't exist");
-            }
-
-        } catch(ExpiredJwtException e){
-            throw AppException.tokenExpired("Refresh token expired.");
-        } catch(JwtException e){
-            throw AppException.jwtProcessingFailed("Error processing JWT: " + e.getMessage());
-        }
-    }
-
-    // Helper: Check if account is locked
-    private boolean isAccountLocked(User user) {
-        return user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil());
-    }
-
-    // Helper: Handle failed login attempts
-    private void handleFailedLoginAttempt(User user) {
-        int newFailedAttempts = user.getFailedLoginAttempts() + 1;
-        user.setFailedLoginAttempts(newFailedAttempts);
-
-        if (newFailedAttempts >= MAX_ATTEMPTS) {
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
-            log.warn("User account locked due to too many failed attempts: {}", user.getEmail());
-        }
-
-        userService.save(user);
-    }
-
-    // Helper: Reset login attempts
-    private void resetLoginAttempts(User user) {
-        user.setFailedLoginAttempts(0);
-        user.setLockedUntil(null);
-        user.setLastLoginTime(LocalDateTime.now());
-        userService.save(user);
-    }
 
     private TokenResponse createTokenResponse(User user, String clientId) {
         // 1. Retrieve token configuration for the app

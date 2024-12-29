@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import {buildAuthUrl} from "../utils/AuthUtils.ts";
 
-const CLIENT_ID = import.meta.env.REACT_APP_CLIENT_ID || 'c2ea9a3d-9ad8-42e5-a73f-488c1bc817db';
-const REDIRECT_URI = import.meta.env.REACT_APP_REDIRECT_URI || 'http://localhost:5173/callback';
-const BASE_URL = import.meta.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+const CLIENT_ID = import.meta.env.VITE_CLIENT_ID ;
+const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Ensure critical environment variables are defined
 if (!CLIENT_ID || !REDIRECT_URI || !BASE_URL) {

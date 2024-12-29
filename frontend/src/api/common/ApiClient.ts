@@ -13,7 +13,7 @@ function getTraceId(): string {
 
 export class ApiClient {
     private static instance: AxiosInstance = axios.create({
-        baseURL: import.meta.env.VITE_CUSTODIAN_BACKEND || 'http://localhost:8080',
+        baseURL: import.meta.env.VITE_BACKEND_URL,
         headers: {
             'Content-Type': 'application/json',
         },
@@ -21,9 +21,11 @@ export class ApiClient {
     });
 
 
+// Update the token retrieval in interceptor
     static init() {
         this.instance.interceptors.request.use((config) => {
-            const token = localStorage.getItem("access-token");
+            const token = sessionStorage.getItem("auth_tokens");
+            const tokenData = token ? JSON.parse(token) : null;
             const traceId = getTraceId();
 
             config.headers = {
@@ -31,12 +33,9 @@ export class ApiClient {
                 'X-B3-TraceId': traceId,
             };
 
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+            if (tokenData?.accessToken) {
+                config.headers.Authorization = `Bearer ${tokenData.accessToken}`;
             }
-
-            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
-            console.log(`[TraceID] ${traceId}`);
 
             return config;
         });
