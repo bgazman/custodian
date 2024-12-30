@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import {Link, useNavigate} from 'react-router-dom';
-import {Menu, X, Bell, User, LogOut, Settings} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, Bell, User, LogOut } from 'lucide-react';
+import { useAuthentication } from '../context/AuthenticationContext'; // Ensure the correct path
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const { logout } = useAuthentication(); // Get logout from AuthenticationContext
     const navigate = useNavigate();
     const isAdmin = true;
 
     const handleLogout = () => {
-        localStorage.clear();
-        navigate("/login", { replace: true });
+        logout(); // Use the context's logout method
+        // Use a small delay to ensure state updates before navigation
+        setTimeout(() => navigate('/', { replace: true }), 100);
     };
+
 
     const commonLinks = [
         // { path: "/dashboard", label: "Dashboard" },
@@ -18,8 +22,7 @@ const Navbar = () => {
 
     const adminLinks = [
         // { path: "/admin", label: "Admin Settings" },
-        { path: "/iam-dashboard", label: "IAM Dashboard" },
-
+        { path: '/iam-dashboard', label: 'IAM Dashboard' },
     ];
 
     const links = isAdmin ? [...commonLinks, ...adminLinks] : commonLinks;
@@ -36,7 +39,7 @@ const Navbar = () => {
             {/* Sidebar */}
             <div
                 className={`fixed top-0 left-0 h-full w-64 bg-gray-800 transform transition-transform z-50 ${
-                    isOpen ? "translate-x-0" : "-translate-x-full"
+                    isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
                 <div className="p-4">
@@ -80,7 +83,6 @@ const Navbar = () => {
                             </Link>
                         </div>
                         <div className="flex items-center space-x-4">
-
                             <button className="text-gray-400 hover:text-white">
                                 <Bell className="h-6 w-6" />
                             </button>
@@ -100,6 +102,5 @@ const Navbar = () => {
         </>
     );
 };
-
 
 export default Navbar;

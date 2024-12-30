@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthenticationContextType {
-    user: any | null; // Adjust 'any' to a specific type if you have a defined User type
+    user: any | null;
     isAuthenticated: boolean;
     login: (loginResponse: { accessToken: string; refreshToken: string; idToken: string }, userInfo: any) => void;
     logout: () => void;
+    isLoading: boolean;
 }
 
 const AuthenticationContext = createContext<AuthenticationContextType | null>(null);
@@ -18,32 +19,27 @@ export const useAuthentication = () => {
 };
 
 export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Initialize state from sessionStorage
     const [user, setUser] = useState<any>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
-    // Avoid double initialization with a flag
-    const [initialized, setInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        if (!initialized) {
-            // Sync state with sessionStorage on first load
-            const storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
-            const storedAccessToken = sessionStorage.getItem('access-token');
+        const initializeAuth = () => {
+            const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+            const storedAccessToken = localStorage.getItem('access-token');
 
-            if (storedAccessToken) {
+            if (storedAccessToken && storedUser) {
                 setAccessToken(storedAccessToken);
+                setUser(storedUser);
                 setIsAuthenticated(true);
             }
 
-            if (storedUser) {
-                setUser(storedUser);
-            }
+            setIsLoading(false);
+        };
 
-            setInitialized(true);
-        }
-    }, [initialized]);
+        initializeAuth();
+    }, []);
 
     const login = (loginResponse: { accessToken: string; refreshToken: string; idToken: string }, userInfo: any) => {
         if (!loginResponse || !userInfo) {
@@ -53,25 +49,24 @@ export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = (
 
         console.log('LOGIN_RESPONSE', loginResponse);
 
-        sessionStorage.setItem('access-token', loginResponse.accessToken);
-        sessionStorage.setItem('refresh-token', loginResponse.refreshToken);
-        sessionStorage.setItem('id-token', loginResponse.idToken);
-        sessionStorage.setItem('user', JSON.stringify(userInfo));
+        localStorage.setItem('access-token', loginResponse.accessToken);
+        localStorage.setItem('refresh-token', loginResponse.refreshToken);
+        localStorage.setItem('id-token', loginResponse.idToken);
+        localStorage.setItem('user', JSON.stringify(userInfo));
 
-        // Sync state with sessionStorage
         setAccessToken(loginResponse.accessToken);
         setUser(userInfo);
         setIsAuthenticated(true);
     };
 
     const logout = () => {
-        // Remove tokens and user information from sessionStorage
-        sessionStorage.removeItem('access-token');
-        sessionStorage.removeItem('refresh-token');
-        sessionStorage.removeItem('id-token');
-        sessionStorage.removeItem('user');
+        localStorage.removeItem('access-token');
+        localStorage.removeItem('refresh-token');
+        localStorage.removeItem('id-token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token_exchange_processed');
+        localStorage.removeItem('oauth_state');
 
-        // Clear state variables
         setAccessToken(null);
         setUser(null);
         setIsAuthenticated(false);
@@ -82,7 +77,12 @@ export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = (
         isAuthenticated,
         login,
         logout,
+        isLoading,
     };
+
+    if (isLoading) {
+        return <div>Loading...</div>; // Or any loading indicator
+    }
 
     return (
         <AuthenticationContext.Provider value={contextValue}>

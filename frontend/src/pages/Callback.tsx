@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthApiClient } from '../api/common/AuthApiClients';
 import { useAuthentication } from '../context/AuthenticationContext';
@@ -6,15 +6,22 @@ import { useAuthentication } from '../context/AuthenticationContext';
 const CallbackPage = () => {
     const navigate = useNavigate();
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true); // Loading state for authentication
+    const [loading, setLoading] = useState(true);
     const { login } = useAuthentication();
+    const tokenExchangeProcessed = useRef(false);
+    const tokenExchangePromise = useRef(null);
 
     useEffect(() => {
         const handleTokenExchange = async () => {
-            // Check if the token exchange process has already been handled
-            if (sessionStorage.getItem('token_exchange_processed')) {
-                setLoading(false); // Prevent infinite loading
+            if (tokenExchangeProcessed.current) {
+                console.log('Token exchange already processed.');
+                setLoading(false);
                 navigate('/dashboard');
+                return;
+            }
+
+            if (tokenExchangePromise.current) {
+                await tokenExchangePromise.current;
                 return;
             }
 
@@ -37,52 +44,43 @@ const CallbackPage = () => {
                 return;
             }
 
-            try {
-                const payload = {
-                    code,
-                    redirectUri: import.meta.env.VITE_REDIRECT_URI,
-                    clientId: import.meta.env.VITE_CLIENT_ID,
-                    grantType: "authorization_code",
-                };
+            tokenExchangePromise.current = (async () => {
+                try {
+                    const payload = {
+                        code,
+                        redirectUri: import.meta.env.VITE_REDIRECT_URI,
+                        clientId: import.meta.env.VITE_CLIENT_ID,
+                        grantType: 'authorization_code',
+                    };
 
-                const response = await Promise.race([
-                    AuthApiClient.post('/oauth/token', payload),
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('Request timeout')), 10000)
-                    ),
-                ]);
+                    const response = await AuthApiClient.post('/oauth/token', payload);
 
-                if (!response?.accessToken) {
-                    throw new Error('Invalid token response');
+                    if (!response?.accessToken) {
+                        throw new Error('Invalid token response');
+                    }
+
+                    login(
+                        {
+                            accessToken: response.accessToken,
+                            refreshToken: response.refreshToken,
+                            idToken: response.idToken,
+                        },
+                        response.userInfo || {}
+                    );
+
+                    tokenExchangeProcessed.current = true;
+                    navigate('/dashboard');
+                } catch (error) {
+                    const errorMessage = error.response?.data?.message || error.message;
+                    setError(`Authentication failed: ${errorMessage}`);
+                    setTimeout(() => navigate('/'), 3000);
+                } finally {
+                    setLoading(false);
+                    tokenExchangePromise.current = null;
                 }
+            })();
 
-                // Save tokens and user info directly to sessionStorage
-                sessionStorage.setItem('access-token', response.accessToken);
-                sessionStorage.setItem('refresh-token', response.refreshToken);
-                sessionStorage.setItem('id-token', response.idToken);
-                sessionStorage.setItem('user', JSON.stringify(response.userInfo || {}));
-
-                // Call login with the stored tokens and user info
-                login(
-                    {
-                        accessToken: response.accessToken,
-                        refreshToken: response.refreshToken,
-                        idToken: response.idToken,
-                    },
-                    response.userInfo || {}
-                );
-
-                // Mark the process as handled
-                sessionStorage.setItem('token_exchange_processed', 'true');
-
-                navigate('/dashboard'); // Navigate to the dashboard
-            } catch (error) {
-                const errorMessage = error.response?.data?.message || error.message;
-                setError(`Authentication failed: ${errorMessage}`);
-                setTimeout(() => navigate('/'), 3000);
-            } finally {
-                setLoading(false); // Ensure loading is stopped
-            }
+            await tokenExchangePromise.current;
         };
 
         handleTokenExchange();

@@ -10,8 +10,6 @@ import {AuthenticationProvider} from "./context/AuthenticationContext.tsx";
 // main.tsx
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <AuthenticationProvider>
             <App />
-        </AuthenticationProvider>
     </React.StrictMode>
 )

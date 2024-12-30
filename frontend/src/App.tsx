@@ -1,21 +1,21 @@
-import {BrowserRouter, Navigate, Route, Routes} from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-
-import LandingPage from "./pages/LandingPage";
+import {LandingRoute} from "./components/LandingRoute";
 import Navbar from "./components/Navbar";
 import AdminPage from './pages/Admin';
 import IamDashboard from "./pages/IamDashboard";
 import Callback from "./pages/Callback";
-import {AuthenticationProvider} from "./context/AuthenticationContext";
+import { AuthenticationProvider } from "./context/AuthenticationContext";
 import PrivateRoute from "./components/PrivateRoutes";
-
 
 const AppLayout = () => (
     <div className="min-h-screen bg-gray-100">
         <Navbar />
         <main className="pt-16 h-full">
             <Routes>
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/iam-dashboard" element={<IamDashboard />} />
+                <Route path="/admin" element={<AdminPage />} />
             </Routes>
         </main>
     </div>
@@ -23,13 +23,11 @@ const AppLayout = () => (
 
 function App() {
     return (
+        <AuthenticationProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* Landing Page (Default Route) */}
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/" element={<LandingRoute  />} />
                     <Route path="/callback" element={<Callback />} />
-
-                    {/* Private Routes */}
                     <Route
                         path="/*"
                         element={
@@ -40,6 +38,7 @@ function App() {
                     />
                 </Routes>
             </BrowserRouter>
+        </AuthenticationProvider>
     );
 }
 
