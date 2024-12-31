@@ -1,19 +1,15 @@
 package consulting.gazman.security.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
 import jakarta.persistence.*;
-import lombok.Builder;
+
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+
 import lombok.Setter;
 
 import java.util.*;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.RequiredArgsConstructor;
-import jakarta.persistence.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -22,12 +18,10 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
+
 
 
 @Entity

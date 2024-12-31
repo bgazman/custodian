@@ -80,7 +80,6 @@ public class OAuthController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
 
-    @Transactional
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthorizeRequest request) {
         LoginRequest loginRequest = LoginRequest.builder()
@@ -116,7 +115,6 @@ public class OAuthController {
         String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() + "&state=" + response.getState();
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
-    @Transactional
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody TokenRequest request) {
         try {

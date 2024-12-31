@@ -181,7 +181,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         // Construct the JWK
         return Map.of(
                 "kty", "RSA", // Key type
-                "kid", oAuthClient.getSigningKey().getId(), // Key ID
+                "kid", String.valueOf(oAuthClient.getSigningKey().getId()), // Key ID
                 "use", "sig", // Key usage: signing
                 "alg", oAuthClient.getAlgorithm(), // Algorithm (e.g., RS256)
                 "n", base64UrlEncode(publicKey.getModulus().toByteArray()), // Modulus (Base64URL-encoded)

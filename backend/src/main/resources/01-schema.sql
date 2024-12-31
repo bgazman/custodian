@@ -129,6 +129,8 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     application_type VARCHAR(50) NOT NULL DEFAULT 'web',  -- Added application_type
     response_types JSONB NOT NULL DEFAULT '["code"]'::jsonb,  -- Added response_types
     client_id VARCHAR(100) NOT NULL UNIQUE,
+    status VARCHAR(50) DEFAULT 'active',
+    revoked_at TIMESTAMP DEFAULT NULL,
     client_secret VARCHAR(255) NOT NULL,
     client_secret_last_rotated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     redirect_uris JSONB NOT NULL,
@@ -145,6 +147,19 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     CONSTRAINT fk_key_id FOREIGN KEY (key_id) REFERENCES secrets (id) ON DELETE CASCADE,
     CONSTRAINT fk_tenant_id FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE -- Relationship added
 
+);
+
+CREATE TABLE IF NOT EXISTS tokens (
+    id BIGSERIAL PRIMARY KEY,
+    client_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    token_type VARCHAR(50) NOT NULL, -- 'access_token', 'refresh_token'
+    token TEXT NOT NULL, -- Should be hashed
+    expires_at TIMESTAMP NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP DEFAULT NULL,
+    rotated_to BIGINT NULL, -- For tracking rotation
+    CONSTRAINT fk_client_id FOREIGN KEY (client_id) REFERENCES oauth_clients (id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX users_email_idx ON users (email);

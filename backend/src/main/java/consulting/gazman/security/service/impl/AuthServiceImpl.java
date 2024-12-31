@@ -6,7 +6,9 @@ import consulting.gazman.security.entity.*;
 
 import consulting.gazman.security.service.AuthService;
 
+import consulting.gazman.security.service.TokenService;
 import consulting.gazman.security.utils.JwtUtils;
+import consulting.gazman.security.utils.TokenUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
@@ -51,6 +53,8 @@ public class AuthServiceImpl implements AuthService {
     private static final int LOCK_DURATION_MINUTES = 15;
     @Autowired
     AuthCodeService authCodeService;
+    @Autowired
+    TokenService tokenService;
 
 
 
@@ -82,86 +86,78 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserRegistrationResponse createUser(UserRegistrationRequest userRegistartionRequest) {
-        log.info("Attempting registration for email: {}", userRegistartionRequest.getEmail());
+    public UserRegistrationResponse createUser(UserRegistrationRequest userRegistrationRequest) {
+        log.info("Attempting registration for email: {}", userRegistrationRequest.getEmail());
 
         // Check if the email is already registered
-        if (userService.existsByEmail(userRegistartionRequest.getEmail())) {
-            throw  AppException.userAlreadyExists("Email is already registered.");
+        if (userService.existsByEmail(userRegistrationRequest.getEmail())) {
+            throw AppException.userAlreadyExists("Email is already registered.");
         }
+
+        // Fetch the default role (e.g., "VIEWER")
         Role userRole = roleService.findByName("VIEWER")
-                .orElseThrow(() ->  AppException.userNotFound("Role 'VIEWER' does not exist"));
+                .orElseThrow(() -> AppException.userNotFound("Role 'VIEWER' does not exist"));
 
         // Create and save the user
         User newUser = new User();
-        newUser.setName(userRegistartionRequest.getName());
-        newUser.setEmail(userRegistartionRequest.getEmail());
-        newUser.setPassword(passwordEncoder.encode(userRegistartionRequest.getPassword()));
+        newUser.setName(userRegistrationRequest.getName());
+        newUser.setEmail(userRegistrationRequest.getEmail());
+        newUser.setPassword(passwordEncoder.encode(userRegistrationRequest.getPassword()));
+
+        // Assign the default role to the new user
         UserRole newUserRole = new UserRole();
         newUserRole.setUser(newUser);
         newUserRole.setRole(userRole);
         newUser.getUserRoles().add(newUserRole);
         newUser.setEnabled(true);
 
+        // Save the user to the database
         User savedUser = userService.save(newUser);
-        String clientId = userRegistartionRequest.getClientId();
+
+        // Fetch OAuth client configuration by clientId
+        String clientId = userRegistrationRequest.getClientId();
         OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> AppException.resourceNotFound("Couldn't find oauth config for:  " + clientId));
+                .orElseThrow(() -> AppException.resourceNotFound("Couldn't find OAuth config for clientId: " + clientId));
 
-        // 2. Get user's groups
-        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(newUser.getId());
+        // Retrieve user's group memberships
+        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(savedUser.getId());
 
-        // 3. Retrieve permissions for each group
+        // Retrieve permissions for each group
         Map<Long, List<String>> permissions = groupMemberships.stream()
                 .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(), // Map group ID
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId()) // Retrieve permissions as names
+                        groupMembership -> groupMembership.getGroup().getId(),
+                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
                 ));
-        String accessToken = jwtService.generateAccessToken(newUser, oAuthClient.getClientId(), groupMemberships, permissions);
-        String refreshToken = jwtService.generateRefreshToken(newUser, oAuthClient.getClientId());
+
+        // Generate access token
+        String accessToken = jwtService.generateAccessToken(savedUser, oAuthClient, groupMemberships, permissions);
+
+        // Generate refresh token
+        String rawRefreshToken = TokenUtils.generateOpaqueToken();
+        LocalDateTime refreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
+        tokenService.createToken("refresh_token", rawRefreshToken, refreshTokenExpiresAt, savedUser, oAuthClient);
+
+        // Build and return the response
         return UserRegistrationResponse.builder()
                 .user(UserRegistrationResponse.UserDetails.builder()
-                        .id(newUser.getId())
-                        .name(newUser.getName())
-                        .email(newUser.getEmail())
+                        .id(savedUser.getId())
+                        .name(savedUser.getName())
+                        .email(savedUser.getEmail())
                         .build())
                 .tokens(UserRegistrationResponse.Tokens.builder()
                         .accessToken(accessToken)
-                        .refreshToken(refreshToken)
+                        .refreshToken(rawRefreshToken) // Return raw token to client
                         .build())
-                .build();    }
+                .build();
+    }
+
 
 
     // Refresh token implementation
 
 
 
-    private TokenResponse createTokenResponse(User user, String clientId) {
-        // 1. Retrieve token configuration for the app
-        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> AppException.resourceNotFound("Couldn't find oauth config for:  " + clientId));
 
-        // 2. Get user's groups
-        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
-
-        // 3. Retrieve permissions for each group
-        Map<Long, List<String>> permissions = groupMemberships.stream()
-                .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(), // Map group ID
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId()) // Retrieve permissions as names
-                ));
-        String accessToken = jwtService.generateAccessToken(user, oAuthClient.getClientId(), groupMemberships, permissions);
-        String refreshToken = jwtService.generateRefreshToken(user, oAuthClient.getClientId());
-        String idToken = jwtService.generateIdToken(user, oAuthClient.getClientId());
-        // 4. Generate tokens and return the response
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .idToken(idToken)
-                .tokenType("Bearer")  // Set token type
-                .expiresIn(3600L)     // Set expiration time (e.g., 1 hour)
-                .build();
-    }
 
 
 

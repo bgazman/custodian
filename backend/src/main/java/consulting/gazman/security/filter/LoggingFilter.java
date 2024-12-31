@@ -1,4 +1,4 @@
-package consulting.gazman.common.filter;
+package consulting.gazman.security.filter;
 
 
 import jakarta.servlet.FilterChain;
@@ -13,11 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.UUID;
-
-
-import java.util.UUID;
-
-
 
 
 @Slf4j

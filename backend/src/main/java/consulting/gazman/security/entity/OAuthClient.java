@@ -48,6 +48,12 @@ public class OAuthClient {
     @Column(name = "client_id", nullable = false, unique = true, length = 100)
     private String clientId;
 
+    @Column(name = "status", nullable = false)
+    private String status;
+
+    @Column(name = "revoked_at " )
+    private LocalDateTime revokedAt;
+
     @Column(name = "client_secret", nullable = false, length = 255)
     private String clientSecret;
 

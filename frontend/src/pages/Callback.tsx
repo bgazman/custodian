@@ -50,7 +50,7 @@ const CallbackPage = () => {
                         code,
                         redirectUri: import.meta.env.VITE_REDIRECT_URI,
                         clientId: import.meta.env.VITE_CLIENT_ID,
-                        grantType: 'authorization_code',
+                        grantType: 'authorization_code'
                     };
 
                     const response = await AuthApiClient.post('/oauth/token', payload);

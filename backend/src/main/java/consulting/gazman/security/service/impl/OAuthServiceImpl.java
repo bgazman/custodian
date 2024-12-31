@@ -5,10 +5,10 @@ import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.security.dto.*;
 import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.OAuthClient;
+import consulting.gazman.security.entity.Token;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.*;
-import consulting.gazman.security.utils.JwtUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import consulting.gazman.security.utils.TokenUtils;
 @Service
 @Transactional
 public class OAuthServiceImpl implements OAuthService {
@@ -47,12 +47,14 @@ public class OAuthServiceImpl implements OAuthService {
 
     @Autowired
     OAuthClientServiceImpl oAuthClientService;
+
     @Autowired
-    private JwtUtils jwtUtils;
+    TokenService tokenService;
 
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
+    @Transactional
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
         LoginResponse response = null;
@@ -86,9 +88,13 @@ public class OAuthServiceImpl implements OAuthService {
             }
 
             resetLoginAttempts(user);
-//            String authorizationCode =authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
+            String authorizationCode =authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
 
-            return LoginResponse.builder().build();        }
+            return LoginResponse.builder()
+                    .code(authorizationCode)
+                    .state(loginRequest.getState())
+                    .redirectUri(loginRequest.getRedirectUri())
+                    .build();        }
         else {
             // Return response indicating that the user was not found
             throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
@@ -107,51 +113,85 @@ public class OAuthServiceImpl implements OAuthService {
                 .build();
     }
 
-
+    @Transactional
     @Override
     public TokenResponse exchangeToken(TokenRequest request) {
-
+        // Validate the authorization code
         String value = authCodeService.validateCode(request.getCode());
 
-        // Split the value to get email and clientId
+        // Extract email and clientId from the value
         String[] parts = value.split(":");
         String email = parts[0];
         String clientId = parts[1];
+
+        // Fetch OAuthClient using clientId
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
+
+        // Fetch the user by email
         User user = userService.findByEmail(email)
-                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));
+                .orElseThrow(() -> AppException.userNotFound("No user found with email: " + email));
 
+        // Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
-
-        // 3. Retrieve permissions for each group
         Map<Long, List<String>> permissions = groupMemberships.stream()
                 .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(), // Map group ID
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId()) // Retrieve permissions as names
+                        groupMembership -> groupMembership.getGroup().getId(),
+                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
                 ));
+
+        // Generate a new refresh token
+        String rawRefreshToken = TokenUtils.generateOpaqueToken();
+        LocalDateTime refreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
+        tokenService.createToken("refresh_token", rawRefreshToken, refreshTokenExpiresAt, user, oAuthClient);
+
+        // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, request.getClientId(), groupMemberships, permissions))
-                .refreshToken(jwtService.generateRefreshToken(user, request.getClientId()))
-                .idToken(jwtService.generateIdToken(user, request.getClientId()))
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions))
+                .refreshToken(rawRefreshToken) // Return raw token to client
+                .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
     }
 
+
+    @Transactional
     @Override
     public TokenResponse refreshToken(TokenRequest request) {
-        User user = jwtService.validateRefreshToken(request.getRefreshToken());
-        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
+        // Validate the refresh token and find the associated token record
+        Token existingToken = tokenService.findToken(request.getRefreshToken())
+                .orElseThrow(() -> AppException.invalidRefreshToken("The refresh token is invalid or expired"));
 
-        // 3. Retrieve permissions for each group
+        if (!tokenService.isTokenValid(request.getRefreshToken())) {
+            throw AppException.invalidRefreshToken("The refresh token has expired");
+        }
+
+        // Fetch the associated OAuthClient
+        OAuthClient oAuthClient = existingToken.getClient();
+
+        // Fetch the associated user
+        User user = existingToken.getUser();
+
+        // Retrieve groups and permissions
+        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
         Map<Long, List<String>> permissions = groupMemberships.stream()
                 .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(), // Map group ID
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId()) // Retrieve permissions as names
+                        groupMembership -> groupMembership.getGroup().getId(),
+                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
                 ));
+
+        // Rotate the refresh token
+        String rawNewRefreshToken = TokenUtils.generateOpaqueToken();
+        LocalDateTime newRefreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
+        tokenService.rotateRefreshToken(existingToken, rawNewRefreshToken, newRefreshTokenExpiresAt);
+
+        // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, request.getClientId(), groupMemberships, permissions))
-                .refreshToken(jwtService.generateRefreshToken(user, request.getClientId()))
-                .idToken(jwtService.generateIdToken(user, request.getClientId()))
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions))
+                .refreshToken(rawNewRefreshToken) // Provide new refresh token
+                .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
     }
+
 
     @Override
     public UserInfoResponse getUserInfo(String bearerToken) {

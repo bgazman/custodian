@@ -1,4 +1,4 @@
-package consulting.gazman.common.filter;
+package consulting.gazman.security.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

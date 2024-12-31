@@ -29,7 +29,7 @@ const GroupMembershipsPage: React.FC = () => {
         refetch(); // Refetch the groups list to include the new group
     };
     useEffect(() => {
-        const role = localStorage.getItem("role");
+        const role = sessionStorage.getItem("role");
         if (role !== "ADMIN") {
             navigate("/", { replace: true });
         }

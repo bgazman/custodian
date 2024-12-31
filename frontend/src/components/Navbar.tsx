@@ -79,7 +79,7 @@ const Navbar = () => {
                                 to="/dashboard"
                                 className="text-white text-xl font-bold ml-4"
                             >
-                                Crypto Custodian
+                                 Custodian
                             </Link>
                         </div>
                         <div className="flex items-center space-x-4">

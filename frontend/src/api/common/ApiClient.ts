@@ -24,7 +24,7 @@ export class ApiClient {
 // Update the token retrieval in interceptor
     static init() {
         this.instance.interceptors.request.use((config) => {
-            const token = sessionStorage.getItem("auth_tokens");
+            const token = sessionStorage.getItem("access_token");
             const tokenData = token ? JSON.parse(token) : null;
             const traceId = getTraceId();
 

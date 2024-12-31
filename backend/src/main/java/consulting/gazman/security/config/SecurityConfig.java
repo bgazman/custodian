@@ -1,14 +1,9 @@
 package consulting.gazman.security.config;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import consulting.gazman.common.dto.ApiError;
-import consulting.gazman.common.dto.ApiResponse;
-import consulting.gazman.common.filter.CustomHeaderFilter;
-
-import consulting.gazman.security.filter.JwtAuthFilter;
+import consulting.gazman.security.filter.JwtExceptionFilter;
 import jakarta.servlet.DispatcherType;
-
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,17 +11,16 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @EnableWebSecurity
@@ -34,23 +28,21 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
-    private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
     private final CorsConfigurationSource corsConfigurationSource;
     private final ObjectMapper objectMapper;
-
     public SecurityConfig(PasswordEncoder passwordEncoder,
-                          JwtAuthFilter jwtAuthFilter,
                           UserDetailsService userDetailsService,
                           CorsConfigurationSource corsConfigurationSource,
-                          ObjectMapper objectMapper) {
+                          ObjectMapper objectMapper
+    ) {
         this.passwordEncoder = passwordEncoder;
-        this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.corsConfigurationSource = corsConfigurationSource;
-        this.objectMapper = objectMapper;  // Add this
 
+        this.objectMapper = objectMapper;
     }
+    // IDP SERVER CHAIN
     @Bean
     @Order(1)
     public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -75,52 +67,25 @@ public class SecurityConfig {
     }
 
 
+// Client Backend Chain
+@Bean
+@Order(2)
+public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+    http
+            .securityMatcher("/api/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/public/**").permitAll()
+                    .requestMatchers("/api/secure/**").authenticated()
+                    .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                    .jwt(Customizer.withDefaults())
+            );
+    return http.build();
+}
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/api/**")
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                // Disable CSRF as we're using JWT tokens
-                .csrf(AbstractHttpConfigurer::disable)
-                // Configure CORS using the provided configuration source
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                // Configure exception handling for various HTTP status codes
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write(objectMapper.writeValueAsString(
-                                    ApiError.builder()
-                                            .code("ACCESS_DENIED")
-                                            .message("Access Denied")
-                                            .build()
-                            ));
-                        }))
-
-                // Configure authorization rules
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll() // Allow error dispatchers
-                        .requestMatchers("/api/public/**").permitAll() // Public endpoints
-                        .requestMatchers("/api/secure/**").authenticated() // Secure endpoints require authentication
-                        .anyRequest().denyAll() // All other endpoints require authentication
-                )
-                // Configure session management to be stateless (no sessions)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                // Add the authentication provider
-                .authenticationProvider(authenticationProvider())
-                // Add filters in the correct order
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new CustomHeaderFilter(), SecurityContextHolderFilter.class);
-
-        return http.build();
-    }
 
 
     @Bean

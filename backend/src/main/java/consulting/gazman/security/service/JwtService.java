@@ -2,6 +2,7 @@ package consulting.gazman.security.service;
 
 
 import consulting.gazman.security.entity.GroupMembership;
+import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.User;
 
 
@@ -12,14 +13,11 @@ public interface JwtService {
 
 
 
-    String generateAccessToken(User user, String clientId, List<GroupMembership> groups, Map<Long, List<String>> permissions);
-
-    String generateRefreshToken(User user, String clientId);
+    String generateAccessToken(User user, OAuthClient oAuthClient, List<GroupMembership> groups, Map<Long, List<String>> permissions);
 
 
 
-
-    String generateIdToken(User user, String clientId);
+    String generateIdToken(User user, OAuthClient oAuthClient);
 
     User validateAccessToken(String token);
 

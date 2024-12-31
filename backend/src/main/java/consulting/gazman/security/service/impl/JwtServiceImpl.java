@@ -8,14 +8,12 @@ import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
-import java.security.PublicKey;
+
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,16 +27,13 @@ public class JwtServiceImpl implements JwtService {
     private OAuthClientServiceImpl oAuthClientService;
     @Autowired
     private UserServiceImpl userService;
+    private static final String JWKS_URL = "https://idp.example.com/.well-known/jwks.json";
 
 
     @Override
-    public String generateAccessToken(User user, String clientId, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
-        // Fetch the token configuration for the app
-        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
-//        Set<String> roles = user.getUserRoles().stream()
-//                .map(userRole -> userRole.getRole().getName())
-//                .collect(Collectors.toSet());
+    public String generateAccessToken(User user, OAuthClient oAuthClient, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
+
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", user.getUserRoles().stream()  // Fix role extraction
                 .map(userRole -> userRole.getRole().getName())
@@ -57,12 +52,12 @@ public class JwtServiceImpl implements JwtService {
         claims.put("groups",groupsList);
         claims.put("sub", user.getEmail());
         claims.put("iss", "http://localhost:8080");
-        claims.put("aud", clientId);
+        claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
         claims.put("iat", Instant.now().getEpochSecond());
         claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
         claims.put("resource_access", Map.of(
-                clientId, Map.of(
+                oAuthClient.getClientId(), Map.of(
                         "roles", user.getUserRoles().stream()
                                 .map(userRole -> userRole.getRole().getName())
                                 .collect(Collectors.toSet()),
@@ -75,31 +70,12 @@ public class JwtServiceImpl implements JwtService {
         return generateToken(user.getEmail(),oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
 
-    @Override
-    public String generateRefreshToken(User user, String clientId) {
-        // Fetch the token configuration for the app
-        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
-
-        // Prepare claims specific to refresh tokens
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getId());
-        claims.put("email", user.getEmail());
-        claims.put("client-id", clientId);
-        claims.put("sub", user.getEmail());      // Add subject as string
-        claims.put("type", "refresh_token");             // Add token type
-
-        // Generate and return the refresh token
-        return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getRefreshTokenExpirySeconds());
-    }
-
 
 
     @Override
-    public String generateIdToken(User user, String clientId) {
+    public String generateIdToken(User user, OAuthClient oAuthClient) {
         // Fetch the token configuration for the app
-        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
+
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getEmail());  // Email as subject
@@ -109,7 +85,7 @@ public class JwtServiceImpl implements JwtService {
         claims.put("iat", Instant.now().getEpochSecond());
         claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
         claims.put("iss", "http://localhost:8080");
-        claims.put("aud", clientId);
+        claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
         return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
@@ -123,7 +99,7 @@ public class JwtServiceImpl implements JwtService {
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(expirationSeconds)))
                 .signWith(signingKey, SignatureAlgorithm.forName(oAuthClient.getAlgorithm()))
-                .setHeaderParam("kid", oAuthClient.getSigningKey().getId())
+                .setHeaderParam("kid", String.valueOf(oAuthClient.getSigningKey().getId()))
                 .compact();
     }
 
@@ -155,57 +131,10 @@ private Key getSigningKey(OAuthClient oAuthClient) {
         }
     }
 
-    // Helper method to generate RSA private key from PEM
-    private PrivateKey generatePrivateKeyFromPem(String pemKey) {
-        try {
-            // Remove PEM headers and decode the Base64 content
-            String keyContent = pemKey
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace("-----END PRIVATE KEY-----", "")
-                    .replaceAll("\\s", "");
-            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
 
-            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            return keyFactory.generatePrivate(spec);
-        } catch (Exception e) {
-            throw new RuntimeException("Error loading RSA private key", e);
-        }
-    }
 
-    // Helper method to generate RSA public key from PEM
-    private PublicKey generatePublicKeyFromPem(String pemKey) {
-        try {
-            // Remove PEM headers and decode the Base64 content
-            String keyContent = pemKey
-                    .replace("-----BEGIN PUBLIC KEY-----", "")
-                    .replace("-----END PUBLIC KEY-----", "")
-                    .replaceAll("\\s", "");
-            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
 
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            return keyFactory.generatePublic(spec);
-        } catch (Exception e) {
-            throw new RuntimeException("Error loading RSA public key", e);
-        }
-    }
 
-    // Optional: Handle symmetric keys (if needed)
-    private SecretKey generateSymmetricKeyFromPem(String pemKey) {
-        try {
-            // Remove PEM headers and decode the Base64 content
-            String keyContent = pemKey
-                    .replace("-----BEGIN SECRET KEY-----", "")
-                    .replace("-----END SECRET KEY-----", "")
-                    .replaceAll("\\s", "");
-            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
-
-            return new SecretKeySpec(keyBytes, "HmacSHA256");
-        } catch (Exception e) {
-            throw new RuntimeException("Error loading symmetric key", e);
-        }
-    }
     @Override
     public User validateAccessToken(String token) {
         String result = validateToken(token);

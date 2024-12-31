@@ -26,8 +26,8 @@ export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = (
 
     useEffect(() => {
         const initializeAuth = () => {
-            const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-            const storedAccessToken = localStorage.getItem('access-token');
+            const storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+            const storedAccessToken = sessionStorage.getItem('access-token');
 
             if (storedAccessToken && storedUser) {
                 setAccessToken(storedAccessToken);
@@ -49,10 +49,10 @@ export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = (
 
         console.log('LOGIN_RESPONSE', loginResponse);
 
-        localStorage.setItem('access-token', loginResponse.accessToken);
-        localStorage.setItem('refresh-token', loginResponse.refreshToken);
-        localStorage.setItem('id-token', loginResponse.idToken);
-        localStorage.setItem('user', JSON.stringify(userInfo));
+        sessionStorage.setItem('access-token', loginResponse.accessToken);
+        sessionStorage.setItem('refresh-token', loginResponse.refreshToken);
+        sessionStorage.setItem('id-token', loginResponse.idToken);
+        sessionStorage.setItem('user', JSON.stringify(userInfo));
 
         setAccessToken(loginResponse.accessToken);
         setUser(userInfo);
@@ -60,12 +60,12 @@ export const AuthenticationProvider: React.FC<{ children: React.ReactNode }> = (
     };
 
     const logout = () => {
-        localStorage.removeItem('access-token');
-        localStorage.removeItem('refresh-token');
-        localStorage.removeItem('id-token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token_exchange_processed');
-        localStorage.removeItem('oauth_state');
+        sessionStorage.removeItem('access-token');
+        sessionStorage.removeItem('refresh-token');
+        sessionStorage.removeItem('id-token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token_exchange_processed');
+        sessionStorage.removeItem('oauth_state');
 
         setAccessToken(null);
         setUser(null);

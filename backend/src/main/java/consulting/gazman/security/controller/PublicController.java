@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/secure")
-public class ProtectedController {
+@RequestMapping("/api/public")
+public class PublicController {
 
     @GetMapping("/data")
     public ResponseEntity<Map<String, String>> getProtectedData() {

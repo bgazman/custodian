@@ -4,10 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-import consulting.gazman.security.service.impl.OAuthClientServiceImpl;
 
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -22,8 +20,6 @@ import java.util.Map;
 public class JwtUtils {
 
 
-    @Autowired
-    private OAuthClientServiceImpl oAuthClientService;
 
 
 
