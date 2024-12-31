@@ -74,6 +74,7 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
                 .clientSecret(clientSecret) // Use pre-generated client_secret
                 .clientSecretLastRotated(LocalDateTime.now())
                 .name(request.getName())
+                .status("active")
                 .redirectUris(request.getRedirectUris())
                 .grantTypes(request.getGrantTypes())
                 .scopes(request.getScopes())

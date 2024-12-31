@@ -1,7 +1,11 @@
 CREATE TABLE tenants (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    description VARCHAR(255),
+	description VARCHAR(255),
+    issuer_url VARCHAR(255) NOT NULL UNIQUE, -- Tenant-specific issuer
+    jwks_uri VARCHAR(255) NOT NULL,         -- Tenant-specific JWKS URI
+    token_lifetime INTEGER DEFAULT 3600,    -- Access token expiration
+    refresh_token_lifetime INTEGER DEFAULT 86400, -- Refresh token expiration
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

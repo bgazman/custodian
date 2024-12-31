@@ -5,14 +5,14 @@ import consulting.gazman.security.entity.*;
 import consulting.gazman.security.repository.*;
 import consulting.gazman.security.service.ClientRegistrationService;
 import consulting.gazman.security.service.OAuthClientService;
-import consulting.gazman.security.service.impl.ClientRegistrationServiceImpl;
-import consulting.gazman.security.service.impl.OAuthClientServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Component
@@ -66,11 +66,24 @@ public class InitializationClass implements CommandLineRunner {
 
     private void initializeRootTenant() {
         // 1. Create Root Tenant
-        Tenant rootTenant = tenantRepository.findByName("root")
+        String rootTenantName = "root";
+        String rootIssuerUrl = "https://localhost:8080/root"; // Replace with your root issuer URL
+        String rootJwksUri = "https://localhost:8080/root/.well-known/jwks.json"; // Replace with your JWKS URI
+
+        // 2. Check if the root tenant already exists
+        Tenant rootTenant = tenantRepository.findByName(rootTenantName)
                 .orElseGet(() -> {
+                    // 3. Create and populate a new root tenant
                     Tenant tenant = new Tenant();
-                    tenant.setName("root");
+                    tenant.setName(rootTenantName);
                     tenant.setDescription("Root System Tenant - Has full system access");
+                    tenant.setIssuerUrl(rootIssuerUrl);
+                    tenant.setJwksUri(rootJwksUri);
+                    tenant.setTokenLifetime(3600); // Default access token lifetime in seconds
+                    tenant.setRefreshTokenLifetime(86400); // Default refresh token lifetime in seconds
+                    tenant.setCreatedAt(LocalDateTime.now());
+
+                    // 4. Save and return the new tenant
                     return tenantRepository.save(tenant);
                 });
 

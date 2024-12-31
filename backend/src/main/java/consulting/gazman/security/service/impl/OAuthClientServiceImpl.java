@@ -141,9 +141,9 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         }
     }
     @Override
-    public Map<String, Object> getJwks() {
+    public Map<String, Object> getJwks(Long tenantId) {
         // Fetch all token configurations and map to JWKS keys
-        List<Map<String, Object>> jwksKeys = oAuthClientRepository.findByDeletedAtIsNull()
+        List<Map<String, Object>> jwksKeys = oAuthClientRepository.findByTenantIdAndDeletedAtIsNull(tenantId)
                 .stream()
                 .map(oAuthClient -> {
                     try {
