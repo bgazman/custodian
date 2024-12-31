@@ -1,7 +1,6 @@
 package consulting.gazman.security.service.impl;
 
 
-import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.security.dto.*;
 import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.OAuthClient;
@@ -9,15 +8,17 @@ import consulting.gazman.security.entity.Token;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.*;
+import consulting.gazman.security.utils.JwtUtils;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -191,17 +192,73 @@ public class OAuthServiceImpl implements OAuthService {
                 .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
     }
+    @Transactional
+    @Override
+    public IntrospectResponse introspectToken(String token) {
+        // Step 1: Validate the token
+        Claims tokenClaims = jwtService.validateToken(token);
 
+
+
+        String clientId = tokenClaims.get("client_id", String.class);
+        String userId = tokenClaims.getSubject(); // Standard "sub" claim
+        String scope = tokenClaims.get("scope", String.class);
+        String tokenType = tokenClaims.get("typ", String.class);
+        LocalDateTime issuedAt = LocalDateTime.ofInstant(
+                tokenClaims.getIssuedAt().toInstant(), ZoneId.systemDefault());
+        LocalDateTime expiresAt = LocalDateTime.ofInstant(
+                tokenClaims.getExpiration().toInstant(), ZoneId.systemDefault());
+        LocalDateTime notBefore = LocalDateTime.ofInstant(
+                tokenClaims.getNotBefore().toInstant(), ZoneId.systemDefault());
+        String issuer = tokenClaims.getIssuer(); // Standard "iss" claim
+        String tokenId = tokenClaims.getId(); // Standard "jti" claim
+
+        // Step 3: Fetch OAuthClient and User information
+        OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
+                .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
+
+        User user = userService.findByEmail(userId)
+                .orElseThrow(() -> AppException.userNotFound("No user found with ID: " + userId));
+
+        // Step 4: Retrieve groups and permissions
+        List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
+        Map<Long, List<String>> permissions = groupMemberships.stream()
+                .collect(Collectors.toMap(
+                        groupMembership -> groupMembership.getGroup().getId(),
+                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
+                ));
+
+        // Step 5: Build and return the IntrospectResponse
+        return IntrospectResponse.builder()
+                .active(true)
+                .scope(scope)
+                .tokenType(tokenType)
+                .clientId(clientId)
+                .username(user.getEmail())
+                .exp(expiresAt.toEpochSecond(ZoneOffset.UTC))
+                .iat(issuedAt.toEpochSecond(ZoneOffset.UTC))
+                .nbf(notBefore.toEpochSecond(ZoneOffset.UTC))
+                .sub(userId)
+                .iss(issuer)
+                .jti(tokenId)
+                .build();
+    }
 
     @Override
     public UserInfoResponse getUserInfo(String bearerToken) {
-        User user = jwtService.validateAccessToken(bearerToken);
-        return UserInfoResponse.builder()
-                .sub(user.getEmail())
-                .email(user.getEmail())
-                .emailVerified(user.isEmailVerified())
-                .build();
+        return null;
     }
+
+
+//    @Override
+//    public UserInfoResponse getUserInfo(String bearerToken) {
+//        User user = jwtService.validateAccessToken(bearerToken);
+//        return UserInfoResponse.builder()
+//                .sub(user.getEmail())
+//                .email(user.getEmail())
+//                .emailVerified(user.isEmailVerified())
+//                .build();
+//    }
 
     // Helper: Check if account is locked
     private boolean isAccountLocked(User user) {

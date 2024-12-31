@@ -135,73 +135,39 @@ private Key getSigningKey(OAuthClient oAuthClient) {
 
 
 
-    @Override
-    public User validateAccessToken(String token) {
-        String result = validateToken(token);
-        if (!"success".equals(result)) {
-            throw AppException.invalidToken("Access token validation failed: " + result);
-        }
 
-        String email = JwtUtils.extractSubject(token);
-        return userService.findByEmail(email)
-                .orElseThrow(() -> AppException.userNotFound("Unable to find user for subject: " + email));
-    }
+
 
     @Override
-    public User validateRefreshToken(String token) {
-        String result = validateToken(token);
-        if (!"success".equals(result)) {
-            throw AppException.invalidToken("Refresh token validation failed: " + result);
-        }
-
-        if (!"refresh_token".equals(JwtUtils.extractType(token))) {
-            throw AppException.invalidToken("Invalid token type");
-        }
-
-        String email = JwtUtils.extractSubject(token);
-        return userService.findByEmail(email)
-                .orElseThrow(() -> AppException.userNotFound("Unable to find user for subject: " + email));    }
-
-    @Override
-    public String validateToken(String token) {
+    public Claims validateToken (String token) {
         try {
             String clientId = JwtUtils.extractClientId(token);
-
 
             OAuthClient config = oAuthClientService.getClientByClientId(clientId)
                     .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
             Key signingKey = getSigningKey(config);
 
-
-            // Fetch configuration for the app
-
-            // Validate the token
-            Jwts.parserBuilder()
+            // Parse and validate the token, returning the claims if successful
+            return Jwts.parserBuilder()
                     .setSigningKey(signingKey) // Use app-specific key
                     .build()
-                    .parseClaimsJws(token); // Throws exception if invalid
-
+                    .parseClaimsJws(token) // Parses the token and throws an exception if invalid
+                    .getBody(); // Returns the claims
             // If successful, return a success response
-            return "success";
         } catch (ExpiredJwtException ex) {
-            return "token_expired";
+            throw AppException.invalidToken("Token expired");
         } catch (MalformedJwtException ex) {
-            return "malformed_token";
+            throw AppException.invalidToken("Malformed token");
         } catch (SignatureException ex) {
-            return "invalid_signature";
-        }
-        catch (Exception ex){
-            return "token_validation_error";
+            throw AppException.invalidToken("Invalid signature");
+        } catch (Exception ex) {
+            throw AppException.invalidToken("Token validation error: " + ex.getMessage());
         }
 
 
     }
 
-    @Override
-    public Map<String, Object> parseHeader(String token) {
-        return Map.of();
-    }
 }
 
 

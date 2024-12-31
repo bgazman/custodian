@@ -4,6 +4,7 @@ package consulting.gazman.security.service;
 import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.User;
+import io.jsonwebtoken.Claims;
 
 
 import java.util.List;
@@ -19,11 +20,8 @@ public interface JwtService {
 
     String generateIdToken(User user, OAuthClient oAuthClient);
 
-    User validateAccessToken(String token);
 
-    User validateRefreshToken(String token);
 
-    String validateToken(String token);
+    Claims validateToken(String token);
 
-    Map<String, Object> parseHeader(String token);
 }

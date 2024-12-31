@@ -1,16 +1,14 @@
 package consulting.gazman.common.controller;
 
 import consulting.gazman.common.dto.ApiError;
-import consulting.gazman.common.dto.ApiResponse;
-import consulting.gazman.common.utils.StatusMapper;
+
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 
 import java.time.Instant;
-import java.util.Map;
+
 import java.util.UUID;
 
 @Slf4j

@@ -51,6 +51,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login").permitAll() // Public login page
                         .requestMatchers("/oauth/token").permitAll() // Public token endpoint
+                        .requestMatchers("/oauth/introspect").permitAll()
+                        .requestMatchers("/oauth/revoke").permitAll()
                         .requestMatchers("/oauth/authorize").permitAll() // Public for initiating OAuth
                         .requestMatchers("/oauth/login").permitAll() // Public for initiating OAuth
                         .requestMatchers("/.well-known/**").permitAll() // Public JWKS and metadata
