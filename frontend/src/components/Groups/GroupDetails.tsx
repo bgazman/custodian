@@ -1,5 +1,5 @@
 import React from "react";
-import { Group } from "../../hooks/userGroups";
+import { Group } from "../../types/Group";
 
 interface GroupDetailsProps {
     group: Group;

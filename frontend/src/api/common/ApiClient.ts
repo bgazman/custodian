@@ -24,8 +24,8 @@ export class ApiClient {
 // Update the token retrieval in interceptor
     static init() {
         this.instance.interceptors.request.use((config) => {
-            const token = sessionStorage.getItem("access_token");
-            const tokenData = token ? JSON.parse(token) : null;
+            const token = sessionStorage.getItem("access-token");
+            // const tokenData = token ? JSON.parse(token) : null;
             const traceId = getTraceId();
 
             config.headers = {
@@ -33,8 +33,8 @@ export class ApiClient {
                 'X-B3-TraceId': traceId,
             };
 
-            if (tokenData?.accessToken) {
-                config.headers.Authorization = `Bearer ${tokenData.accessToken}`;
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
             }
 
             return config;

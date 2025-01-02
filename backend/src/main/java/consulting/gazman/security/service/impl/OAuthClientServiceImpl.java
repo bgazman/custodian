@@ -1,7 +1,5 @@
 package consulting.gazman.security.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.Secret;
@@ -141,9 +139,9 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         }
     }
     @Override
-    public Map<String, Object> getJwks(Long tenantId) {
+    public Map<String, Object> getJwks() {
         // Fetch all token configurations and map to JWKS keys
-        List<Map<String, Object>> jwksKeys = oAuthClientRepository.findByTenantIdAndDeletedAtIsNull(tenantId)
+        List<Map<String, Object>> jwksKeys = oAuthClientRepository.findByDeletedAtIsNull()
                 .stream()
                 .map(oAuthClient -> {
                     try {

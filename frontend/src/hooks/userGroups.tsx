@@ -15,7 +15,7 @@ export const useGroups = () => {
         setLoading(true);
         setError(null);
         try {
-            const fetchedGroups = await ApiClient.get<Group[]>("/groups");
+            const fetchedGroups = await ApiClient.get<Group[]>("/api/secure/groups");
             setGroups(fetchedGroups);
         } catch (err: any) {
             console.error("Error fetching groups:", err);

@@ -1,5 +1,6 @@
 package consulting.gazman.security.config;
 
+import com.fasterxml.jackson.core.StreamWriteConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -32,10 +33,18 @@ public class JacksonConfig {
                         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
                 ));
 
-        return JsonMapper.builder()
+        JsonMapper jsonMapper = JsonMapper.builder()
                 .addModule(javaTimeModule)
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // Disable array-like timestamps
-                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // Avoid serialization errors for lazy-loaded proxies
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 .build();
+
+        jsonMapper.getFactory().setStreamWriteConstraints(
+                StreamWriteConstraints.builder()
+                        .maxNestingDepth(1500)  // Increase the nesting depth limit
+                        .build()
+        );
+        return jsonMapper;
+
     }
 }

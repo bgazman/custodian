@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ClientRegistrationRequest {
-    private Long tenantId;
     private String name;                   // changed from clientName to match entity
     private String applicationType;
     private List<String> redirectUris;

@@ -13,7 +13,7 @@ export const useUsers = () => {
         setLoading(true);
         setError(null);
         try {
-            const fetchedUsers = await ApiClient.get<User[]>("/api/users");
+            const fetchedUsers = await ApiClient.get<User[]>("/api/secure/users");
             setUsers(fetchedUsers);
         } catch (err: any) {
             console.error("Error fetching users:", err);

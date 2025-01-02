@@ -14,5 +14,4 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, Long> 
 
     boolean existsByName(String name);
 
-    List<OAuthClient> findByTenantIdAndDeletedAtIsNull(Long tenantId);
 }

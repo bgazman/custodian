@@ -1,15 +1,4 @@
-CREATE TABLE tenants (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-	description VARCHAR(255),
-    issuer_url VARCHAR(255) NOT NULL UNIQUE, -- Tenant-specific issuer
-    jwks_uri VARCHAR(255) NOT NULL,         -- Tenant-specific JWKS URI
-    token_lifetime INTEGER DEFAULT 3600,    -- Access token expiration
-    refresh_token_lifetime INTEGER DEFAULT 86400, -- Refresh token expiration
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -30,15 +19,6 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMP DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE IF NOT EXISTS tenant_users (
-    tenant_id BIGINT NOT NULL,        -- References the tenant
-    user_id BIGINT NOT NULL,          -- References the user
-    role VARCHAR(50),                 -- Optional: Role for the user in the tenant
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- When the user joined the tenant
-    PRIMARY KEY (tenant_id, user_id), -- Composite key for uniqueness
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -66,12 +46,8 @@ CREATE TABLE IF NOT EXISTS groups (
     description VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    tenant_id BIGINT REFERENCES tenants(id) ON DELETE CASCADE,
     parent_group_id BIGINT DEFAULT NULL REFERENCES groups(id) ON DELETE CASCADE
-
 );
-
-
 
 CREATE TABLE IF NOT EXISTS group_memberships (
     user_id BIGINT NOT NULL,
@@ -83,8 +59,6 @@ CREATE TABLE IF NOT EXISTS group_memberships (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
-
-
 CREATE TABLE IF NOT EXISTS permissions (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE, -- Example: "READ_PRIVILEGES", "WRITE_PRIVILEGES"
@@ -92,8 +66,6 @@ CREATE TABLE IF NOT EXISTS permissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
 
 CREATE TABLE IF NOT EXISTS group_permissions (
     group_id BIGINT NOT NULL,
@@ -125,11 +97,9 @@ CREATE TABLE IF NOT EXISTS secrets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE IF NOT EXISTS oauth_clients (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    tenant_id BIGINT NOT NULL,
     application_type VARCHAR(50) NOT NULL DEFAULT 'web',  -- Added application_type
     response_types JSONB NOT NULL DEFAULT '["code"]'::jsonb,  -- Added response_types
     client_id VARCHAR(100) NOT NULL UNIQUE,
@@ -148,9 +118,7 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP DEFAULT NULL,
-    CONSTRAINT fk_key_id FOREIGN KEY (key_id) REFERENCES secrets (id) ON DELETE CASCADE,
-    CONSTRAINT fk_tenant_id FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE -- Relationship added
-
+    CONSTRAINT fk_key_id FOREIGN KEY (key_id) REFERENCES secrets (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tokens (
@@ -165,37 +133,67 @@ CREATE TABLE IF NOT EXISTS tokens (
     rotated_to BIGINT NULL, -- For tracking rotation
     CONSTRAINT fk_client_id FOREIGN KEY (client_id) REFERENCES oauth_clients (id) ON DELETE CASCADE
 );
+-- Define Resources
+CREATE TABLE resources (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50), -- Example: "document", "project", etc.
+    description VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-CREATE UNIQUE INDEX users_email_idx ON users (email);
-CREATE INDEX users_enabled_idx ON users (enabled);
-CREATE INDEX users_login_attempts_idx ON users (failed_login_attempts, locked_until);
+-- Assign Permissions to Resources
+CREATE TABLE resource_permissions (
+    resource_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    PRIMARY KEY (resource_id, permission_id),
+    FOREIGN KEY (resource_id) REFERENCES resources(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+);
 
-CREATE INDEX idx_tenant_users_tenant_id ON tenant_users(tenant_id);
-CREATE INDEX idx_oauth_clients_client_id ON oauth_clients(client_id);
+-- Users Table Indexes
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX idx_users_last_login_time ON users (last_login_time);
 
-CREATE UNIQUE INDEX roles_name_idx ON roles (name);
+-- Roles Table Indexes
+CREATE INDEX idx_roles_name ON roles (name);
 
--- User Roles Table
-CREATE INDEX user_roles_user_idx ON user_roles (user_id);
-CREATE INDEX user_roles_role_idx ON user_roles (role_id);
+-- User Roles Table Indexes
+CREATE INDEX idx_user_roles_user_id ON user_roles (user_id);
+CREATE INDEX idx_user_roles_role_id ON user_roles (role_id);
 
--- Groups Table
+-- Groups Table Indexes
+CREATE INDEX idx_groups_name ON groups (name);
 
-CREATE UNIQUE INDEX groups_name_idx ON groups (name);
+-- Group Memberships Table Indexes
+CREATE INDEX idx_group_memberships_user_id ON group_memberships (user_id);
+CREATE INDEX idx_group_memberships_group_id ON group_memberships (group_id);
+CREATE INDEX idx_group_memberships_role_id ON group_memberships (role_id);
 
--- Group Memberships Table
-CREATE INDEX group_memberships_user_idx ON group_memberships (user_id);
-CREATE INDEX group_memberships_group_idx ON group_memberships (group_id);
+-- Permissions Table Indexes
+CREATE INDEX idx_permissions_name ON permissions (name);
 
--- Permissions Table
-CREATE UNIQUE INDEX permissions_name_idx ON permissions (name);
+-- Group Permissions Table Indexes
+CREATE INDEX idx_group_permissions_group_id ON group_permissions (group_id);
+CREATE INDEX idx_group_permissions_permission_id ON group_permissions (permission_id);
 
--- Group Permissions Table
-CREATE INDEX group_permissions_group_idx ON group_permissions (group_id);
-CREATE INDEX group_permissions_permission_idx ON group_permissions (permission_id);
+-- Role Permissions Table Indexes
+CREATE INDEX idx_role_permissions_role_id ON role_permissions (role_id);
+CREATE INDEX idx_role_permissions_permission_id ON role_permissions (permission_id);
 
--- Secrets Table
+-- Secrets Table Indexes
 CREATE INDEX idx_secrets_name ON secrets (name);
-CREATE INDEX idx_secrets_active_expires ON secrets (active, expires_at);
+CREATE INDEX idx_secrets_last_rotated_at ON secrets (last_rotated_at);
 
+-- OAuth Clients Table Indexes
+CREATE INDEX idx_oauth_clients_name ON oauth_clients (name);
+CREATE INDEX idx_oauth_clients_client_id ON oauth_clients (client_id);
+CREATE INDEX idx_oauth_clients_created_at ON oauth_clients (created_at);
+CREATE INDEX idx_oauth_clients_updated_at ON oauth_clients (updated_at);
 
+-- Tokens Table Indexes
+CREATE INDEX idx_tokens_client_id ON tokens (client_id);
+CREATE INDEX idx_tokens_user_id ON tokens (user_id);
+CREATE INDEX idx_tokens_expires_at ON tokens (expires_at);

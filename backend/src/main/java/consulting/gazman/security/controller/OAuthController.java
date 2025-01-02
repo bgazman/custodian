@@ -168,6 +168,26 @@ public class OAuthController {
         }
     }
 
+    @PostMapping("/revoke")
+    public ResponseEntity<?> revokeToken(@RequestBody String refreshToken) {
+        try {
+            // Attempt to revoke the token using your service
+            oAuthService.revokeToken(refreshToken);
+
+            // Return a success response
+            return ResponseEntity.ok("Token successfully revoked.");
+        } catch (AppException e) {
+            // Handle application-specific exceptions
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
+        } catch (Exception e) {
+            // Handle generic exceptions
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+        }
+    }
 
     @GetMapping("/userinfo")
     public ResponseEntity<?> userinfo(@RequestHeader("Authorization") String bearerToken) {

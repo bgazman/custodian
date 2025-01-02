@@ -19,7 +19,8 @@ public interface OAuthClientService {
     boolean validateGrantType(String clientId, String grantType);
     boolean validateScope(String clientId, String scope);
 
-    Map<String, Object> getJwks(Long tenantId);
+
+    Map<String, Object> getJwks();
 
     void delete(Long id);
 

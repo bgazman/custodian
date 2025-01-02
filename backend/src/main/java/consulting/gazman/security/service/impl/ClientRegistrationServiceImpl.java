@@ -6,10 +6,8 @@ import consulting.gazman.security.dto.ClientRegistrationRequest;
 import consulting.gazman.security.dto.ClientRegistrationResponse;
 import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.Secret;
-import consulting.gazman.security.entity.Tenant;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.repository.SecretRepository;
-import consulting.gazman.security.repository.TenantRepository;
 import consulting.gazman.security.service.ClientRegistrationService;
 import consulting.gazman.security.service.OAuthClientService;
 import jakarta.transaction.Transactional;
@@ -27,12 +25,10 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
     private final SecretServiceImpl secretService;
     private final OAuthClientService oAuthClientService;
     private final ObjectMapper objectMapper;
-    private final TenantRepository tenantRepository;
-    public ClientRegistrationServiceImpl(SecretServiceImpl secretService, OAuthClientService oAuthClientService, ObjectMapper objectMapper, TenantRepository tenantRepository) {
+    public ClientRegistrationServiceImpl(SecretServiceImpl secretService, OAuthClientService oAuthClientService, ObjectMapper objectMapper) {
         this.secretService = secretService;
         this.oAuthClientService = oAuthClientService;
         this.objectMapper = objectMapper;
-        this.tenantRepository = tenantRepository;
     }
 //    private Secret getOrCreateDefaultSecret() {
 //        return secretRepository.findByName("default-signing-key")
@@ -57,9 +53,6 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
         }
 
         // Fetch the tenant
-        Tenant tenant = tenantRepository.findById(request.getTenantId())
-                .orElseThrow(() -> AppException.resourceNotFound("TENANT_NOT_FOUND"));
-
         // Generate client_id and client_secret first
         String clientId = generateClientId();
         String clientSecret = generateClientSecret();
@@ -69,7 +62,6 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
 
         // Create the OAuth client
         OAuthClient client = OAuthClient.builder()
-                .tenant(tenant)
                 .clientId(clientId) // Use pre-generated client_id
                 .clientSecret(clientSecret) // Use pre-generated client_secret
                 .clientSecretLastRotated(LocalDateTime.now())

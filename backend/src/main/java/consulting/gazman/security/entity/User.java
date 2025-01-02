@@ -1,11 +1,11 @@
 package consulting.gazman.security.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
-import lombok.Getter;
-
-import lombok.Setter;
+import lombok.*;
 
 import java.util.*;
 
@@ -37,8 +37,7 @@ public class User implements UserDetails {
     private String name;
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<TenantUser> tenantUsers = new ArrayList<>();
+
 
     @Column(name = "password", nullable = false, length = 255)
     private String password;
@@ -58,7 +57,8 @@ public class User implements UserDetails {
     @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired = true;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    @JsonManagedReference("user-roles")    // or @JsonIgnore if you don't need it in JSON
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<UserRole> userRoles = new HashSet<>();
 
     @Column(name = "failed_login_attempts", nullable = false)

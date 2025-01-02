@@ -2,21 +2,22 @@ import React, {useEffect, useState} from 'react';
 import { Users, UserCircle, Shield, Key, Settings } from 'lucide-react';
 import {useNavigate} from "react-router-dom";
 import UsersComponent from "../components/Users/Users";
+import Groups from "./Groups.tsx";
 
 const IamDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [currentSection, setCurrentSection] = useState('users');
     useEffect(() => {
-        const isAdmin = localStorage.getItem("role") === "ADMIN";
-        if (!isAdmin) {
-            navigate("/", { replace: true });
-        }
+        // const isAdmin = localStorage.getItem("role") === "ADMIN";
+        // if (!isAdmin) {
+        //     navigate("/", { replace: true });
+        // }
     }, [navigate]);
 
     const renderContent = () => {
         switch(currentSection) {
             case 'users': return <UsersComponent />;
-            case 'groups': return <div>Groups Content</div>;
+            case 'groups': return <Groups/>;
             case 'permissions': return <div>Permissions Content</div>;
             case 'secrets': return <div>Secrets Content</div>;
             case 'tokens': return <div>Tokens Content</div>;
@@ -62,23 +63,6 @@ const IamDashboard: React.FC = () => {
     );
 };
 
-const UsersDashboardLayout = () => (
-    <>
-        <div className="mb-4 text-sm text-gray-600">
-            Home &gt; Users
-        </div>
-        <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Users Management</h1>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-            <div className="flex gap-4 items-center">
-                {/* Filter components */}
-            </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm">
-            {/* Users table */}
-        </div>
-    </>
-);
+
 
 export default IamDashboard;

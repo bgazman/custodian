@@ -41,9 +41,7 @@ public class OAuthClient {
     @Column(name = "response_types", nullable = false, columnDefinition = "jsonb")
     private List<String> responseTypes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tenant_id"))
-    private Tenant tenant;
+
 
     @Column(name = "client_id", nullable = false, unique = true, length = 100)
     private String clientId;

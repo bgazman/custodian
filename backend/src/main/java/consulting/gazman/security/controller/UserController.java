@@ -16,8 +16,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/users")
-@PreAuthorize("hasRole('ADMIN')")
+@RequestMapping("/api/secure/users")
 
 public class UserController extends ApiController {
 
@@ -26,7 +25,7 @@ public class UserController extends ApiController {
 
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
-        logRequest("GET", "/api/users");
+        logRequest("GET", "/api/secure/users");
         try {
             List<User> users = userService.getAllUsers();
             return wrapSuccessResponse(users, "Users retrieved successfully");
@@ -52,7 +51,7 @@ public class UserController extends ApiController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody User user) {
-        logRequest("POST", "/api/users");
+        logRequest("POST", "/api/secure/users");
         try {
             User createdUser = userService.save(user);
             return wrapSuccessResponse(createdUser, "User created successfully");

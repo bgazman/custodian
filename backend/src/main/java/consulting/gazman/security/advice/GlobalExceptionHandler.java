@@ -1,5 +1,6 @@
 package consulting.gazman.security.advice;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import consulting.gazman.common.dto.ApiError;
 import consulting.gazman.common.dto.ApiResponse;
 import consulting.gazman.security.exception.AppException;
@@ -20,6 +21,16 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(JsonMappingException.class)
+    public ResponseEntity<?> handleJsonMappingException(JsonMappingException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.builder()
+                        .code("JSON_MAPPING_ERROR")
+                        .message("An error occurred during serialization: " + ex.getMessage())
+                        .build());
+    }
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<?> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
         return ResponseEntity

@@ -1,5 +1,8 @@
 package consulting.gazman.security.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -19,6 +22,7 @@ public class UserRole {
     @EmbeddedId
     private UserRoleId id = new UserRoleId();
 
+    @JsonIgnore // Change this from @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
     @JoinColumn(name = "user_id")
@@ -27,6 +31,7 @@ public class UserRole {
     @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("roleId")
     @JoinColumn(name = "role_id")
+    @JsonIgnoreProperties({"userRoles"}) // Add this annotation
     private Role role;
 
     @Column(name = "created_at", nullable = false, updatable = false)

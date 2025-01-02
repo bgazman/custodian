@@ -8,7 +8,6 @@ import consulting.gazman.security.entity.Token;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.*;
-import consulting.gazman.security.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -250,15 +249,19 @@ public class OAuthServiceImpl implements OAuthService {
     }
 
 
-//    @Override
-//    public UserInfoResponse getUserInfo(String bearerToken) {
-//        User user = jwtService.validateAccessToken(bearerToken);
-//        return UserInfoResponse.builder()
-//                .sub(user.getEmail())
-//                .email(user.getEmail())
-//                .emailVerified(user.isEmailVerified())
-//                .build();
-//    }
+    @Transactional
+    @Override
+    public void revokeToken(String token) {
+        Token existingToken = tokenService.findToken(token)
+                .orElseThrow(() -> AppException.invalidRefreshToken("The refresh token is invalid or expired"));
+
+        tokenService.revokeToken(existingToken.getId());
+
+
+
+    }
+
+
 
     // Helper: Check if account is locked
     private boolean isAccountLocked(User user) {

@@ -19,11 +19,10 @@ import java.util.*;
 @Slf4j
 public class InitializationClass implements CommandLineRunner {
     private final OAuthClientService oAuthClientService;
-    private final TenantRepository tenantRepository;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
-    private final TenantUserRepository tenantUserRepository;
     private final ClientRegistrationService clientRegistrationService;
     private final PasswordEncoder passwordEncoder;
     private final RolePermissionRepository rolePermissionRepository;
@@ -32,21 +31,18 @@ public class InitializationClass implements CommandLineRunner {
     // Constructor with all dependencies
     public InitializationClass(
             OAuthClientService oAuthClientService,
-            TenantRepository tenantRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
             PermissionRepository permissionRepository,
-            TenantUserRepository tenantUserRepository,
             ClientRegistrationService clientRegistrationService,
             PasswordEncoder passwordEncoder,
             RolePermissionRepository rolePermissionRepository,
             UserRoleRepository userRoleRepository) {
         this.oAuthClientService = oAuthClientService;
-        this.tenantRepository = tenantRepository;
+
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
-        this.tenantUserRepository = tenantUserRepository;
         this.clientRegistrationService = clientRegistrationService;
         this.passwordEncoder = passwordEncoder;
         this.rolePermissionRepository = rolePermissionRepository;
@@ -57,41 +53,20 @@ public class InitializationClass implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
-            initializeRootTenant();
+            initializeRooUser();
         } catch (Exception e) {
-            log.error("Failed to initialize root tenant", e);
+            log.error("Failed to initialize root user", e);
             throw new RuntimeException("System initialization failed", e);
         }
     }
 
-    private void initializeRootTenant() {
-        // 1. Create Root Tenant
-        String rootTenantName = "root";
-        String rootIssuerUrl = "https://localhost:8080/root"; // Replace with your root issuer URL
-        String rootJwksUri = "https://localhost:8080/root/.well-known/jwks.json"; // Replace with your JWKS URI
+    private void initializeRooUser() {
 
-        // 2. Check if the root tenant already exists
-        Tenant rootTenant = tenantRepository.findByName(rootTenantName)
-                .orElseGet(() -> {
-                    // 3. Create and populate a new root tenant
-                    Tenant tenant = new Tenant();
-                    tenant.setName(rootTenantName);
-                    tenant.setDescription("Root System Tenant - Has full system access");
-                    tenant.setIssuerUrl(rootIssuerUrl);
-                    tenant.setJwksUri(rootJwksUri);
-                    tenant.setTokenLifetime(3600); // Default access token lifetime in seconds
-                    tenant.setRefreshTokenLifetime(86400); // Default refresh token lifetime in seconds
-                    tenant.setCreatedAt(LocalDateTime.now());
-
-                    // 4. Save and return the new tenant
-                    return tenantRepository.save(tenant);
-                });
 
         // 2. Initialize System Roles
         Map<String, String> systemRoles = Map.of(
                 "SUPER_ADMIN", "Complete system access with all permissions",
                 "SYSTEM_ADMIN", "System-wide administrative access with limited restrictions",
-                "TENANT_ADMIN", "Full access within assigned tenant",
                 "USER_MANAGER", "User management capabilities",
                 "AUDIT_VIEWER", "Access to system audit logs",
                 "CLIENT_MANAGER", "OAuth client management capabilities"
@@ -119,11 +94,6 @@ public class InitializationClass implements CommandLineRunner {
         // 3. Initialize System Permissions
         Map<String, String> systemPermissions = new LinkedHashMap<>();
 
-        // Tenant Management
-        systemPermissions.put("TENANT_CREATE", "Create new tenants");
-        systemPermissions.put("TENANT_READ", "View tenant information");
-        systemPermissions.put("TENANT_UPDATE", "Update tenant details");
-        systemPermissions.put("TENANT_DELETE", "Delete tenants");
 
         // User Management
         systemPermissions.put("USER_CREATE", "Create new users");
@@ -201,17 +171,7 @@ public class InitializationClass implements CommandLineRunner {
                     });
         });
 
-        // 6. Assign Root User to Root Tenant
-        TenantUserId tenantUserId = new TenantUserId(rootTenant.getId(), rootUser.getId());
-        tenantUserRepository.findById(tenantUserId)
-                .orElseGet(() -> {
-                    TenantUser tenantUser = new TenantUser();
-                    tenantUser.setId(tenantUserId);
-                    tenantUser.setTenant(rootTenant);
-                    tenantUser.setUser(rootUser);
-                    tenantUser.setRole("SUPER_ADMIN");
-                    return tenantUserRepository.save(tenantUser);
-                });
+
 
         // 7. Assign Super Admin Role to Root User
         UserRoleId userRoleId = new UserRoleId();
@@ -236,7 +196,6 @@ public class InitializationClass implements CommandLineRunner {
                     .responseTypes(List.of("authorization_code", "refresh_token"))
                     .redirectUris(List.of("https://localhost:5173/callback"))
                     .grantTypes(List.of("authorization_code", "refresh_token"))
-                    .tenantId(rootTenant.getId())
                     .build();
             try {
                 clientRegistrationService.registerClient(clientRegistrationRequest);
@@ -245,6 +204,6 @@ public class InitializationClass implements CommandLineRunner {
             }
         }
 
-        log.info("Root tenant initialization completed successfully!");
+        log.info("Root user initialization completed successfully!");
     }
 }

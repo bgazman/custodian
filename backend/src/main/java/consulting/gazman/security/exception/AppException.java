@@ -83,4 +83,5 @@ public class AppException extends RuntimeException {
     public static AppException invalidAuthCode(String message) {
         return new AppException("INVALID_AUTH_CODE", message);
     }
+
 }

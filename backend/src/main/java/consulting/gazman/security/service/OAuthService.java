@@ -9,8 +9,10 @@ public interface OAuthService {
     TokenResponse exchangeToken(TokenRequest request);
     TokenResponse refreshToken(TokenRequest request);
 
-    @Transactional
     IntrospectResponse introspectToken(String token);
 
+
     UserInfoResponse getUserInfo(String bearerToken);
+
+    void revokeToken(String token);
 }
