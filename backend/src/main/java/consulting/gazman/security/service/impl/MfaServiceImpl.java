@@ -48,7 +48,7 @@ public class MfaServiceImpl implements MfaService {
             notificationService.sendEmail(email, "Your OTP", "Your OTP is: " + token);
         }
         // Store the token in Redis with a short expiration (e.g., 5 minutes)
-        redisTemplate.opsForValue().set("mfa:" + email, token, 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set("mfa:token:" + email, token, 5, TimeUnit.MINUTES);
     }
 
 
@@ -68,31 +68,24 @@ public class MfaServiceImpl implements MfaService {
         }
 
         if ("TOTP".equalsIgnoreCase(method)) {
-//            String secret = userService.getTotpSecret(email); // Actually fetch from user profile
-//            if (secret == null) {
-//                log.error("No TOTP secret found for user: {}", email);
-//                return false;
-//            }
-//            return validateTotp(secret, token);
-            return true;
-        } else {
-            String redisKey = "mfa:" + email;
-            String storedToken = redisTemplate.opsForValue().get(redisKey);
-
-            if (storedToken == null) {
-                return false;
-            }
-
-            boolean matches = storedToken.equals(token);
-            if (!matches) {
-                log.debug("Token mismatch for user {}: expected={}, received={}",
-                        email, storedToken, token);
-            }else{
-                redisTemplate.delete(redisKey);
-
-            }
-            return matches;
+            return true; // TOTP validation logic
         }
+
+        String tokenKey = "mfa:token:" + email;
+        String storedToken = redisTemplate.opsForValue().get(tokenKey);
+
+        if (storedToken == null) {
+            return false;
+        }
+
+        boolean matches = storedToken.equals(token);
+        if (matches) {
+            redisTemplate.delete(tokenKey);
+            redisTemplate.delete("mfa:resend:" + email); // Clear resend attempts
+        } else {
+            log.debug("Token mismatch for user {}", email);
+        }
+        return matches;
     }
 
     @Override

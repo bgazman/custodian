@@ -1,4 +1,9 @@
-<div id="errorModal">
-    <p id="errorMessage"></p>
-    <button onclick="closeErrorModal()">Close</button>
+<div th:fragment="errorModal">
+    <div class="modal-overlay"></div>
+    <div id="errorModal">
+        <div class="modal-content">
+            <p id="errorMessage"></p>
+            <button type="button" class="modal-btn" onclick="window.closeModal()">Close</button>
+        </div>
+    </div>
 </div>

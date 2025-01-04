@@ -5,34 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <script type="module" th:src="@{/js/login.js}"></script>
 </head>
 <body>
 <h1>Login</h1>
 <div class="form-container">
     <form id="loginForm">
-        <div>
-            <label for="email">Email:</label>
-            <input type="text" id="email" name="email" required />
+        <div class="form-group">
+            <label class="form-label" for="email">Email:</label>
+            <input class="form-input" type="text" id="email" name="email" required />
         </div>
 
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required />
+        <div class="form-group">
+            <label class="form-label" for="password">Password:</label>
+            <input class="form-input" type="password" id="password" name="password" required />
         </div>
 
-        <div class="forgot-password">
-            <a href="/forgot-password">Forgot Password?</a>
+        <div class="form-group">
+            <a href="/forgot-password" class="link">Forgot Password?</a>
         </div>
 
-        <!-- Store OAuth parameters -->
+        <!-- Hidden OAuth Parameters -->
         <input type="hidden" id="clientId" th:value="${clientId}" />
         <input type="hidden" id="state" th:value="${state}" />
         <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
         <input type="hidden" id="responseType" th:value="${responseType}" />
         <input type="hidden" id="scope" th:value="${scope}" />
 
-        <div>
-            <button type="submit">Login</button>
+        <div class="form-group">
+            <button type="submit" class="btn-primary">Login</button>
         </div>
     </form>
 
@@ -41,19 +42,11 @@
     </div>
 
     <div class="register-link">
-        Don't have an account? <a href="/register">Register</a>
+        Don't have an account? <a href="/register" class="link">Register</a>
     </div>
 </div>
 
-<!-- Modal Overlay -->
-<div class="modal-overlay"></div>
-
-<!-- Error modal -->
-<div id="errorModal">
-    <p id="errorMessage"></p>
-    <button onclick="closeErrorModal()">Close</button>
-</div>
-
-<script th:src="@{/js/login.js}"></script>
+<!-- Include Error Modal -->
+<div th:replace="~{_error_modal :: errorModal}"></div>
 </body>
 </html>

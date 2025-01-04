@@ -1,91 +1,37 @@
-// Modal handling
-function showErrorModal(message) {
-    const errorModal = document.getElementById('errorModal');
-    const modalOverlay = document.querySelector('.modal-overlay');
-    const errorMessage = document.getElementById('errorMessage');
-
-    errorMessage.textContent = message || 'An unknown error occurred';
-    errorModal.style.display = 'block';
-    modalOverlay.style.display = 'block';
-
-    // Add class for animation if you want to add it later
-    errorModal.classList.add('visible');
-    modalOverlay.classList.add('visible');
-}
-
-function closeErrorModal() {
-    const errorModal = document.getElementById('errorModal');
-    const modalOverlay = document.querySelector('.modal-overlay');
-
-    errorModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-
-    errorModal.classList.remove('visible');
-    modalOverlay.classList.remove('visible');
-}
-
-function handleResponse() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const state = urlParams.get('state');
-    const error = urlParams.get('error');
-    const message = urlParams.get('message');
-    const mfaRequired = urlParams.get('mfa_required');
-
-    if (error && message) {
-        showErrorModal(decodeURIComponent(message));
-    } else if (mfaRequired) {
-        const params = new URLSearchParams({
-            email: urlParams.get('email'),
-            client_id: urlParams.get('client_id'),
-            redirect_uri: urlParams.get('redirect_uri'),
-            state: urlParams.get('state')
-        }).toString();
-
-        window.location.href = `/mfa?${params}`;
-    } else if (code && state) {
-        console.log('Authorization successful. Code:', code, 'State:', state);
-        // Handle successful authorization
-    }
-}
+import { modal } from './utils/modal.js';
+import { validation } from './utils/validation.js';
+import { handleSubmit } from './utils/api.js';
 
 function validateForm(email, password) {
-    if (!email || !email.trim()) {
-        showErrorModal('Email is required');
+    const emailError = validation.email(email);
+    if (emailError) {
+        modal.show(emailError);
         return false;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showErrorModal('Please enter a valid email address');
+    const passwordError = validation.password(password);
+    if (passwordError) {
+        modal.show(passwordError);
         return false;
     }
-
-    if (!password || !password.trim()) {
-        showErrorModal('Password is required');
-        return false;
-    }
-
     return true;
 }
 
-function submitLogin(event) {
-    event.preventDefault();  // Make sure this runs first
+async function submitLogin(event) {
+    event.preventDefault();
 
-    const form = event.target; // This is the form element
+    console.log('Form submission triggered'); // Debugging log
+
+    const form = event.target;
     const submitButton = form.querySelector('button[type="submit"]');
-
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    if (!validateForm(email, password)) {
-        return;
-    }
+    if (!validateForm(email, password)) return;
 
     const loginRequest = {
-        email: email,
-        password: password,
+        email,
+        password,
         clientId: document.getElementById('clientId').value,
         responseType: document.getElementById('responseType').value,
         redirectUri: document.getElementById('redirectUri').value,
@@ -93,58 +39,32 @@ function submitLogin(event) {
         state: document.getElementById('state').value,
     };
 
-    // Show loading state
-    const originalButtonText = submitButton.textContent;
-    submitButton.disabled = true;
-    submitButton.textContent = 'Logging in...';
+    try {
+        const result = await handleSubmit('/oauth/login', loginRequest, submitButton, 'Login');
 
-    fetch('/oauth/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginRequest),
-        redirect: 'follow'
-    })
-    .then(response => {
-        const redirectUrl = new URL(response.url);
-        const error = redirectUrl.searchParams.get('error');
-        const message = redirectUrl.searchParams.get('message');
-
-        if (error && message) {
-            showErrorModal(decodeURIComponent(message));
-            // Reset button state
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
+        if (result.error || result.message) {
+            modal.show(decodeURIComponent(result.message || 'An error occurred. Please try again.'));
             return;
         }
-        window.location.href = response.url;
-    })
-    .catch(error => {
-        console.error('Error during login:', error);
-        showErrorModal('An error occurred during login. Please try again.');
-        // Reset button state
-        submitButton.disabled = false;
-        submitButton.textContent = originalButtonText;
-    });
+
+        if (result.redirectUrl) {
+            window.location.href = result.redirectUrl;
+        } else {
+            modal.show('Login successful, but no redirect URL provided.');
+        }
+    } catch (error) {
+        modal.show(error.message);
+    }
 }
 
+
+
+// Attach event listener on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', submitLogin); // Simplified this line
+        loginForm.addEventListener('submit', submitLogin);
     }
+    modal.init(); // Initialize the modal
+});
 
-    // Close modal when clicking overlay
-    const modalOverlay = document.querySelector('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', closeErrorModal);
-    }
-
-    // Close modal with escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeErrorModal();
-        }
-    });
-}); // Moved this closing bracket

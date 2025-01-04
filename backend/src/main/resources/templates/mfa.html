@@ -5,24 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link th:href="@{/css/style.css}" rel="stylesheet">
-    <script>
-        // Add this before the mfa.js script
-        console.log('Page loaded');
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo);
-            return false;
-        };
-    </script>
-
-    <script th:src="@{/js/mfa.js}"
-            onerror="console.error('Failed to load mfa.js')"
-            onload="console.log('mfa.js loaded successfully')">
-    </script>
+    <script type="module" src="/js/mfa.js"></script>
 </head>
 <body>
 <h1>Multi-Factor Authentication</h1>
 <div class="form-container">
-    <form id="mfaForm" action="javascript:void(0);">        <div>
+    <form id="mfaForm" >
+        <div>
             <p>Please enter the verification code sent to your
                 <span th:if="${mfaMethod == 'SMS'}" th:text="'phone'">device</span>
                 <span th:if="${mfaMethod == 'EMAIL'}" th:text="${#strings.mask(email, '*', 3, email.indexOf('@'))}">email</span>
@@ -32,7 +21,7 @@
         <input type="hidden" id="email" name="email" th:value="${email}" />
 
         <!-- MFA Token -->
-        <div>
+        <div class="form-group">
             <label for="mfaToken">Verification Code:</label>
             <input type="text"
                    id="mfaToken"
@@ -54,24 +43,28 @@
         <input type="hidden" id="mfaMethod" name="mfaMethod" th:value="${mfaMethod}" />
 
         <!-- Submit Button -->
-        <div>
-            <button type="submit">Verify</button>
+        <div class="form-group">
+            <button type="submit" class="btn-primary">Verify</button>
         </div>
 
         <div class="divider">
             <span>or</span>
         </div>
+        <div class="form-group">
 
         <div class="alternative-options">
             <div class="register-link">
-                <a href="#" onclick="resendCode()">Resend Code</a>
+                <a href="#" onclick="window.resendCode()">Resend Code</a>
                 <span>|</span>
-                <a href="#" onclick="showBackupCodeForm()">Use Backup Code</a>
+                <a href="#" onclick="window.toggleBackupMode()">Use Backup Code</a>
             </div>
         </div>
+        </div>
+        <div class="form-group">
+            <div class="register-link">
 
-        <div class="support-link register-link">
             Having trouble? <a href="/support">Contact Support</a>
+            </div>
         </div>
     </form>
 </div>
@@ -79,10 +72,7 @@
 <!-- Modal Overlay -->
 <div class="modal-overlay"></div>
 
-<!-- Error Modal -->
-<div id="errorModal">
-    <p id="errorMessage"></p>
-    <button onclick="closeErrorModal()">Close</button>
-</div>
+<!-- Replace the modal code with: -->
+<div th:replace="~{_error_modal :: errorModal}"></div>
 </body>
 </html>
