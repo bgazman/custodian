@@ -1,4 +1,5 @@
 import { modal } from './utils/modal.js';
+import { forgotPasswordModal } from './utils/forgot-password_modal.js';
 import { validation } from './utils/validation.js';
 import { handleSubmit } from './utils/api.js';
 
@@ -55,16 +56,37 @@ async function submitLogin(event) {
     } catch (error) {
         modal.show(error.message);
     }
+
+function showForgotPasswordModal() {
+    modal.show('forgotPasswordModal'); // Opens the Forgot Password modal
+}
+
+function closeForgotPasswordModal() {
+    modal.close(); // Closes the currently active modal
+}
+
 }
 
 
 
-// Attach event listener on DOMContentLoaded
+// Attach event listeners on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Login form submission
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', submitLogin);
     }
-    modal.init(); // Initialize the modal
-});
 
+    // Forgot Password link click
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            forgotPasswordModal.show(); // Opens the Forgot Password modal
+        });
+    }
+
+    // Initialize modals
+    modal.init(); // Initialize the generic modal
+    forgotPasswordModal.init(); // Initialize the Forgot Password modal
+});

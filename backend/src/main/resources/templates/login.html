@@ -22,7 +22,7 @@
         </div>
 
         <div class="form-group">
-            <a href="/forgot-password" class="link">Forgot Password?</a>
+            <a href="#" id="forgotPasswordLink" class="link">Forgot Password?</a>
         </div>
 
         <!-- Hidden OAuth Parameters -->
@@ -48,5 +48,7 @@
 
 <!-- Include Error Modal -->
 <div th:replace="~{_error_modal :: errorModal}"></div>
+<div th:replace="~{_forgot-password_modal :: forgotPasswordModal}"></div>
+
 </body>
 </html>

@@ -42,32 +42,39 @@ public class SecurityConfig {
 
         this.objectMapper = objectMapper;
     }
-    // IDP SERVER CHAIN
     @Bean
     @Order(1)
     public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register", "/mfa/**") // Matches relevant paths
+                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register", "/mfa/**", "/forgot-password/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login").permitAll() // Public login page
-                        .requestMatchers("/oauth/token").permitAll() // Public token endpoint
-                        .requestMatchers("/oauth/introspect").permitAll()
-                        .requestMatchers("/oauth/revoke").permitAll()
-                        .requestMatchers("/oauth/authorize").permitAll() // Public for initiating OAuth
-                        .requestMatchers("/oauth/login").permitAll() // Public for initiating OAuth
-                        .requestMatchers("/.well-known/**").permitAll() // Public JWKS and metadata
-                        .requestMatchers("/client/register").permitAll() // Public client registration
-                        .requestMatchers("/mfa/**").permitAll() // Allow public access to MFA endpoints
-                        .anyRequest().authenticated() // All other requests require authentication
+                        // Public endpoints
+                        .requestMatchers("/login",
+                                "/oauth/token",
+                                "/oauth/introspect",
+                                "/oauth/revoke",
+                                "/oauth/authorize",
+                                "/oauth/login",
+                                "/.well-known/**",
+                                "/client/register",
+                                "/mfa/**",
+                                "/forgot-password/**").permitAll()
+                        // All other requests
+                        .anyRequest().authenticated()
                 )
+                // Form login configuration
                 .formLogin(form -> form
-                        .loginPage("/login") // Custom login page
-                        .loginProcessingUrl("/login") // Login form submission URL
-                        .defaultSuccessUrl("/oauth/authorize", false) // Redirect here after successful login
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/oauth/authorize", false)
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/oauth/**", "/mfa/**")); // Disable CSRF for OAuth endpoints
+                // CSRF ignoring configuration
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/oauth/**", "/mfa/**", "/forgot-password/**")
+                );
         return http.build();
     }
+
 
 
 // Client Backend Chain

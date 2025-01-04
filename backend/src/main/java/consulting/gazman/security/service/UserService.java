@@ -33,5 +33,9 @@ public interface UserService {
     String getPhoneNumber(String email);
 
     void updateUser(User user);
+
+    boolean isEmailRegistered(String email);
+
+    void updatePassword(String email, String newPassword);
 }
 

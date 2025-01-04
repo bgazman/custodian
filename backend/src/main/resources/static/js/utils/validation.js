@@ -48,4 +48,16 @@ export const validation = {
         // Additional password rules can be added here if needed
         return null;
     },
+        /**
+         * Checks if the new password and confirm password match.
+         * @param {string} password - The new password.
+         * @param {string} confirmPassword - The confirmation password.
+         * @returns {string|null} - Error message if they don't match, or null if valid.
+         */
+        passwordMatch(password, confirmPassword) {
+            if (password !== confirmPassword) {
+                return 'Passwords do not match';
+            }
+            return null;
+        },
 };

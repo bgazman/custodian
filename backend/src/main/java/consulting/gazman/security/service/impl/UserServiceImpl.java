@@ -195,6 +195,27 @@ public class UserServiceImpl implements UserService {
             throw new AppException("UPDATE_FAILED", "Failed to update user: " + e.getMessage());
         }
     }
+
+    @Override
+    public boolean isEmailRegistered(String email) {
+        // Check if a user with the given email exists
+        return userRepository.existsByEmail(email);
+    }
+
+    @Override
+    public void updatePassword(String email, String newPassword) {
+        // Find the user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email not found in the system."));
+
+        // Hash the new password
+        String hashedPassword = passwordEncoder.encode(newPassword);
+
+        // Update the password
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
+
+    }
 }
 
 

@@ -4,6 +4,8 @@ export const modal = {
         overlay: null,
         message: null,
         closeButton: null,
+        content: null, // Added to handle dynamic modal content
+
     },
 
     /**
@@ -43,29 +45,33 @@ export const modal = {
     /**
      * Closes the modal and restores focus to the active form or document.
      */
-    close() {
-        try {
-            this.initElements();
+close() {
+    try {
+        this.initElements();
 
-            if (!this.elements.modal || !this.elements.overlay) return;
+        if (!this.elements.modal || !this.elements.overlay) return;
 
-            // Remove visible classes for transition effects
-            this.elements.modal.classList.remove('visible');
-            this.elements.overlay.classList.remove('visible');
+        // Remove visible classes for transition effects
+        this.elements.modal.classList.remove('visible');
+        this.elements.overlay.classList.remove('visible');
 
-            // Hide modal and overlay after the transition
-            setTimeout(() => {
-                this.elements.overlay.style.display = 'none';
-                this.elements.modal.style.display = 'none';
+        // Hide modal and overlay after the transition
+        setTimeout(() => {
+            this.elements.overlay.style.display = 'none';
+            this.elements.modal.style.display = 'none';
 
-                // Restore focus to the active form or document
-                const activeForm = document.querySelector('form:visible');
-                if (activeForm) activeForm.focus();
-            }, 300); // Match CSS transition duration
-        } catch (error) {
-            console.error('Error closing modal:', error);
-        }
-    },
+            // Restore focus to the first visible and enabled form element
+            const activeForm = Array.from(document.forms).find((form) => {
+                return form.offsetParent !== null; // Check if form is visible
+            });
+
+            if (activeForm) activeForm.focus();
+        }, 300); // Match CSS transition duration
+    } catch (error) {
+        console.error('Error closing modal:', error);
+    }
+}
+,
 
     /**
      * Initializes modal elements and event listeners if not already initialized.

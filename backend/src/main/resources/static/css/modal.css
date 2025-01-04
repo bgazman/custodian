@@ -1,4 +1,4 @@
-/* Modal Overlay */
+/* Modal Overlay (Hidden by Default) */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -12,7 +12,7 @@
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-/* Modal Container */
+/* Modal Container (Hidden by Default) */
 #errorModal {
     position: fixed;
     top: 50%;
@@ -70,4 +70,27 @@
 
 .modal-btn:hover {
     background: var(--primary-hover);
+}
+/* Modal Container (Hidden by Default) */
+#forgotPasswordModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: var(--card-background);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+}
+
+
+
+#forgotPasswordModal.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
 }
