@@ -11,15 +11,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Component
 @Slf4j
 public class InitializationClass implements CommandLineRunner {
-    private final OAuthClientService oAuthClientService;
 
+    private final OAuthClientService oAuthClientService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
@@ -27,8 +26,11 @@ public class InitializationClass implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final RolePermissionRepository rolePermissionRepository;
     private final UserRoleRepository userRoleRepository;
+    private final PolicyRepository policyRepository;
+    private final PolicyAssignmentRepository policyAssignmentRepository;
+    private final ResourceRepository resourceRepository;
+    private final ResourcePermissionRepository resourcePermissionRepository;
 
-    // Constructor with all dependencies
     public InitializationClass(
             OAuthClientService oAuthClientService,
             UserRepository userRepository,
@@ -37,9 +39,12 @@ public class InitializationClass implements CommandLineRunner {
             ClientRegistrationService clientRegistrationService,
             PasswordEncoder passwordEncoder,
             RolePermissionRepository rolePermissionRepository,
-            UserRoleRepository userRoleRepository) {
+            UserRoleRepository userRoleRepository,
+            PolicyRepository policyRepository,
+            PolicyAssignmentRepository policyAssignmentRepository,
+            ResourceRepository resourceRepository,
+            ResourcePermissionRepository resourcePermissionRepository) {
         this.oAuthClientService = oAuthClientService;
-
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
@@ -47,91 +52,77 @@ public class InitializationClass implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
         this.rolePermissionRepository = rolePermissionRepository;
         this.userRoleRepository = userRoleRepository;
+        this.policyRepository = policyRepository;
+        this.policyAssignmentRepository = policyAssignmentRepository;
+        this.resourceRepository = resourceRepository;
+        this.resourcePermissionRepository = resourcePermissionRepository;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
         try {
-            initializeRooUser();
+            initializeSystem();
         } catch (Exception e) {
-            log.error("Failed to initialize root user", e);
-            throw new RuntimeException("System initialization failed", e);
+            log.error("System initialization failed", e);
+            throw new RuntimeException("Initialization failed", e);
         }
     }
 
-    private void initializeRooUser() {
+    private void initializeSystem() {
+        // Initialize Roles
+        Role superAdminRole = createRoles();
 
+        // Initialize Permissions
+        List<Permission> permissions = createPermissions();
 
-        // 2. Initialize System Roles
+        // Initialize Policies
+        createPolicies(superAdminRole, permissions);
+
+        // Initialize Resources and Permissions
+        createResourcesAndPermissions();
+
+        // Create Root User and Assign Role
+        createRootUserAndAssignRole(superAdminRole);
+
+        // Initialize Default OAuth Client
+        createDefaultOAuthClient();
+
+        log.info("System initialization completed successfully!");
+    }
+
+    private Role createRoles() {
         Map<String, String> systemRoles = Map.of(
-                "SUPER_ADMIN", "Complete system access with all permissions",
-                "SYSTEM_ADMIN", "System-wide administrative access with limited restrictions",
-                "USER_MANAGER", "User management capabilities",
-                "AUDIT_VIEWER", "Access to system audit logs",
-                "CLIENT_MANAGER", "OAuth client management capabilities"
+                "SUPER_ADMIN", "Complete system access",
+                "USER_MANAGER", "Manage users and roles",
+                "AUDIT_VIEWER", "View audit logs"
         );
 
-        Map<Role, Role> roleHierarchy = new HashMap<>();
         Role superAdminRole = null;
-
-        for (Map.Entry<String, String> roleEntry : systemRoles.entrySet()) {
-            Role role = roleRepository.findByName(roleEntry.getKey())
+        for (Map.Entry<String, String> entry : systemRoles.entrySet()) {
+            Role role = roleRepository.findByName(entry.getKey())
                     .orElseGet(() -> {
                         Role newRole = new Role();
-                        newRole.setName(roleEntry.getKey());
-                        newRole.setDescription(roleEntry.getValue());
+                        newRole.setName(entry.getKey());
+                        newRole.setDescription(entry.getValue());
                         return roleRepository.save(newRole);
                     });
 
-            if ("SUPER_ADMIN".equals(roleEntry.getKey())) {
+            if ("SUPER_ADMIN".equals(entry.getKey())) {
                 superAdminRole = role;
-            } else if ("SYSTEM_ADMIN".equals(roleEntry.getKey())) {
-                roleHierarchy.put(role, superAdminRole);
             }
         }
+        return superAdminRole;
+    }
 
-        // 3. Initialize System Permissions
-        Map<String, String> systemPermissions = new LinkedHashMap<>();
+    private List<Permission> createPermissions() {
+        Map<String, String> systemPermissions = Map.of(
+                "USER_READ", "Read user information",
+                "USER_WRITE", "Modify user information",
+                "AUDIT_READ", "View audit logs"
+        );
 
-
-        // User Management
-        systemPermissions.put("USER_CREATE", "Create new users");
-        systemPermissions.put("USER_READ", "View user information");
-        systemPermissions.put("USER_UPDATE", "Update user details");
-        systemPermissions.put("USER_DELETE", "Delete users");
-
-        // Role Management
-        systemPermissions.put("ROLE_CREATE", "Create new roles");
-        systemPermissions.put("ROLE_READ", "View role information");
-        systemPermissions.put("ROLE_UPDATE", "Update role details");
-        systemPermissions.put("ROLE_DELETE", "Delete roles");
-
-        // Permission Management
-        systemPermissions.put("PERMISSION_CREATE", "Create new permissions");
-        systemPermissions.put("PERMISSION_READ", "View permission information");
-        systemPermissions.put("PERMISSION_UPDATE", "Update permission details");
-        systemPermissions.put("PERMISSION_DELETE", "Delete permissions");
-
-        // Group Management
-        systemPermissions.put("GROUP_CREATE", "Create new groups");
-        systemPermissions.put("GROUP_READ", "View group information");
-        systemPermissions.put("GROUP_UPDATE", "Update group details");
-        systemPermissions.put("GROUP_DELETE", "Delete groups");
-
-        // OAuth Client Management
-        systemPermissions.put("OAUTH_CLIENT_CREATE", "Create new OAuth clients");
-        systemPermissions.put("OAUTH_CLIENT_READ", "View OAuth client information");
-        systemPermissions.put("OAUTH_CLIENT_UPDATE", "Update OAuth client details");
-        systemPermissions.put("OAUTH_CLIENT_DELETE", "Delete OAuth clients");
-
-        // System Management
-        systemPermissions.put("SYSTEM_AUDIT", "View system audit logs");
-        systemPermissions.put("SYSTEM_CONFIG", "Modify system configuration");
-        systemPermissions.put("SYSTEM_BACKUP", "Manage system backups");
-        systemPermissions.put("SYSTEM_RESTORE", "Restore system from backup");
-
-        List<Permission> allPermissions = new ArrayList<>();
+        List<Permission> permissions = new ArrayList<>();
         systemPermissions.forEach((name, description) -> {
             Permission permission = permissionRepository.findByName(name)
                     .orElseGet(() -> {
@@ -140,10 +131,66 @@ public class InitializationClass implements CommandLineRunner {
                         newPermission.setDescription(description);
                         return permissionRepository.save(newPermission);
                     });
-            allPermissions.add(permission);
+            permissions.add(permission);
         });
+        return permissions;
+    }
 
-        // 4. Create Root User
+    private void createPolicies(Role superAdminRole, List<Permission> permissions) {
+        Policy policy = policyRepository.findByName("FullAccessPolicy")
+                .orElseGet(() -> {
+                    Policy newPolicy = new Policy();
+                    newPolicy.setName("FullAccessPolicy");
+                    newPolicy.setDescription("Grants all permissions");
+                    newPolicy.setDefinition("{\"effect\": \"allow\"}");
+                    newPolicy.setEffect("allow");
+                    return policyRepository.save(newPolicy);
+                });
+
+        PolicyAssignment assignment = policyAssignmentRepository.findByPolicyIdAndRoleId(policy.getId(), superAdminRole.getId())
+                .orElseGet(() -> {
+                    PolicyAssignment newAssignment = new PolicyAssignment();
+                    newAssignment.setPolicy(policy);
+                    newAssignment.setRole(superAdminRole);
+                    return policyAssignmentRepository.save(newAssignment);
+                });
+
+        permissions.forEach(permission -> {
+            RolePermissionId rolePermissionId = new RolePermissionId(superAdminRole.getId(), permission.getId());
+            rolePermissionRepository.findById(rolePermissionId).orElseGet(() -> {
+                RolePermission rolePermission = new RolePermission();
+                rolePermission.setId(rolePermissionId);
+                rolePermission.setRole(superAdminRole);
+                rolePermission.setPermission(permission);
+                return rolePermissionRepository.save(rolePermission);
+            });
+        });
+    }
+
+    private void createResourcesAndPermissions() {
+        Resource resource = resourceRepository.findByName("SystemLogs")
+                .orElseGet(() -> {
+                    Resource newResource = new Resource();
+                    newResource.setName("SystemLogs");
+                    newResource.setType("log");
+                    newResource.setDescription("System-wide audit logs");
+                    return resourceRepository.save(newResource);
+                });
+
+        Permission auditReadPermission = permissionRepository.findByName("AUDIT_READ").orElseThrow();
+        ResourcePermissionId resourcePermissionId = new ResourcePermissionId();
+        resourcePermissionId.setPermissionId(auditReadPermission.getId());
+        resourcePermissionId.setResourceId(resource.getId());
+        resourcePermissionRepository.findById(resourcePermissionId).orElseGet(() -> {
+            ResourcePermission resourcePermission = new ResourcePermission();
+            resourcePermission.setId(resourcePermissionId);
+            resourcePermission.setResource(resource);
+            resourcePermission.setPermission(auditReadPermission);
+            return resourcePermissionRepository.save(resourcePermission);
+        });
+    }
+
+    private void createRootUserAndAssignRole(Role superAdminRole) {
         String rootPassword = System.getenv().getOrDefault("ROOT_PASSWORD", "rootpass123!");
         User rootUser = userRepository.findByEmail("root@system.local")
                 .orElseGet(() -> {
@@ -153,43 +200,24 @@ public class InitializationClass implements CommandLineRunner {
                     user.setPassword(passwordEncoder.encode(rootPassword));
                     user.setEnabled(true);
                     user.setEmailVerified(true);
-//                    user.setMfaEnabled(true);
                     return userRepository.save(user);
                 });
 
-        // 5. Assign All Permissions to Super Admin Role
-        Role finalSuperAdminRole = superAdminRole;
-        allPermissions.forEach(permission -> {
-            RolePermissionId rolePermissionId = new RolePermissionId(finalSuperAdminRole.getId(), permission.getId());
-            rolePermissionRepository.findById(rolePermissionId)
-                    .orElseGet(() -> {
-                        RolePermission rp = new RolePermission();
-                        rp.setId(rolePermissionId);
-                        rp.setRole(finalSuperAdminRole);
-                        rp.setPermission(permission);
-                        return rolePermissionRepository.save(rp);
-                    });
-        });
-
-
-
-        // 7. Assign Super Admin Role to Root User
         UserRoleId userRoleId = new UserRoleId();
-        userRoleId.setUserId(rootUser.getId());
         userRoleId.setRoleId(superAdminRole.getId());
-        Role finalSuperAdminRole1 = superAdminRole;
-        userRoleRepository.findById(userRoleId)
-                .orElseGet(() -> {
-                    UserRole userRole = new UserRole();
-                    userRole.setId(userRoleId);
-                    userRole.setUser(rootUser);
-                    userRole.setRole(finalSuperAdminRole1);
-                    return userRoleRepository.save(userRole);
-                });
+        userRoleId.setUserId(rootUser.getId());
+        userRoleRepository.findById(userRoleId).orElseGet(() -> {
+            UserRole userRole = new UserRole();
+            userRole.setId(userRoleId);
+            userRole.setUser(rootUser);
+            userRole.setRole(superAdminRole);
+            return userRoleRepository.save(userRole);
+        });
+    }
 
-        // 8. Initialize Default OAuth Client
+    private void createDefaultOAuthClient() {
         if (!oAuthClientService.existsByName("root-dashboard")) {
-            ClientRegistrationRequest clientRegistrationRequest = ClientRegistrationRequest.builder()
+            ClientRegistrationRequest clientRequest = ClientRegistrationRequest.builder()
                     .name("root-dashboard")
                     .applicationType("web")
                     .scopes(List.of("openid", "profile", "email", "admin"))
@@ -197,13 +225,7 @@ public class InitializationClass implements CommandLineRunner {
                     .redirectUris(List.of("https://localhost:5173/callback"))
                     .grantTypes(List.of("authorization_code", "refresh_token"))
                     .build();
-            try {
-                clientRegistrationService.registerClient(clientRegistrationRequest);
-            } catch (Exception e) {
-                log.warn("Root dashboard client already exists", e);
-            }
+            clientRegistrationService.registerClient(clientRequest);
         }
-
-        log.info("Root user initialization completed successfully!");
     }
 }

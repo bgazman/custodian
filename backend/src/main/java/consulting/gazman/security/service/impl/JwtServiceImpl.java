@@ -32,63 +32,82 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateAccessToken(User user, OAuthClient oAuthClient, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
+        // Validate expiration
+        if (oAuthClient.getAccessTokenExpirySeconds() == null) {
+            throw new IllegalArgumentException("Access token expiry seconds must not be null");
+        }
 
+        // Generate timestamps
+        Instant now = Instant.now();
+        long issuedAt = now.getEpochSecond();
+        long expiration = now.plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond();
 
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getUserRoles().stream()  // Fix role extraction
+        // Prepare roles
+        Set<String> userRoles = user.getUserRoles().stream()
                 .map(userRole -> userRole.getRole().getName())
-                .collect(Collectors.toSet()));
-        List<Map<String, Object>> groupsList = groups.stream()
-                .map(group -> {
-                    Map<String, Object> groupMap = new HashMap<>();
-                    groupMap.put("id", group.getGroup().getId().toString());
-                    groupMap.put("name", group.getGroup().getName());
-                    groupMap.put("role", group.getRole().toString());
-                    groupMap.put("permissions", permissions.get(group.getGroup().getId()));
-                    return groupMap;
-                })
+                .collect(Collectors.toSet());
+
+        // Prepare groups
+        List<String> userGroups = groups.stream()
+                .map(group -> group.getGroup().getName())
                 .collect(Collectors.toList());
 
-        claims.put("groups",groupsList);
+        // Prepare permissions
+        List<String> userPermissions = permissions.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Prepare claims
+        Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getEmail());
-        claims.put("iss", "http://localhost:8080");
+        claims.put("roles", userRoles);
+        claims.put("groups", userGroups);
+        claims.put("iss", "http://localhost:8080"); // Replace with production issuer
         claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
-        claims.put("iat", Instant.now().getEpochSecond());
-        claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
+        claims.put("iat", issuedAt);
+        claims.put("exp", expiration);
         claims.put("resource_access", Map.of(
                 oAuthClient.getClientId(), Map.of(
-                        "roles", user.getUserRoles().stream()
-                                .map(userRole -> userRole.getRole().getName())
-                                .collect(Collectors.toSet()),
-                        "permissions", permissions.values().stream()
-                                .flatMap(List::stream)
-                                .collect(Collectors.toList())
+                        "roles", userRoles,
+                        "permissions", userPermissions
                 )
         ));
+
         // Generate and return the access token
-        return generateToken(user.getEmail(),oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
+        return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
 
 
 
     @Override
     public String generateIdToken(User user, OAuthClient oAuthClient) {
-        // Fetch the token configuration for the app
+        // Validate that access token expiry is set
+        if (oAuthClient.getAccessTokenExpirySeconds() == null) {
+            throw new IllegalArgumentException("Access token expiry seconds must not be null");
+        }
 
+        // Generate timestamps
+        Instant now = Instant.now();
+        long issuedAt = now.getEpochSecond();
+        long expiration = now.plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond();
 
+        // Prepare claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getEmail());  // Email as subject
         claims.put("email", user.getEmail());
         claims.put("email_verified", user.isEmailVerified());
-        claims.put("auth_time", Instant.now().getEpochSecond());
-        claims.put("iat", Instant.now().getEpochSecond());
-        claims.put("exp", Instant.now().plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond());
-        claims.put("iss", "http://localhost:8080");
+        claims.put("auth_time", issuedAt);
+        claims.put("iat", issuedAt);
+        claims.put("exp", expiration);
+        claims.put("iss", "http://localhost:8080");  // Update to your production issuer
         claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
+
+        // Generate and return the token
         return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());
     }
+
 
     private String generateToken(String subject, OAuthClient oAuthClient, Map<String, Object> claims, int expirationSeconds) {
         Key signingKey = getSigningKey(oAuthClient);

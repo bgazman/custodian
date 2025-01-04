@@ -47,7 +47,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register") // Matches relevant paths
+                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register", "/mfa/**") // Matches relevant paths
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login").permitAll() // Public login page
                         .requestMatchers("/oauth/token").permitAll() // Public token endpoint
@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth/login").permitAll() // Public for initiating OAuth
                         .requestMatchers("/.well-known/**").permitAll() // Public JWKS and metadata
                         .requestMatchers("/client/register").permitAll() // Public client registration
+                        .requestMatchers("/mfa/**").permitAll() // Allow public access to MFA endpoints
                         .anyRequest().authenticated() // All other requests require authentication
                 )
                 .formLogin(form -> form
@@ -64,7 +65,7 @@ public class SecurityConfig {
                         .loginProcessingUrl("/login") // Login form submission URL
                         .defaultSuccessUrl("/oauth/authorize", false) // Redirect here after successful login
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/oauth/**")); // Disable CSRF for OAuth endpoints
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/oauth/**", "/mfa/**")); // Disable CSRF for OAuth endpoints
         return http.build();
     }
 

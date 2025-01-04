@@ -11,7 +11,9 @@ import java.util.*;
 
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.time.LocalDateTime;
@@ -38,13 +40,21 @@ public class User implements UserDetails {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-
+    @Column(name = "phone_number", unique = true,length=15)
+    private String phoneNumber;
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
     @Column(name = "enabled", nullable = false)
     private boolean enabled = false;
 
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+    @Column(name = "mfa_method")
+    private String mfaMethod;
+    @Column(name = "mfa_backup_codes", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String mfaBackupCodes;
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 

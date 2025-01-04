@@ -94,6 +94,7 @@ public class OAuthServiceImpl implements OAuthService {
                     .code(authorizationCode)
                     .state(loginRequest.getState())
                     .redirectUri(loginRequest.getRedirectUri())
+                    .mfaMethod(user.getMfaMethod())
                     .build();        }
         else {
             // Return response indicating that the user was not found
@@ -101,6 +102,7 @@ public class OAuthServiceImpl implements OAuthService {
         }
 
     }
+
 
     @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {

@@ -7,6 +7,7 @@ import consulting.gazman.security.entity.OAuthClient;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.AuthService;
+import consulting.gazman.security.service.MfaService;
 import consulting.gazman.security.service.OAuthService;
 import consulting.gazman.security.service.impl.ClientRegistrationServiceImpl;
 import consulting.gazman.security.service.impl.OAuthServiceImpl;
@@ -34,8 +35,10 @@ public class OAuthController {
     private AuthService authService;
 
     @Autowired
-    private OAuthServiceImpl oAuthService;
+    private OAuthService oAuthService;
 
+    @Autowired
+    MfaService mfaService;
     @GetMapping("/authorize")
     public ResponseEntity<?> authorize(
             @RequestParam String response_type,
@@ -82,39 +85,71 @@ public class OAuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthorizeRequest request) {
-        LoginRequest loginRequest = LoginRequest.builder()
-                .redirectUri(request.getRedirectUri())
-                .clientId(request.getClientId())
-                .state(request.getState())
-                .email(request.getEmail())
-                .password(request.getPassword())
-                .build();
-
-
-            LoginResponse loginResponse = oAuthService.login(loginRequest);
-        if (loginResponse.getError() != null && !loginResponse.getError().isBlank()) {
-
-            String redirectUrl = "/login?error=invalid_credentials&message=" + URLEncoder.encode(loginResponse.getError(), StandardCharsets.UTF_8);
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl))
+        try {
+            // Step 1: Build the initial login request
+            LoginRequest loginRequest = LoginRequest.builder()
+                    .redirectUri(request.getRedirectUri())
+                    .clientId(request.getClientId())
+                    .state(request.getState())
+                    .email(request.getEmail())
+                    .password(request.getPassword())
                     .build();
+
+            // Step 2: Attempt primary login (email and password validation)
+            LoginResponse loginResponse = oAuthService.login(loginRequest);
+
+            if (loginResponse.getError() != null && !loginResponse.getError().isBlank()) {
+                String redirectUrl = "/login?error=invalid_credentials&message=" +
+                        URLEncoder.encode(loginResponse.getError(), StandardCharsets.UTF_8);
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(redirectUrl))
+                        .build();
+            }
+
+            // Step 3: Check if MFA is required for the user
+            if (loginResponse.getMfaMethod() != null) {
+                // Generate an MFA challenge using the method from the response
+                mfaService.initiateMfaChallenge(request.getEmail(), loginResponse.getMfaMethod());
+
+                String redirectUrl = "/mfa?email=" + URLEncoder.encode(request.getEmail(), StandardCharsets.UTF_8) +
+                        "&client_id=" + URLEncoder.encode(request.getClientId(), StandardCharsets.UTF_8) +
+                        "&redirect_uri=" + URLEncoder.encode(request.getRedirectUri(), StandardCharsets.UTF_8) +
+                        "&state=" + URLEncoder.encode(request.getState(), StandardCharsets.UTF_8) +
+                        "&response_type=" + URLEncoder.encode(request.getResponseType(), StandardCharsets.UTF_8) +
+                        "&mfa_method=" + URLEncoder.encode(loginResponse.getMfaMethod(), StandardCharsets.UTF_8);
+
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(redirectUrl))
+                        .build();
+            }
+
+            // Step 4: Generate authorization code
+            AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                    .email(request.getEmail())
+                    .responseType(request.getResponseType())
+                    .clientId(request.getClientId())
+                    .redirectUri(request.getRedirectUri())
+                    .scope(request.getScope())
+                    .state(request.getState())
+                    .build());
+
+            String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() + "&state=" +
+                    URLEncoder.encode(response.getState(), StandardCharsets.UTF_8);
+            return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
+
+        } catch (Exception e) {
+            // Log the error and return a generic error response
+            log.error("Error during login process", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred during the login process. Please try again later.");
         }
-
-
-
-        AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                .email(request.getEmail())
-                .responseType(request.getResponseType())
-                .clientId(request.getClientId())
-                .redirectUri(request.getRedirectUri())
-                .scope(request.getScope())
-                .state(request.getState())
-                .build());
-
-        String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() + "&state=" + response.getState();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
+
+
+
+
+
+
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody TokenRequest request) {
         try {

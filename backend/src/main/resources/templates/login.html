@@ -8,27 +8,42 @@
 </head>
 <body>
 <h1>Login</h1>
-<form id="loginForm">
-    <div>
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" required />
+<div class="form-container">
+    <form id="loginForm">
+        <div>
+            <label for="email">Email:</label>
+            <input type="text" id="email" name="email" required />
+        </div>
+
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required />
+        </div>
+
+        <div class="forgot-password">
+            <a href="/forgot-password">Forgot Password?</a>
+        </div>
+
+        <!-- Store OAuth parameters -->
+        <input type="hidden" id="clientId" th:value="${clientId}" />
+        <input type="hidden" id="state" th:value="${state}" />
+        <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
+        <input type="hidden" id="responseType" th:value="${responseType}" />
+        <input type="hidden" id="scope" th:value="${scope}" />
+
+        <div>
+            <button type="submit">Login</button>
+        </div>
+    </form>
+
+    <div class="divider">
+        <span>or</span>
     </div>
 
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required />
+    <div class="register-link">
+        Don't have an account? <a href="/register">Register</a>
     </div>
-
-    <!-- Store OAuth parameters -->
-    <input type="hidden" id="clientId" th:value="${clientId}" />
-    <input type="hidden" id="state" th:value="${state}" />
-    <input type="hidden" id="redirectUri" th:value="${redirectUri}" />
-    <input type="hidden" id="responseType" th:value="${responseType}" />
-    <input type="hidden" id="scope" th:value="${scope}" />
-    <div>
-        <button type="submit">Login</button>
-    </div>
-</form>
+</div>
 
 <!-- Modal Overlay -->
 <div class="modal-overlay"></div>
@@ -41,5 +56,4 @@
 
 <script th:src="@{/js/login.js}"></script>
 </body>
-</html>
 </html>

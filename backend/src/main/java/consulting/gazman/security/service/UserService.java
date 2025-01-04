@@ -29,5 +29,9 @@ public interface UserService {
     void trackLogin(Long id); // Update last login time
 
     User createUser(User user);
+
+    String getPhoneNumber(String email);
+
+    void updateUser(User user);
 }
 
