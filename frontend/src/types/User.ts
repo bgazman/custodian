@@ -1,3 +1,5 @@
+import {UserRole} from "./UserRole";
+
 export interface User {
     id: string;
     name: string;
@@ -6,7 +8,7 @@ export interface User {
     createdAt: Date;
     lastLogin?: Date;
     permissions: string[];
-    roles: string[];
+    userRoles: UserRole[];
     status: "active" | "suspended" | "inactive";
     requiredMFA: boolean;
 

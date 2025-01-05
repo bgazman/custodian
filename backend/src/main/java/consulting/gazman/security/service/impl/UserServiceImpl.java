@@ -1,8 +1,12 @@
 package consulting.gazman.security.service.impl;
 
+import consulting.gazman.security.dto.UserRequest;
+import consulting.gazman.security.entity.Role;
 import consulting.gazman.security.entity.User;
+import consulting.gazman.security.entity.UserRole;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.repository.UserRepository;
+import consulting.gazman.security.service.RoleService;
 import consulting.gazman.security.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -22,6 +28,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    @Autowired
+    RoleService roleService;
 
     @Override
     public List<User> getAllUsers() {
@@ -126,18 +134,32 @@ public class UserServiceImpl implements UserService {
             throw AppException.userAlreadyExists("A user with this email already exists");
         }
 
-        // Hash the password before saving
+        // Hash the password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Set default properties
-        user.setEmailVerified(false); // Default to unverified
-        user.setEnabled(false);       // Default to disabled
-//        user.setRegisteredAt(LocalDateTime.now());
-        user.setLastPasswordChange(LocalDateTime.now());
+        // Assign roles to the user
+        if (user.getUserRoles() == null || user.getUserRoles().isEmpty()) {
+            throw AppException.badRequest("At least one role is required for the user");
+        }
+
+        Set<UserRole> userRoles = user.getUserRoles().stream()
+                .map(userRole -> {
+                    Role role = roleService.findById(userRole.getRole().getId());
+
+                    UserRole newUserRole = new UserRole();
+                    newUserRole.setUser(user);
+                    newUserRole.setRole(role);
+                    return newUserRole;
+                })
+                .collect(Collectors.toSet());
+
+        user.setUserRoles(userRoles);
 
         // Save the user to the database
         return userRepository.save(user);
     }
+
+
 
     @Override
     public String getPhoneNumber(String email) {
@@ -153,48 +175,64 @@ public class UserServiceImpl implements UserService {
             throw new AppException("INVALID_USER", "User ID cannot be null");
         }
 
-        try {
-            // First check if user exists
-            User existingUser = userRepository.findById(user.getId())
-                    .orElseThrow(() -> new AppException("USER_NOT_FOUND", "User not found with id: " + user.getId()));
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "User not found with ID: " + user.getId()));
 
-            // Update only non-null fields
-            if (user.getName() != null) {
-                existingUser.setName(user.getName());
-            }
-            if (user.getEmail() != null) {
-                // Check if new email is already taken by another user
-                userRepository.findByEmailAndIdNot(user.getEmail(), user.getId())
-                        .ifPresent(u -> {
-                            throw new AppException("EMAIL_TAKEN", "Email is already in use");
-                        });
-                existingUser.setEmail(user.getEmail());
-            }
-            if (user.getPhoneNumber() != null) {
-                existingUser.setPhoneNumber(user.getPhoneNumber());
-            }
-            if (user.isMfaEnabled()) {
-                existingUser.setMfaEnabled(user.isMfaEnabled());
-            }
-            if (user.getMfaMethod() != null) {
-                existingUser.setMfaMethod(user.getMfaMethod());
-            }
-            if (user.getMfaBackupCodes() != null) {
-                existingUser.setMfaBackupCodes(user.getMfaBackupCodes());
-            }
-
-            // Don't update password here - should have a separate method for that
-            // Don't update email_verified status here - should have a separate method for that
-
-            existingUser.setUpdatedAt(LocalDateTime.now());
-
-            userRepository.save(existingUser);
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AppException("UPDATE_FAILED", "Failed to update user: " + e.getMessage());
+        // Update fields only if they are not null
+        if (user.getName() != null) {
+            existingUser.setName(user.getName());
         }
+
+        if (user.getEmail() != null) {
+            // Check if the new email is already taken by another user
+            userRepository.findByEmailAndIdNot(user.getEmail(), user.getId())
+                    .ifPresent(existing -> {
+                        throw new AppException("EMAIL_TAKEN", "The email is already in use by another user");
+                    });
+            existingUser.setEmail(user.getEmail());
+        }
+
+        if (user.getPhoneNumber() != null) {
+            existingUser.setPhoneNumber(user.getPhoneNumber());
+        }
+
+        if (user.isMfaEnabled()) {
+            existingUser.setMfaEnabled(true);
+        }
+
+        if (user.getMfaMethod() != null) {
+            existingUser.setMfaMethod(user.getMfaMethod());
+        }
+
+        if (user.getMfaBackupCodes() != null) {
+            existingUser.setMfaBackupCodes(user.getMfaBackupCodes());
+        }
+
+        // Handle role updates
+        if (user.getUserRoles() != null) {
+            Set<UserRole> updatedRoles = user.getUserRoles().stream()
+                    .map(userRole -> {
+                        Role role = roleService.findById(userRole.getRole().getId());
+                        UserRole updatedUserRole = new UserRole();
+                        updatedUserRole.setUser(existingUser);
+                        updatedUserRole.setRole(role);
+                        return updatedUserRole;
+                    })
+                    .collect(Collectors.toSet());
+
+            // Update roles in the existing user
+            existingUser.getUserRoles().clear();
+            existingUser.getUserRoles().addAll(updatedRoles);
+        }
+
+        // Update the last updated timestamp
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+        // Save the updated user
+        userRepository.save(existingUser);
     }
+
+
 
     @Override
     public boolean isEmailRegistered(String email) {

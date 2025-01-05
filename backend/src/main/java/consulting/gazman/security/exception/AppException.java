@@ -24,6 +24,11 @@ public class AppException extends RuntimeException {
         return new AppException("BAD_REQUEST", message);
     }
 
+    public static AppException roleNotFound(String message) {
+        return new AppException("ROLE_NOT_FOUND", message);
+
+    }
+
     public String getErrorCode() {
         return errorCode;
     }

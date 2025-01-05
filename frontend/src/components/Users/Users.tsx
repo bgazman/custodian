@@ -47,10 +47,7 @@ const UsersComponent: React.FC = () => {
     }
 
     return (
-
-
         <div className="p-6">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Manage Users</h1>
                 <button
@@ -61,14 +58,14 @@ const UsersComponent: React.FC = () => {
                 </button>
             </div>
 
-            {/* Users Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
                     <thead className="bg-gray-50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roles</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enabled</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -78,9 +75,29 @@ const UsersComponent: React.FC = () => {
                     {users.map((user) => (
                         <tr key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{user.enabled ? "Yes" : "No"}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex flex-wrap gap-1">
+                                    {user.userRoles.map((userRole) => (
+                                        <span
+                                            key={userRole.role.id}
+                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                        >
+                                            {userRole.role.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    user.enabled
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                }`}>
+                                    {user.enabled ? "Yes" : "No"}
+                                </span>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {new Date(user.createdAt).toLocaleDateString()}
                             </td>
@@ -116,14 +133,12 @@ const UsersComponent: React.FC = () => {
                 </table>
             </div>
 
-            {/* Create User Dialog */}
             <CreateUserDialog
                 open={isCreateDialogOpen}
                 onClose={() => setIsCreateDialogOpen(false)}
                 onUserCreated={handleCreateUser}
             />
 
-            {/* User Details Modal */}
             {selectedUser && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">

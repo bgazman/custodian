@@ -1,32 +1,32 @@
 package consulting.gazman.security.dto;
 
 import consulting.gazman.security.entity.User;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.Set;
 
 @Getter
 @Setter
-@RequiredArgsConstructor
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserRequest {
-    private String email; // User's email
-    private String password; // User's password
-    private String role; // Role of the user (e.g., USER, ADMIN)
+    private Long id; // Required for updates
 
-    // Convert UserRequest to User entity
-//    public User toEntity() {
-//        return User.builder()
-//                .email(this.email)
-//                .password(this.password) // Hash the password in the service layer
-//                .role(this.role)
-//                .enabled(true) // Default values
-//                .emailVerified(false) // Default values
-//                .accountNonExpired(true) // Default values
-//                .accountNonLocked(true) // Default values
-//                .credentialsNonExpired(true) // Default values
-//                .build();
-//    }
+    private String name;
+
+    private String email;
+
+    private String password;
+
+    private Boolean enabled; // Optional; defaults to `false`
+    private Boolean mfaEnabled; // Optional; defaults to `false`
+    private String phoneNumber; // Optional
+
+    private String mfaMethod; // Optional, can be null
+    private String mfaBackupCodes; // Optional, can be null
+
+    private Set<Long> roleIds; // Role IDs to associate with the user
 }
+
+
 

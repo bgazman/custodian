@@ -2,9 +2,12 @@ package consulting.gazman.security.controller;
 
 import consulting.gazman.common.controller.ApiController;
 import consulting.gazman.common.dto.ApiResponse;
+import consulting.gazman.security.dto.UserRequest;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
+import consulting.gazman.security.service.RoleService;
 import consulting.gazman.security.service.UserService;
+import consulting.gazman.security.utils.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +25,8 @@ public class UserController extends ApiController {
 
     @Autowired
     private UserService userService;
-
+    @Autowired
+    RoleService roleService;
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         logRequest("GET", "/api/secure/users");
@@ -50,10 +54,10 @@ public class UserController extends ApiController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody User user) {
+    public ResponseEntity<?> createUser(@RequestBody UserRequest userRequest) {
         logRequest("POST", "/api/secure/users");
         try {
-            User createdUser = userService.save(user);
+            User createdUser = userService.createUser(UserMapper.toEntity(userRequest,roleService));
             return wrapSuccessResponse(createdUser, "User created successfully");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -63,10 +67,10 @@ public class UserController extends ApiController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
         logRequest("PUT", "/api/users/" + id);
         try {
-            User updatedUser = userService.update(id, user);
+            User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService));
             return wrapSuccessResponse(updatedUser, "User updated successfully");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);

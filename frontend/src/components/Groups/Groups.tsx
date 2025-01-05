@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useGroups} from "../hooks/userGroups"; // Assuming a custom hook for fetching groups
-import CreateGroupDialog from "../components/Groups/CreateGroupDialog.tsx"; // Component for creating a group
-import GroupDetails from "../components/Groups/GroupDetails"; // Component for displaying group details
-import {Group} from "../types/Group";
-import {User} from "@/types/User.ts";
+import React, { useState } from "react";
+import { useGroups } from "../../hooks/userGroups.tsx";
+import CreateGroupDialog from "../../components/Groups/CreateGroupDialog.tsx";
+import GroupDetails from "../../components/Groups/GroupDetails.tsx";
+import { Group } from "../../types/Group.ts";
 
-const GroupsPage: React.FC = () => {
-    const navigate = useNavigate();
-    const { groups, loading, error, deleteGroup, refetch } = useGroups();
+const Groups: React.FC = () => {
+    const { groups, loading, error, deleteGroup, toggleGroupEnabled, refetch } = useGroups();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
@@ -19,13 +16,6 @@ const GroupsPage: React.FC = () => {
     const closeGroupDetails = () => {
         setSelectedGroup(null);
     };
-
-    useEffect(() => {
-        const isAdmin = localStorage.getItem("role") === "ADMIN";
-        if (!isAdmin) {
-            navigate("/", { replace: true });
-        }
-    }, [navigate]);
 
     const handleCreateGroup = (newGroup: Group) => {
         setIsCreateDialogOpen(false);
@@ -75,21 +65,33 @@ const GroupsPage: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Members</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {groups.map((group) => (
+                    {groups && groups.map((group) => (
                         <tr key={group.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{group.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{group.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{group.description || "N/A"}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{group.description}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{group.members?.length || 0}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {new Date(group.createdAt).toLocaleDateString()}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => toggleGroupEnabled(group.id, group.enabled)}
+                                        className={`text-sm ${
+                                            group.enabled
+                                                ? "text-red-500 hover:underline"
+                                                : "text-green-500 hover:underline"
+                                        }`}
+                                    >
+                                        {group.enabled ? "Disable" : "Enable"}
+                                    </button>
                                     <button
                                         onClick={() => deleteGroup(group.id)}
                                         className="text-red-500 hover:underline text-sm"
@@ -113,7 +115,7 @@ const GroupsPage: React.FC = () => {
             {/* Create Group Dialog */}
             <CreateGroupDialog
                 open={isCreateDialogOpen}
-                onClose={() => setIsCreateDialogOpen(false)} // Ensure this closes the dialog
+                onClose={() => setIsCreateDialogOpen(false)}
                 onGroupCreated={handleCreateGroup}
             />
 
@@ -135,4 +137,4 @@ const GroupsPage: React.FC = () => {
     );
 };
 
-export default GroupsPage;
+export default Groups;

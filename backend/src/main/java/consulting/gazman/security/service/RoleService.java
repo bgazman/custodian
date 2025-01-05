@@ -9,7 +9,7 @@ public interface RoleService {
 
     List<Role> getAllRoles(); // Retrieve all roles
 
-    Role findById(Long id); // Find role by ID
+    Role findById(Long id);
 
     Role save(Role role); // Create or update a role
 

@@ -1,6 +1,7 @@
 package consulting.gazman.security.service;
 
 
+import consulting.gazman.security.dto.UserRequest;
 import consulting.gazman.security.entity.User;
 
 import java.util.List;
