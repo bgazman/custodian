@@ -36,9 +36,9 @@ public class UserMapper {
         if (userRequest.getPhoneNumber() != null) {
             user.setPhoneNumber(userRequest.getPhoneNumber());
         }
-        if (userRequest.getMfaMethod() != null) {
-            user.setMfaMethod(userRequest.getMfaMethod());
-        }
+// Explicitly set mfaMethod, including null values
+        user.setMfaMethod(userRequest.getMfaMethod());
+
         if (userRequest.getMfaBackupCodes() != null) {
             user.setMfaBackupCodes(userRequest.getMfaBackupCodes());
         }

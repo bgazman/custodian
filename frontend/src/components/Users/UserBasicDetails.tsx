@@ -144,6 +144,12 @@ const UserBasicDetails = ({ user: initialUser }) => {
                         }
                     />
                     <EditableInfoItem
+                        label="Email "
+                        value={editedUser.email}
+                        isEditing={editingBasic}
+                        editable={false}
+                    />
+                    <EditableInfoItem
                         label="Email Verified"
                         value={editedUser.emailVerified ? "Yes" : "No"}
                         isEditing={editingBasic}
