@@ -5,9 +5,11 @@ import consulting.gazman.security.dto.UserResponse;
 import consulting.gazman.security.entity.Role;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.entity.UserRole;
+import consulting.gazman.security.entity.UserRoleId;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.RoleService;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,31 +43,25 @@ public class UserMapper {
             user.setMfaBackupCodes(userRequest.getMfaBackupCodes());
         }
 
-        // Map role IDs to UserRole entities
-        if (userRequest.getRoleIds() != null && !userRequest.getRoleIds().isEmpty()) {
+        if (userRequest.getRoleIds() != null) {  // Changed from checking isEmpty()
             Set<UserRole> userRoles = userRequest.getRoleIds().stream()
                     .map(roleId -> {
-                        Role role = roleService.findById(roleId);
                         UserRole userRole = new UserRole();
+                        UserRoleId id = new UserRoleId();
+                        id.setUserId(user.getId());
+                        id.setRoleId(roleId);
+                        userRole.setId(id);
                         userRole.setUser(user);
-                        userRole.setRole(role);
+                        userRole.setRole(roleService.findById(roleId));
                         return userRole;
                     })
                     .collect(Collectors.toSet());
-            user.setUserRoles(userRoles);
+            user.getUserRoles().clear();
+            user.getUserRoles().addAll(userRoles);
         }
 
         return user;
     }
 
 
-
-    public static UserResponse toResponse(User user) {
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setName(user.getName());
-        response.setEmail(user.getEmail());
-        response.setEnabled(user.isEnabled());
-        return response;
-    }
 }

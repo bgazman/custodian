@@ -6,6 +6,7 @@ import consulting.gazman.security.entity.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserService {
 
@@ -14,7 +15,7 @@ public interface UserService {
 
     User save(User user);
 
-    User update(Long id, User user);
+
     void delete(Long id);
     boolean existsByEmail(String email);
 

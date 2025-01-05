@@ -6,6 +6,7 @@ import consulting.gazman.security.dto.UserRequest;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.RoleService;
+import consulting.gazman.security.service.UserRoleService;
 import consulting.gazman.security.service.UserService;
 import consulting.gazman.security.utils.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,8 @@ public class UserController extends ApiController {
     private UserService userService;
     @Autowired
     RoleService roleService;
+    @Autowired
+    UserRoleService userRoleService;
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         logRequest("GET", "/api/secure/users");
@@ -67,19 +70,24 @@ public class UserController extends ApiController {
         }
     }
 
-        @PutMapping("/{id}")
-        public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
-            logRequest("PUT", "/api/users/" + id);
-            try {
-                User existingUser = userService.findById(id);
-                User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService,existingUser));
-                return wrapSuccessResponse(updatedUser, "User updated successfully");
-            } catch (AppException e) {
-                return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-            } catch (Exception e) {
-                return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id,  @RequestBody UserRequest userRequest) {
+        logRequest("PUT", "/api/users/" + id);
+        try {
+            User existingUser = userService.findById(id);
+            existingUser.getUserRoles().clear();
+            userRoleService.deleteByUserId(existingUser.getId());
+            userRoleService.flush();
+
+            User updatedUser = UserMapper.toEntity(userRequest, roleService, existingUser);
+            userService.save(updatedUser);
+            return wrapSuccessResponse(updatedUser, "User updated successfully");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {

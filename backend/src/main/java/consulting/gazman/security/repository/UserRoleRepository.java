@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> {
@@ -21,4 +22,7 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> 
 
     // Delete a specific user-role association
     void deleteByUserIdAndRoleId(Long userId, Long roleId);
-}
+
+    void deleteByUserIdAndRoleIdIn(Long id, Set<Long> roleIds);
+
+    void deleteByUserId(Long userId);}
