@@ -67,9 +67,20 @@ public class User implements UserDetails {
     @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired = true;
 
+
     @JsonManagedReference("user-roles")    // or @JsonIgnore if you don't need it in JSON
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)  // Remove orphanRemoval
     private Set<UserRole> userRoles = new HashSet<>();
+
+    public void setUserRoles(Set<UserRole> roles) {
+        userRoles.clear();
+        if (roles != null) {
+            roles.forEach(role -> {
+                role.setUser(this);
+                userRoles.add(role);
+            });
+        }
+    }
 
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;
@@ -97,6 +108,15 @@ public class User implements UserDetails {
      * Retrieves the authorities granted to the user.
      * For simplicity, the user's role is used as the granted authority.
      */
+    public void addUserRole(UserRole userRole) {
+        userRoles.add(userRole);
+        userRole.setUser(this);
+    }
+
+    public void removeUserRole(UserRole userRole) {
+        userRoles.remove(userRole);
+        userRole.setUser(null);
+    }
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userRoles.stream()
                 .map(userRole -> new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getName()))

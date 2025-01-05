@@ -26,6 +26,7 @@ public class UserRequest {
     private String mfaBackupCodes; // Optional, can be null
 
     private Set<Long> roleIds; // Role IDs to associate with the user
+    private int failedLoginAttempts;
 }
 
 

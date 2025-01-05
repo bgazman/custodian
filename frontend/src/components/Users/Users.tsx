@@ -93,7 +93,7 @@ const UsersComponent: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                     {users.map((user) => (
-                        <tr>
+                        <tr key={user.id}> {/* Add key here */}
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
@@ -104,19 +104,21 @@ const UsersComponent: React.FC = () => {
                                             key={userRole.role.id}
                                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                         >
-                                            {userRole.role.name}
-                                        </span>
+                            {userRole.role.name}
+                        </span>
                                     ))}
                                 </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    user.enabled
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-red-100 text-red-800"
-                                }`}>
-                                    {user.enabled ? "Yes" : "No"}
-                                </span>
+                <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.enabled
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                    }`}
+                >
+                    {user.enabled ? "Yes" : "No"}
+                </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {new Date(user.createdAt).toLocaleDateString()}
@@ -156,6 +158,7 @@ const UsersComponent: React.FC = () => {
                         </tr>
                     ))}
                     </tbody>
+
                 </table>
             </div>
 
@@ -173,7 +176,7 @@ const UsersComponent: React.FC = () => {
             {selectedUser && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-                        <UserDetailsDialog user={selectedUser} />
+                        <UserDetailsDialog user={selectedUser}/>
                         <button
                             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
                             onClick={closeUserDetails}

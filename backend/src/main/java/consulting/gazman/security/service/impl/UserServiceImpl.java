@@ -4,8 +4,10 @@ import consulting.gazman.security.dto.UserRequest;
 import consulting.gazman.security.entity.Role;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.entity.UserRole;
+import consulting.gazman.security.entity.UserRoleId;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.repository.UserRepository;
+import consulting.gazman.security.repository.UserRoleRepository;
 import consulting.gazman.security.service.RoleService;
 import consulting.gazman.security.service.UserService;
 import jakarta.transaction.Transactional;
@@ -31,6 +33,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     RoleService roleService;
 
+    @Autowired
+    UserRoleRepository userRoleRepository;
+
     @Override
     public List<User> getAllUsers() {
         // Fetch all users from the database
@@ -51,14 +56,53 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
-    @Override
     public User update(Long id, User userDetails) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> AppException.resourceNotFound("User not found with ID: " + id));
 
+        // Update basic fields
+        user.setName(userDetails.getName());
         user.setEmail(userDetails.getEmail());
+        user.setPhoneNumber(userDetails.getPhoneNumber());
+        user.setEnabled(userDetails.isEnabled());
+        user.setMfaEnabled(userDetails.isMfaEnabled());
+        user.setMfaMethod(userDetails.getMfaMethod());
+        user.setMfaBackupCodes(userDetails.getMfaBackupCodes());
+        user.setEmailVerified(userDetails.isEmailVerified());
+        user.setAccountNonExpired(userDetails.isAccountNonExpired());
+        user.setAccountNonLocked(userDetails.isAccountNonLocked());
+        user.setCredentialsNonExpired(userDetails.isCredentialsNonExpired());
+        user.setLastLoginTime(userDetails.getLastLoginTime());
+        user.setLastPasswordChange(userDetails.getLastPasswordChange());
+
+        // Update roles safely
+        Set<UserRole> existingRoles = user.getUserRoles();
+        Set<UserRole> newRoles = userDetails.getUserRoles();
+
+        // Remove roles no longer present
+        existingRoles.removeIf(role -> newRoles.stream()
+                .noneMatch(newRole -> newRole.getId().equals(role.getId())));
+
+        // Add or update roles
+        for (UserRole newRole : newRoles) {
+            UserRole existingRole = existingRoles.stream()
+                    .filter(role -> role.getId().equals(newRole.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingRole == null) {
+                // Fetch a managed entity from the database if it exists
+                UserRole managedRole = userRoleRepository.findById(newRole.getId())
+                        .orElse(newRole); // If not found, use the new role
+                managedRole.setUser(user); // Maintain bidirectional relationship
+                existingRoles.add(managedRole);
+            }
+        }
+
         return userRepository.save(user);
     }
+
+
 
     @Override
     public void delete(Long id) {
@@ -169,22 +213,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public void updateUser(User user) {
         if (user.getId() == null) {
             throw new AppException("INVALID_USER", "User ID cannot be null");
         }
 
+        // Fetch the existing user
         User existingUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new AppException("USER_NOT_FOUND", "User not found with ID: " + user.getId()));
 
-        // Update fields only if they are not null
+        // Update basic fields only if they are not null
         if (user.getName() != null) {
             existingUser.setName(user.getName());
         }
 
         if (user.getEmail() != null) {
-            // Check if the new email is already taken by another user
             userRepository.findByEmailAndIdNot(user.getEmail(), user.getId())
                     .ifPresent(existing -> {
                         throw new AppException("EMAIL_TAKEN", "The email is already in use by another user");
@@ -213,10 +256,18 @@ public class UserServiceImpl implements UserService {
             Set<UserRole> updatedRoles = user.getUserRoles().stream()
                     .map(userRole -> {
                         Role role = roleService.findById(userRole.getRole().getId());
-                        UserRole updatedUserRole = new UserRole();
-                        updatedUserRole.setUser(existingUser);
-                        updatedUserRole.setRole(role);
-                        return updatedUserRole;
+                        UserRoleId userRoleId = new UserRoleId();
+                        userRoleId.setUserId(existingUser.getId());
+                        userRoleId.setRoleId( role.getId());
+                        // Fetch managed UserRole or create new if it doesn't exist
+                        return userRoleRepository.findById(userRoleId)
+                                .orElseGet(() -> {
+                                    UserRole newUserRole = new UserRole();
+                                    newUserRole.setId(userRoleId);
+                                    newUserRole.setUser(existingUser);
+                                    newUserRole.setRole(role);
+                                    return newUserRole;
+                                });
                     })
                     .collect(Collectors.toSet());
 

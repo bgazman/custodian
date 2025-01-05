@@ -67,19 +67,19 @@ public class UserController extends ApiController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
-        logRequest("PUT", "/api/users/" + id);
-        try {
-            User existingUser = userService.findById(id);
-            User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService,existingUser));
-            return wrapSuccessResponse(updatedUser, "User updated successfully");
-        } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        @PutMapping("/{id}")
+        public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
+            logRequest("PUT", "/api/users/" + id);
+            try {
+                User existingUser = userService.findById(id);
+                User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService,existingUser));
+                return wrapSuccessResponse(updatedUser, "User updated successfully");
+            } catch (AppException e) {
+                return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            } catch (Exception e) {
+                return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
