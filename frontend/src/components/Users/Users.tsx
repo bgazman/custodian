@@ -2,14 +2,34 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../../hooks/userUsers.tsx";
 import CreateUserDialog from "../../components/Users/CreateUserDialog.tsx";
-import UserDetails from "../../components/Users/UserDetails.tsx";
+import UserDetailsDialog from "./UserDetailsDialog.tsx";
 import {User} from "../../types/User.ts";
+import DeleteUserDialog from "../../components/Users/DeleteUserDialog.tsx";
 
 const UsersComponent: React.FC = () => {
     const { users, loading, error, deleteUser, toggleUserEnabled, refetch } = useUsers();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const navigate = useNavigate();
 
+    const handleDeleteClick = (user: User) => {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (userToDelete) {
+            try {
+                await deleteUser(userToDelete.id);
+                setDeleteDialogOpen(false);
+                setUserToDelete(null);
+            } catch (err) {
+                console.error('Failed to delete user:', err);
+            }
+        }
+    };
     const handleViewDetails = (user: User) => {
         setSelectedUser(user);
     };
@@ -73,7 +93,7 @@ const UsersComponent: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                     {users.map((user) => (
-                        <tr key={user.id}>
+                        <tr>
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
@@ -114,7 +134,7 @@ const UsersComponent: React.FC = () => {
                                         {user.enabled ? "Disable" : "Enable"}
                                     </button>
                                     <button
-                                        onClick={() => deleteUser(user.id)}
+                                        onClick={() => handleDeleteClick(user)}
                                         className="text-red-500 hover:underline text-sm"
                                     >
                                         Delete
@@ -124,6 +144,12 @@ const UsersComponent: React.FC = () => {
                                         className="text-blue-500 hover:underline text-sm"
                                     >
                                         View Details
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/users/${user.id}`)}
+                                        className="text-blue-500 hover:underline text-sm"
+                                    >
+                                        Edit
                                     </button>
                                 </div>
                             </td>
@@ -138,11 +164,16 @@ const UsersComponent: React.FC = () => {
                 onClose={() => setIsCreateDialogOpen(false)}
                 onUserCreated={handleCreateUser}
             />
-
+            <DeleteUserDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                userName={userToDelete?.name || ''}
+            />
             {selectedUser && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-                        <UserDetails user={selectedUser} />
+                        <UserDetailsDialog user={selectedUser} />
                         <button
                             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
                             onClick={closeUserDetails}

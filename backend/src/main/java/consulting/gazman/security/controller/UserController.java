@@ -57,7 +57,8 @@ public class UserController extends ApiController {
     public ResponseEntity<?> createUser(@RequestBody UserRequest userRequest) {
         logRequest("POST", "/api/secure/users");
         try {
-            User createdUser = userService.createUser(UserMapper.toEntity(userRequest,roleService));
+
+            User createdUser = userService.createUser(UserMapper.toEntity(userRequest,roleService,null));
             return wrapSuccessResponse(createdUser, "User created successfully");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -70,7 +71,8 @@ public class UserController extends ApiController {
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
         logRequest("PUT", "/api/users/" + id);
         try {
-            User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService));
+            User existingUser = userService.findById(id);
+            User updatedUser = userService.update(id, UserMapper.toEntity(userRequest,roleService,existingUser));
             return wrapSuccessResponse(updatedUser, "User updated successfully");
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);

@@ -24,7 +24,7 @@ interface UserDetailsProps {
     onSave?: (updatedUser: Partial<UserDetailsProps["user"]>) => void;
 }
 
-const UserDetails: React.FC<UserDetailsProps> = ({ user, editable = false, onSave }) => {
+const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false, onSave }) => {
     const [formData, setFormData] = useState(user);
 
     const handleChange = (field: keyof UserDetailsProps["user"], value: any) => {
@@ -137,4 +137,4 @@ const UserDetails: React.FC<UserDetailsProps> = ({ user, editable = false, onSav
     );
 };
 
-export default UserDetails;
+export default UserDetailsDialog;

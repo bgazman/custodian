@@ -64,7 +64,7 @@ const IamDashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-200">
+            <nav className="bg-white border-b border-gray-200   ">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">
