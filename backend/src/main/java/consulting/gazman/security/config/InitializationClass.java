@@ -7,6 +7,7 @@ import consulting.gazman.security.service.ClientRegistrationService;
 import consulting.gazman.security.service.OAuthClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.*;
 @Slf4j
 public class InitializationClass implements CommandLineRunner {
 
+    private final Environment environment;
     private final OAuthClientService oAuthClientService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -31,8 +33,9 @@ public class InitializationClass implements CommandLineRunner {
     private final ResourceRepository resourceRepository;
     private final ResourcePermissionRepository resourcePermissionRepository;
 
+    // Constructor Injection for all required dependencies
     public InitializationClass(
-            OAuthClientService oAuthClientService,
+            Environment environment, OAuthClientService oAuthClientService,
             UserRepository userRepository,
             RoleRepository roleRepository,
             PermissionRepository permissionRepository,
@@ -44,6 +47,7 @@ public class InitializationClass implements CommandLineRunner {
             PolicyAssignmentRepository policyAssignmentRepository,
             ResourceRepository resourceRepository,
             ResourcePermissionRepository resourcePermissionRepository) {
+        this.environment = environment;
         this.oAuthClientService = oAuthClientService;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -62,6 +66,7 @@ public class InitializationClass implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
+            log.info("Starting system initialization...");
             initializeSystem();
         } catch (Exception e) {
             log.error("System initialization failed", e);
@@ -191,13 +196,17 @@ public class InitializationClass implements CommandLineRunner {
     }
 
     private void createRootUserAndAssignRole(Role superAdminRole) {
-        String rootPassword = System.getenv().getOrDefault("ROOT_PASSWORD", "rootpass123!");
+        // Fetch properties from the environment with defaults
+        String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
+        String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
+        String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
+
         User rootUser = userRepository.findByEmail("root@system.local")
                 .orElseGet(() -> {
                     User user = new User();
-                    user.setName("Root Admin");
-                    user.setEmail("root@system.local");
-                    user.setPassword(passwordEncoder.encode(rootPassword));
+                    user.setName(rootUserName);
+                    user.setEmail(rootUserEmail);
+                    user.setPassword(passwordEncoder.encode(rootUserPassword));
                     user.setEnabled(true);
                     user.setEmailVerified(true);
                     return userRepository.save(user);

@@ -1,0 +1,79 @@
+version: '3.8'
+name: custodian-infra
+services:
+  postgres:
+    image: postgres:15
+    container_name: custodian-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: custodian-db
+      POSTGRES_USER: custodian
+      POSTGRES_PASSWORD: custodian123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/src/main/resources/02-data.sql:/docker-entrypoint-initdb.d/02-data.sql
+    networks:
+      - custodian-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: custodian-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - custodian-net
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: custodian-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - APP_ROOT_USER_NAME=${ROOT_USER_NAME}
+      - APP_ROOT_USER_EMAIL=${ROOT_USER_EMAIL}
+      - APP_ROOT_USER_PASSWORD=${ROOT_USER_PASSWORD}
+      - APP_REDIRECT_URIS=${REDIRECT_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${JWKS_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${ISSUER_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCE=${AUDIENCE}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - APP_OAUTH_CLIENT_ID=${CLIENT_ID}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - custodian-net
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: custodian-frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_BACKEND_URL=http://backend:8080  # Ensure this is set correctly
+      - VITE_CLIENT_ID=${CLIENT_ID}
+      - VITE_REDIRECT_URI=${REDIRECT_URI}
+    depends_on:
+      - backend
+    networks:
+      - custodian-net
+
+volumes:
+  postgres_data:
+    name: custodian-postgres-data
+  redis_data:
+    name: custodian-redis-data
+
+networks:
+  custodian-net:
