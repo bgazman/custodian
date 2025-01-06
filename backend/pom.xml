@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.0</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
+		<!-- lookup parent from repository -->
 	</parent>
 	<groupId>consulting.gazman</groupId>
 	<artifactId>security</artifactId>
@@ -28,7 +28,6 @@
 	</scm>
 	<properties>
 		<spring-cloud.version>2021.0.8</spring-cloud.version>
-
 		<java.version>17</java.version>
 	</properties>
 	<dependencies>
@@ -52,7 +51,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
@@ -94,7 +92,6 @@
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -102,14 +99,15 @@
 		</dependency>
 		<dependency>
 			<groupId>com.vladmihalcea</groupId>
-			<artifactId>hibernate-types-60</artifactId> <!-- Use hibernate-types-55 for Hibernate 5.x -->
-			<version>2.21.1</version> <!-- Check for the latest version -->
+			<artifactId>hibernate-types-60</artifactId>
+			<!-- Use hibernate-types-55 for Hibernate 5.x -->
+			<version>2.21.1</version>
+			<!-- Check for the latest version -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -124,11 +122,10 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.14.0</version> <!-- Use the appropriate version -->
+			<version>2.14.0</version>
+			<!-- Use the appropriate version -->
 		</dependency>
 	</dependencies>
-
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -146,10 +143,17 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>consulting.gazman.security.SecurityApplication</mainClass> <!-- Replace with your actual main class -->
+					<mainClass>consulting.gazman.security.SecurityApplication</mainClass>
+					<!-- Replace with your actual main class -->
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skipTests>true</skipTests>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

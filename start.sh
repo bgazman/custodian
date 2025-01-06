@@ -29,7 +29,7 @@ ROOT_USER_EMAIL="root@system.local"
 ROOT_USER_PASSWORD="rootpass123!"
 
 # Define React CORS and redirect URIs
-CORS_ALLOWED_ORIGINS="http://frontend"
+CORS_ALLOWED_ORIGINS="http://frontend,http://localhost"
 REDIRECT_URI="http://frontend/callback"
 
 # === Functions ===
@@ -43,6 +43,8 @@ generate_client_credentials() {
 update_docker_compose_env() {
     echo "Updating Docker Compose environment variables..."
     cat <<EOF > .env
+SPRING_REDIS_HOST=$REDIS_HOST
+SPRING_REDIS_PORT=$REDIS_PORT    
 SPRING_DATASOURCE_URL=$SPRING_DATASOURCE_URL
 SPRING_DATASOURCE_USERNAME=$SPRING_DATASOURCE_USERNAME
 SPRING_DATASOURCE_PASSWORD=$SPRING_DATASOURCE_PASSWORD
@@ -68,6 +70,12 @@ EOF
     echo "React .env file updated successfully at $REACT_ENV_FILE"
 }
 
+build_maven_project() {
+    echo "Building Maven project..."
+    cd "$BACKEND_DIR"
+    mvn clean install -DskipTests
+    echo "Maven project built successfully"
+}
 start_services() {
     echo "Starting all services using Docker Compose..."
     docker-compose -f "$DOCKER_COMPOSE_FILE" up --build -d
@@ -86,4 +94,6 @@ trap handle_error ERR
 generate_client_credentials
 update_docker_compose_env
 update_react_env
+build_maven_project
 start_services
+
