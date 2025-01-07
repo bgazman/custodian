@@ -31,7 +31,7 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<LandingRoute  />} />
-                    <Route path="/callback" element={<Callback />} />
+                    <Route path="/oauth-callback" element={<Callback />} />
                     <Route
                         path="/*"
                         element={

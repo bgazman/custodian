@@ -13,6 +13,7 @@ import consulting.gazman.security.service.OAuthClientService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -54,7 +55,7 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
 
         // Fetch the tenant
         // Generate client_id and client_secret first
-        String clientId = generateClientId();
+        String clientId = StringUtils.hasText(request.getClientId()) ? request.getClientId() : generateClientId();
         String clientSecret = generateClientSecret();
 
         // Generate a client-specific signing key

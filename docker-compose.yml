@@ -27,16 +27,16 @@ services:
     networks:
       - custodian-net
 
-  backend:
+  app:
     build: 
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: custodian-backend
+    container_name: custodian-app
     ports:
       - "8080:8080"
     environment:
-      - SPRING_REDIS_HOST=${SPRING_REDIS_HOST}
-      - SPRING_REDIS_PORT=${SPRING_REDIS_PORT}
+      - SPRING_DATA_REDIS_HOST=${SPRING_DATA_REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${SPRING_DATA_REDIS_PORT}
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
@@ -46,28 +46,12 @@ services:
       - APP_REDIRECT_URIS=${REDIRECT_URI}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${JWKS_URI}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${ISSUER_URI}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCE=${AUDIENCE}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCE=${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCE}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - APP_OAUTH_CLIENT_ID=${CLIENT_ID}
     depends_on:
       - postgres
       - redis
-    networks:
-      - custodian-net
-
-  frontend:
-    build: 
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: custodian-frontend
-    ports:
-      - "80:80"
-    environment:
-      - VITE_BACKEND_URL=http://backend:8080  # Ensure this is set correctly
-      - VITE_CLIENT_ID=${CLIENT_ID}
-      - VITE_REDIRECT_URI=${REDIRECT_URI}
-    depends_on:
-      - backend
     networks:
       - custodian-net
 

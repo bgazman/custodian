@@ -18,5 +18,6 @@ public class ClientRegistrationRequest {
     private List<String> grantTypes;
     private List<String> scopes;          // changed from String scope to List<String> scopes
     private List<String> responseTypes;
+    private String clientId;
 
 }

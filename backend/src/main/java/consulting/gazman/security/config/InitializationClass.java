@@ -226,6 +226,8 @@ public class InitializationClass implements CommandLineRunner {
 
     private void createDefaultOAuthClient() {
         if (!oAuthClientService.existsByName("root-dashboard")) {
+            String clientId = environment.getProperty("app.oauth.client.id", "rootpass123!");
+            log.info("Initializing root client with clientId: " + clientId);
             ClientRegistrationRequest clientRequest = ClientRegistrationRequest.builder()
                     .name("root-dashboard")
                     .applicationType("web")
@@ -233,6 +235,7 @@ public class InitializationClass implements CommandLineRunner {
                     .responseTypes(List.of("authorization_code", "refresh_token"))
                     .redirectUris(List.of("https://localhost:5173/callback"))
                     .grantTypes(List.of("authorization_code", "refresh_token"))
+                    .clientId(clientId)
                     .build();
             clientRegistrationService.registerClient(clientRequest);
         }
