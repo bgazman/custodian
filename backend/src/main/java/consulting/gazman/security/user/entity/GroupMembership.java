@@ -25,22 +25,7 @@ public class GroupMembership {
     @JoinColumn(name = "group_id", nullable = false)
     private Group group;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = true) // Role is optional
-    private Role role;
 
-    // Constructor with User and Group
     public GroupMembership(User user, Group group) {
-        this.id = new GroupMembershipId();
-        this.id.setUserId(user.getId());
-        this.id.setGroupId(group.getId());
-        this.user = user;
-        this.group = group;
-    }
-
-    // Constructor with User, Group, and Role
-    public GroupMembership(User user, Group group, Role role) {
-        this(user, group);
-        this.role = role;
     }
 }

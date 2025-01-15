@@ -4,6 +4,7 @@ import consulting.gazman.security.user.entity.Group;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.user.repository.GroupRepository;
 import consulting.gazman.security.user.service.GroupService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -58,5 +59,18 @@ public class GroupServiceImpl implements GroupService {
         // Fetch all groups from the repository and convert to a Set
         return new HashSet<>(groupRepository.findAllById(groupIds));
     }
+
+    @Override
+    public Group createIfNotExists(String name, String description) {
+        return groupRepository.findByName(name)
+                .orElseGet(() -> {
+                    Group newGroup = new Group();
+                    newGroup.setName(name);
+                    newGroup.setDescription(description);
+                    return groupRepository.save(newGroup); // Saves and returns the persisted group
+                });
+    }
+
+
 
 }

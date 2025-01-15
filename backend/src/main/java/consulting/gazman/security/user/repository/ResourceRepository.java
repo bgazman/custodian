@@ -16,5 +16,7 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     @Query(value = "SELECT * FROM resources WHERE attributes::text LIKE %:attribute%", nativeQuery = true)
     List<Resource> findByAttributesContaining(@Param("attribute") String attribute);
     Optional<Resource> findByName(String systemLogs);
+
+    List<Resource> findByNameContaining(String partialName);
 }
 

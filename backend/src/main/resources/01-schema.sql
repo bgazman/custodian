@@ -71,12 +71,12 @@ CREATE TABLE IF NOT EXISTS groups (
 CREATE TABLE IF NOT EXISTS group_memberships (
     user_id BIGINT NOT NULL,
     group_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
     PRIMARY KEY (user_id, group_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
+
+
 CREATE TABLE policy_assignments (
     id BIGSERIAL PRIMARY KEY,
     policy_id BIGINT NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
@@ -85,8 +85,6 @@ CREATE TABLE policy_assignments (
     group_id BIGINT DEFAULT NULL REFERENCES groups(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
 
 
 CREATE TABLE IF NOT EXISTS permissions (
@@ -216,7 +214,6 @@ CREATE INDEX idx_groups_updated_at ON groups (updated_at);
 -- Group Memberships Table Indexes
 CREATE INDEX idx_group_memberships_user_id ON group_memberships (user_id);
 CREATE INDEX idx_group_memberships_group_id ON group_memberships (group_id);
-CREATE INDEX idx_group_memberships_role_id ON group_memberships (role_id);
 
 -- Policy Assignments Table Indexes
 CREATE INDEX idx_policy_assignments_policy_id ON policy_assignments (policy_id);

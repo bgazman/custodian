@@ -3,13 +3,17 @@ package consulting.gazman.security.user.service.impl;
 
 import consulting.gazman.security.user.entity.Permission;
 import consulting.gazman.security.common.exception.AppException;
+import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.user.repository.PermissionRepository;
 import consulting.gazman.security.user.service.PermissionService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
+@Transactional
 @Service
 public class PermissionServiceImpl implements PermissionService {
 
@@ -49,4 +53,10 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean existsByName(String name) {
         return permissionRepository.existsByName(name);
     }
+
+    @Override
+    public Optional<Permission> findByNameOptional(String name) {
+
+            return permissionRepository.findByName(name);
+        }
 }

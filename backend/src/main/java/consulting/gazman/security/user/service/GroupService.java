@@ -16,5 +16,7 @@ public interface GroupService {
     List<Group> searchByName(String partialName); // Search groups by partial name
 
     Set<Group> findAllById(Set<Long> groupIds);
+
+    Group createIfNotExists(String value, String s);
 }
 

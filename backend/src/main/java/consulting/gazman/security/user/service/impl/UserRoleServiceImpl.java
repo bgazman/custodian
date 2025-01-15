@@ -68,4 +68,9 @@ public class UserRoleServiceImpl implements UserRoleService {
     public void flush() {
         userRoleRepository.flush();
     }
+
+    @Override
+    public UserRole save(UserRole userRole) {
+        return userRoleRepository.save(userRole);
+    }
 }

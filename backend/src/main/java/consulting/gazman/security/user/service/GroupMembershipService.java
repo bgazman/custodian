@@ -30,4 +30,6 @@ public interface GroupMembershipService {
     void deleteByUserId(Long userId);
 
     void saveAll(List<GroupMembership> newMemberships);
+
+    void save(GroupMembership membership);
 }

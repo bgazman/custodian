@@ -18,4 +18,6 @@ public interface UserRoleService {
     void deleteByUserId(Long id);
 
     void flush();
+
+    UserRole save(UserRole userRole);
 }

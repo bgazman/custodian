@@ -7,6 +7,7 @@ import consulting.gazman.security.user.entity.UserRoleId;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.user.repository.RoleRepository;
 import consulting.gazman.security.user.service.RoleService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

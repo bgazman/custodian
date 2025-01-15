@@ -43,7 +43,6 @@ public class GroupMembershipServiceImpl implements GroupMembershipService {
         membership.setId(new GroupMembershipId());
         membership.setUser(user);
         membership.setGroup(group);
-        membership.setRole(role);
 
         groupMembershipRepository.save(membership);
     }
@@ -55,7 +54,6 @@ public class GroupMembershipServiceImpl implements GroupMembershipService {
                         "Membership not found for User ID: " + userId + " and Group ID: " + groupId));
         Role role = roleService.findById(newRoleId);
 
-        membership.setRole(role);
         groupMembershipRepository.save(membership);
     }
 
@@ -119,5 +117,10 @@ public class GroupMembershipServiceImpl implements GroupMembershipService {
     public void saveAll(List<GroupMembership> newMemberships) {
         // Use the repository to save all group memberships
         groupMembershipRepository.saveAll(newMemberships);
+    }
+
+    @Override
+    public void save(GroupMembership membership) {
+        groupMembershipRepository.save(membership);
     }
 }

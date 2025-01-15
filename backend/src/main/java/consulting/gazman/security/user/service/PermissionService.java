@@ -4,6 +4,7 @@ package consulting.gazman.security.user.service;
 import consulting.gazman.security.user.entity.Permission;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PermissionService {
 
@@ -24,4 +25,6 @@ public interface PermissionService {
 
     // Check if a permission exists by name
     boolean existsByName(String name);
+
+    Optional<Permission> findByNameOptional(String name);
 }

@@ -1,10 +1,12 @@
 package consulting.gazman.security.common.config;
 
+import consulting.gazman.security.common.constants.SecurityDefaults;
 import consulting.gazman.security.oauth.dto.ClientRegistrationRequest;
 import consulting.gazman.security.oauth.service.ClientRegistrationService;
 import consulting.gazman.security.oauth.service.OAuthClientService;
 import consulting.gazman.security.user.entity.*;
 import consulting.gazman.security.user.repository.*;
+import consulting.gazman.security.user.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.env.Environment;
@@ -20,45 +22,54 @@ public class InitializationClass implements CommandLineRunner {
 
     private final Environment environment;
     private final OAuthClientService oAuthClientService;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
+    private final UserService userService;
+    private final RoleService roleService;
+    private final PermissionService permissionService;
     private final ClientRegistrationService clientRegistrationService;
     private final PasswordEncoder passwordEncoder;
-    private final RolePermissionRepository rolePermissionRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final PolicyRepository policyRepository;
-    private final PolicyAssignmentRepository policyAssignmentRepository;
-    private final ResourceRepository resourceRepository;
-    private final ResourcePermissionRepository resourcePermissionRepository;
 
+    private final RolePermissionService rolePermissionService;
+    private final UserRoleService userRoleService;
+    private final PolicyService policyService;
+    private final PolicyAssignmentService policyAssignmentService;
+    private final ResourceService resourceService;
+    private final ResourcePermissionService resourcePermissionService;
+    private final GroupService groupService;
+    private final GroupMembershipService groupMembershipService;
     // Constructor Injection for all required dependencies
     public InitializationClass(
-            Environment environment, OAuthClientService oAuthClientService,
-            UserRepository userRepository,
-            RoleRepository roleRepository,
-            PermissionRepository permissionRepository,
+            Environment environment,
+            OAuthClientService oAuthClientService,
+            UserService userService,
+            RoleService roleService,
+            PermissionService permissionService,
             ClientRegistrationService clientRegistrationService,
             PasswordEncoder passwordEncoder,
-            RolePermissionRepository rolePermissionRepository,
-            UserRoleRepository userRoleRepository,
-            PolicyRepository policyRepository,
-            PolicyAssignmentRepository policyAssignmentRepository,
-            ResourceRepository resourceRepository,
-            ResourcePermissionRepository resourcePermissionRepository) {
+            RolePermissionService rolePermissionService,
+            UserRoleService userRoleService,
+            PolicyService policyService,
+            PolicyAssignmentService policyAssignmentService,
+            ResourceService resourceService,
+            ResourcePermissionService resourcePermissionService, RoleRepository roleRepository, PermissionRepository permissionRepository, RolePermissionRepository rolePermissionRepository, UserRoleRepository userRoleRepository, PolicyRepository policyRepository, PolicyAssignmentRepository policyAssignmentRepository, ResourceRepository resourceRepository, ResourcePermissionRepository resourcePermissionRepository, ResourcePermissionService resourcePermissionService1,
+            GroupService groupService,
+            GroupMembershipService groupMembershipService) {
         this.environment = environment;
         this.oAuthClientService = oAuthClientService;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.permissionRepository = permissionRepository;
+        this.userService = userService;
+        this.roleService = roleService;
+        this.permissionService = permissionService;
+
         this.clientRegistrationService = clientRegistrationService;
         this.passwordEncoder = passwordEncoder;
-        this.rolePermissionRepository = rolePermissionRepository;
-        this.userRoleRepository = userRoleRepository;
-        this.policyRepository = policyRepository;
-        this.policyAssignmentRepository = policyAssignmentRepository;
-        this.resourceRepository = resourceRepository;
-        this.resourcePermissionRepository = resourcePermissionRepository;
+        this.rolePermissionService = rolePermissionService;
+        this.userRoleService = userRoleService;
+        this.policyService = policyService;
+        this.policyAssignmentService = policyAssignmentService;
+        this.resourceService = resourceService;
+        this.resourcePermissionService = resourcePermissionService1;
+
+        this.groupService = groupService;
+        this.groupMembershipService = groupMembershipService;
     }
 
     @Override
@@ -67,6 +78,7 @@ public class InitializationClass implements CommandLineRunner {
         try {
             log.info("Starting system initialization...");
             initializeSystem();
+            log.info("System initialization complete");
         } catch (Exception e) {
             log.error("System initialization failed", e);
             throw new RuntimeException("Initialization failed", e);
@@ -74,26 +86,17 @@ public class InitializationClass implements CommandLineRunner {
     }
 
     private void initializeSystem() {
-        // Initialize Roles
+        // Create base roles and permissions
         Role superAdminRole = createRoles();
-
-        // Initialize Permissions
         List<Permission> permissions = createPermissions();
-
-        // Initialize Policies
-        createPolicies(superAdminRole, permissions);
-
-        // Initialize Resources and Permissions
-        createResourcesAndPermissions();
-
-        // Create Root User and Assign Role
-        createRootUserAndAssignRole(superAdminRole);
-
-        // Initialize Default OAuth Client
+        createPolicies();
+        Map<String, Group> groups = createGroups(); // Now it's a Map<String, Group>
+        User rootUser = createRootUser(superAdminRole);
+        assignRoleToUser(rootUser,superAdminRole);
+        assignUserToGroup(rootUser, groups.get("ROOT")); // Fetch the ROOT group by name
         createDefaultOAuthClient();
-
-        log.info("System initialization completed successfully!");
     }
+
 
     private Role createRoles() {
         Map<String, String> systemRoles = Map.of(
@@ -104,12 +107,12 @@ public class InitializationClass implements CommandLineRunner {
 
         Role superAdminRole = null;
         for (Map.Entry<String, String> entry : systemRoles.entrySet()) {
-            Role role = roleRepository.findByName(entry.getKey())
+            Role role = roleService.findByName(entry.getKey())
                     .orElseGet(() -> {
                         Role newRole = new Role();
                         newRole.setName(entry.getKey());
                         newRole.setDescription(entry.getValue());
-                        return roleRepository.save(newRole);
+                        return roleService.save(newRole);
                     });
 
             if ("SUPER_ADMIN".equals(entry.getKey())) {
@@ -118,6 +121,29 @@ public class InitializationClass implements CommandLineRunner {
         }
         return superAdminRole;
     }
+
+    private Map<String, Group> createGroups() {
+        Map<String, String> systemGroups = Map.of(
+                "ROOT", "Default group for root users",
+                "SYSTEM_ADMINS", "Group for system administrators",
+                "APPLICATION_ADMINS", "Group for application administrators",
+                "USERS", "Group for regular users"
+        );
+
+        Map<String, Group> groupMap = new HashMap<>();
+        systemGroups.forEach((groupName, description) -> {
+            Group group = groupService.createIfNotExists(groupName, description);
+            groupMap.put(groupName, group);
+        });
+
+        return groupMap;
+    }
+
+
+
+
+
+
 
     private List<Permission> createPermissions() {
         Map<String, String> systemPermissions = Map.of(
@@ -128,101 +154,171 @@ public class InitializationClass implements CommandLineRunner {
 
         List<Permission> permissions = new ArrayList<>();
         systemPermissions.forEach((name, description) -> {
-            Permission permission = permissionRepository.findByName(name)
+            Permission permission = permissionService.findByNameOptional(name)
                     .orElseGet(() -> {
                         Permission newPermission = new Permission();
                         newPermission.setName(name);
                         newPermission.setDescription(description);
-                        return permissionRepository.save(newPermission);
+                        return permissionService.save(newPermission);
                     });
             permissions.add(permission);
         });
         return permissions;
     }
 
-    private void createPolicies(Role superAdminRole, List<Permission> permissions) {
-        Policy policy = policyRepository.findByName("FullAccessPolicy")
-                .orElseGet(() -> {
-                    Policy newPolicy = new Policy();
-                    newPolicy.setName("FullAccessPolicy");
-                    newPolicy.setDescription("Grants all permissions");
-                    newPolicy.setDefinition("{\"effect\": \"allow\"}");
-                    newPolicy.setEffect("allow");
-                    return policyRepository.save(newPolicy);
-                });
+    private List<Policy> createPolicies() {
+        Map<String, String> systemPolicies = Map.of(
+                "USER_MANAGEMENT", "Policy for managing users",
+                "AUDIT_LOG_ACCESS", "Policy for accessing audit logs",
+                "DATA_EXPORT", "Policy for exporting system data"
+        );
 
-        PolicyAssignment assignment = policyAssignmentRepository.findByPolicyIdAndRoleId(policy.getId(), superAdminRole.getId())
-                .orElseGet(() -> {
-                    PolicyAssignment newAssignment = new PolicyAssignment();
-                    newAssignment.setPolicy(policy);
-                    newAssignment.setRole(superAdminRole);
-                    return policyAssignmentRepository.save(newAssignment);
-                });
+        List<Policy> policies = new ArrayList<>();
+        systemPolicies.forEach((name, description) -> {
+            Policy policy = policyService.findByNameOptional(name)
+                    .orElseGet(() -> {
+                        Policy newPolicy = new Policy();
+                        newPolicy.setName(name);
+                        newPolicy.setDescription(description);
+                        newPolicy.setDefinition(createDefaultPolicyDefinition(name)); // Example method for default JSON definition
+                        newPolicy.setEffect("allow"); // Default effect
+                        return policyService.save(newPolicy);
+                    });
+            policies.add(policy);
+        });
+        return policies;
+    }
+    private String createDefaultPolicyDefinition(String policyName) {
+        // Generate default JSON definitions based on the policy name
+        switch (policyName) {
+            case "USER_MANAGEMENT":
+                return """
+                {
+                    "actions": ["create_user", "delete_user", "update_user"],
+                    "resources": ["users/*"]
+                }
+            """;
+            case "AUDIT_LOG_ACCESS":
+                return """
+                {
+                    "actions": ["view_logs"],
+                    "resources": ["audit_logs/*"]
+                }
+            """;
+            case "DATA_EXPORT":
+                return """
+                {
+                    "actions": ["export_data"],
+                    "resources": ["data/*"]
+                }
+            """;
+            default:
+                return """
+                {
+                    "actions": [],
+                    "resources": []
+                }
+            """;
+        }
+    }
 
-        permissions.forEach(permission -> {
-            RolePermissionId rolePermissionId = new RolePermissionId(superAdminRole.getId(), permission.getId());
-            rolePermissionRepository.findById(rolePermissionId).orElseGet(() -> {
-                RolePermission rolePermission = new RolePermission();
-                rolePermission.setId(rolePermissionId);
-                rolePermission.setRole(superAdminRole);
-                rolePermission.setPermission(permission);
-                return rolePermissionRepository.save(rolePermission);
-            });
+
+    private void assignUserToGroup(User user, Group group) {
+        if (group == null || group.getId() == null) {
+            throw new RuntimeException("Group is null or has not been persisted: " + group);
+        }
+
+        GroupMembership membership = new GroupMembership();
+        membership.setUser(user);
+        membership.setGroup(group);
+        groupMembershipService.save(membership);
+    }
+
+
+
+
+    private void assignRoleToUser(User user, Role role) {
+        UserRoleId userRoleId = new UserRoleId(user.getId(), role.getId());
+        userRoleService.findById(userRoleId).orElseGet(() -> {
+            UserRole userRole = new UserRole();
+            userRole.setId(userRoleId);
+            userRole.setUser(user);
+            userRole.setRole(role);
+            return userRoleService.save(userRole);
         });
     }
 
+
     private void createResourcesAndPermissions() {
-        Resource resource = resourceRepository.findByName("SystemLogs")
+        Resource resource = resourceService.findByName("SystemLogs")
                 .orElseGet(() -> {
                     Resource newResource = new Resource();
                     newResource.setName("SystemLogs");
                     newResource.setType("log");
                     newResource.setDescription("System-wide audit logs");
-                    return resourceRepository.save(newResource);
+                    return resourceService.save(newResource);
                 });
 
-        Permission auditReadPermission = permissionRepository.findByName("AUDIT_READ").orElseThrow();
+        Permission auditReadPermission = permissionService.findByNameOptional("AUDIT_READ").orElseThrow();
         ResourcePermissionId resourcePermissionId = new ResourcePermissionId();
         resourcePermissionId.setPermissionId(auditReadPermission.getId());
         resourcePermissionId.setResourceId(resource.getId());
-        resourcePermissionRepository.findById(resourcePermissionId).orElseGet(() -> {
+        resourcePermissionService.findByIdOptional(resourcePermissionId).orElseGet(() -> {
             ResourcePermission resourcePermission = new ResourcePermission();
             resourcePermission.setId(resourcePermissionId);
             resourcePermission.setResource(resource);
             resourcePermission.setPermission(auditReadPermission);
-            return resourcePermissionRepository.save(resourcePermission);
+            return resourcePermissionService.save(resourcePermission);
         });
     }
 
-    private void createRootUserAndAssignRole(Role superAdminRole) {
-        // Fetch properties from the environment with defaults
-        String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
-        String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
-        String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
+//    private void createRootUserAndAssignRole(Role superAdminRole) {
+//        // Fetch properties from the environment with defaults
+//        String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
+//        String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
+//        String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
+//
+//        User rootUser = userService.findByEmailOptional("root@system.local")
+//                .orElseGet(() -> {
+//                    User user = new User();
+//                    user.setName(rootUserName);
+//                    user.setEmail(rootUserEmail);
+//                    user.setPassword(passwordEncoder.encode(rootUserPassword));
+//                    user.setEnabled(true);
+//                    user.setEmailVerified(true);
+//                    return userService.save(user);
+//                });
+//
+//        UserRoleId userRoleId = new UserRoleId();
+//        userRoleId.setRoleId(superAdminRole.getId());
+//        userRoleId.setUserId(rootUser.getId());
+//        userRoleService.findById(userRoleId).orElseGet(() -> {
+//            UserRole userRole = new UserRole();
+//            userRole.setId(userRoleId);
+//            userRole.setUser(rootUser);
+//            userRole.setRole(superAdminRole);
+//            return userRoleService.save(userRole);
+//        });
+//    }
+private User createRootUser(Role superAdminRole) {
+    // Fetch properties from the environment with defaults
+    String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
+    String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
+    String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
 
-        User rootUser = userRepository.findByEmail("root@system.local")
-                .orElseGet(() -> {
-                    User user = new User();
-                    user.setName(rootUserName);
-                    user.setEmail(rootUserEmail);
-                    user.setPassword(passwordEncoder.encode(rootUserPassword));
-                    user.setEnabled(true);
-                    user.setEmailVerified(true);
-                    return userRepository.save(user);
-                });
+    User rootUser = userService.findByEmailOptional("root@system.local")
+            .orElseGet(() -> {
+                User user = new User();
+                user.setName(rootUserName);
+                user.setEmail(rootUserEmail);
+                user.setPassword(passwordEncoder.encode(rootUserPassword));
+                user.setEnabled(true);
+                user.setEmailVerified(true);
+                return userService.save(user);
+            });
 
-        UserRoleId userRoleId = new UserRoleId();
-        userRoleId.setRoleId(superAdminRole.getId());
-        userRoleId.setUserId(rootUser.getId());
-        userRoleRepository.findById(userRoleId).orElseGet(() -> {
-            UserRole userRole = new UserRole();
-            userRole.setId(userRoleId);
-            userRole.setUser(rootUser);
-            userRole.setRole(superAdminRole);
-            return userRoleRepository.save(userRole);
-        });
-    }
-
+    return rootUser;
+}
     private void createDefaultOAuthClient() {
         if (!oAuthClientService.existsByName("root-dashboard")) {
             String clientId = environment.getProperty("app.client-id", "");
