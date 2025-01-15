@@ -8,7 +8,10 @@ import consulting.gazman.security.repository.GroupRepository;
 import consulting.gazman.security.service.GroupService;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class GroupServiceImpl implements GroupService {
@@ -52,4 +55,11 @@ public class GroupServiceImpl implements GroupService {
     public List<Group> searchByName(String partialName) {
         return groupRepository.findByNameContaining(partialName);
     }
+
+    @Override
+    public Set<Group> findAllById(Set<Long> groupIds) {
+        // Fetch all groups from the repository and convert to a Set
+        return new HashSet<>(groupRepository.findAllById(groupIds));
+    }
+
 }

@@ -62,8 +62,8 @@ public class AuthCodeService {
             throw AppException.invalidAuthCode("Code not found");
         }
         String email = value.split(":")[0];
-        return  userService.findByEmail(email)
-                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));    }
+        return userService.findByEmail(email);
+    }
 
     private void validateRequest(AuthorizeRequest request) {
         if (!"code".equals(request.getResponseType())) {

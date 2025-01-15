@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useGroups } from "../../hooks/userGroups.tsx";
+import { useGroups } from "../../hooks/useGroups.tsx";
 import CreateGroupDialog from "../../components/Groups/CreateGroupDialog.tsx";
 import GroupDetails from "../../components/Groups/GroupDetails.tsx";
 import { Group } from "../../types/Group.ts";

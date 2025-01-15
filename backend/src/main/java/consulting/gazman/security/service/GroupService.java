@@ -3,6 +3,8 @@ package consulting.gazman.security.service;
 import consulting.gazman.security.entity.Group;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public interface GroupService {
 
@@ -13,5 +15,7 @@ public interface GroupService {
     void delete(Long id); // Delete a group by ID
     Group findByName(String name); // Find group by name
     List<Group> searchByName(String partialName); // Search groups by partial name
+
+    Set<Group> findAllById(Set<Long> groupIds);
 }
 

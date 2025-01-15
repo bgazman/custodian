@@ -163,8 +163,7 @@ public class AuthServiceImpl implements AuthService {
 
 
     public User findByEmail(String email) {
-        return userService.findByEmail(email)
-                .orElseThrow(() ->  AppException.userNotFound("User not found for subject: " + email));
+        return userService.findByEmail(email);
     }
 
 }

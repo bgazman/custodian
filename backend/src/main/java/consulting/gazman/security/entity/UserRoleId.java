@@ -10,10 +10,12 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Getter
 @Setter
+@AllArgsConstructor
 public class UserRoleId implements Serializable {
 
     private Long userId;
     private Long roleId;
+
 
 
 }

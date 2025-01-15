@@ -4,7 +4,7 @@ import {useState} from "react";
 import {ShieldCheck, UserCircle, Users,Lock} from "lucide-react";
 import UserBasicDetails from "../components/Users/UserBasicDetails.tsx";
 import UserSecurityDetails from "../components/Users/UserSecurityDetails";
-
+import UserGroups from "../components/Users/UserGroups";
 const UserDetailsPage: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -23,19 +23,21 @@ const UserDetailsPage: React.FC = () => {
     ];
 
     const renderContent = () => {
-        switch(currentSection) {
+        switch (currentSection) {
             case 'details':
                 return <UserBasicDetails user={user} />;
             case 'security':
-                return <UserSecurityDetails user={user}/>;
+                return <UserSecurityDetails user={user} />;
             case 'groups':
-                return <div></div>;
+                return <UserGroups user={user} />;
             case 'permissions':
-                return <div></div>;
+                return <div>Permissions section under construction</div>;
             default:
+                console.warn(`Invalid section: ${currentSection}. Rendering default section.`);
                 return <UserBasicDetails user={user} />;
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50">

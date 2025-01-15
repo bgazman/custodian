@@ -17,12 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/group-memberships")
 @PreAuthorize("hasRole('ADMIN')")
-public class GroupMembershipController extends ApiController {
+public class GroupMembershipController extends ApiController implements IGroupMembershipController {
 
     @Autowired
     private GroupMembershipService groupMembershipService;
 
     @PostMapping
+    @Override
     public ResponseEntity<?> addMembership(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam Long role) {
         logRequest("POST", "/api/group-memberships?userId=" + userId + "&groupId=" + groupId + "&role=" + role);
         try {
@@ -36,6 +37,7 @@ public class GroupMembershipController extends ApiController {
     }
 
     @PutMapping
+    @Override
     public ResponseEntity<?> updateRole(@RequestParam Long userId, @RequestParam Long groupId, @RequestParam Long newRole) {
         logRequest("PUT", "/api/group-memberships?userId=" + userId + "&groupId=" + groupId + "&newRole=" + newRole);
         try {
@@ -49,6 +51,7 @@ public class GroupMembershipController extends ApiController {
     }
 
     @DeleteMapping
+    @Override
     public ResponseEntity<?> removeMembership(@RequestParam Long userId, @RequestParam Long groupId) {
         logRequest("DELETE", "/api/group-memberships?userId=" + userId + "&groupId=" + groupId);
         try {
@@ -62,6 +65,7 @@ public class GroupMembershipController extends ApiController {
     }
 
     @GetMapping("/user/{userId}")
+    @Override
     public ResponseEntity<?> getGroupsForUser(@PathVariable Long userId) {
         logRequest("GET", "/api/group-memberships/user/" + userId);
         try {
@@ -75,6 +79,7 @@ public class GroupMembershipController extends ApiController {
     }
 
     @GetMapping("/group/{groupId}")
+    @Override
     public ResponseEntity<?> getUsersInGroup(@PathVariable Long groupId) {
         logRequest("GET", "/api/group-memberships/group/" + groupId);
         try {

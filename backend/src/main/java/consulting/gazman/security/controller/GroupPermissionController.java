@@ -14,14 +14,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/group-permissions")
+@RequestMapping("/api/secure/group-permissions")
 @PreAuthorize("hasRole('ADMIN')")
-public class GroupPermissionController extends ApiController {
+public class GroupPermissionController extends ApiController implements IGroupPermissionController {
 
     @Autowired
     private GroupPermissionService groupPermissionService;
 
     @PostMapping
+    @Override
     public ResponseEntity<?> addPermissionToGroup(@RequestParam Long groupId, @RequestParam Long permissionId) {
         logRequest("POST", "/api/group-permissions?groupId=" + groupId + "&permissionId=" + permissionId);
         try {
@@ -35,6 +36,7 @@ public class GroupPermissionController extends ApiController {
     }
 
     @DeleteMapping
+    @Override
     public ResponseEntity<?> removePermissionFromGroup(@RequestParam Long groupId, @RequestParam Long permissionId) {
         logRequest("DELETE", "/api/group-permissions?groupId=" + groupId + "&permissionId=" + permissionId);
         try {
@@ -48,6 +50,7 @@ public class GroupPermissionController extends ApiController {
     }
 
     @GetMapping("/group/{groupId}")
+    @Override
     public ResponseEntity<?> getPermissionsForGroup(@PathVariable Long groupId) {
         logRequest("GET", "/api/group-permissions/group/" + groupId);
         try {
@@ -61,6 +64,7 @@ public class GroupPermissionController extends ApiController {
     }
 
     @GetMapping("/permission/{permissionId}")
+    @Override
     public ResponseEntity<?> getGroupsForPermission(@PathVariable Long permissionId) {
         logRequest("GET", "/api/group-permissions/permission/" + permissionId);
         try {

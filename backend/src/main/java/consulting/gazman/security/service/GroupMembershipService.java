@@ -4,6 +4,7 @@ import consulting.gazman.security.entity.GroupMembership;
 import consulting.gazman.security.entity.Role;
 
 import java.util.List;
+import java.util.Set;
 
 public interface GroupMembershipService {
 
@@ -24,4 +25,10 @@ public interface GroupMembershipService {
 
     // Get all users in a group
     List<GroupMembership> getUsersInGroup(Long groupId);
+
+    void assignUserToGroups(Long id, Set<Long> groupIds);
+
+    void deleteByUserId(Long userId);
+
+    void saveAll(List<GroupMembership> newMemberships);
 }

@@ -34,7 +34,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
 
         // Check if the email exists without exposing errors
-        Optional<User> userOptional = userService.findByEmail(email);
+        Optional<User> userOptional = userService.findByEmailOptional(email);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
@@ -82,7 +82,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     public void resetPassword(String email, String newPassword) {
         // Validate user
-        User user = userService.findByEmail(email)
+        User user = userService.findByEmailOptional(email)
                 .orElseThrow(() -> new IllegalArgumentException("Email not registered"));
 
         // Update the password (hashed)

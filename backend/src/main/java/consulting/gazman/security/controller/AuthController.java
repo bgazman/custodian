@@ -60,7 +60,6 @@ public class AuthController extends ApiController {
 
         @PostMapping("/register")
         public ResponseEntity<?> register(@RequestBody UserRegistrationRequest request) {
-            logRequest("POST", "/api/auth/register");
             try {
                 authService.registerUser(request);
                 return wrapSuccessResponse(null, "Registration successful");
@@ -72,7 +71,7 @@ public class AuthController extends ApiController {
         }
     @PostMapping("/verify-email")
     public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
-        logRequest("POST", "/api/auth/verify-email");
+
         try {
             emailVerificationService.validateVerificationToken(token);
 
@@ -99,7 +98,7 @@ public class AuthController extends ApiController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody AuthRequest request) {
-        logRequest("POST", "/api/auth/logout");
+
         try {
 //            authService.logout(request);
             return wrapSuccessResponse(null, "Logout successful");

@@ -1,7 +1,9 @@
 package consulting.gazman.security.service;
 
 
-import consulting.gazman.security.dto.UserRequest;
+import consulting.gazman.security.dto.*;
+
+import consulting.gazman.security.entity.Role;
 import consulting.gazman.security.entity.User;
 
 import java.util.List;
@@ -19,7 +21,9 @@ public interface UserService {
     void delete(Long id);
     boolean existsByEmail(String email);
 
-    Optional<User> findByEmail(String email);
+    User findByEmail(String email);
+
+    Optional<User> findByEmailOptional(String email);
 
     void enableUser(Long id); // Enable a user account
     void disableUser(Long id); // Disable a user account
@@ -30,14 +34,30 @@ public interface UserService {
     void resetFailedLoginAttempts(Long id); // Reset failed login attempts counter
     void trackLogin(Long id); // Update last login time
 
-    User createUser(User user);
+    User createUser(User user, Set<Long> roleIds, Set<Long> groupIds);
 
     String getPhoneNumber(String email);
 
-    void updateUser(User user);
+    User updateUser(User user);
 
     boolean isEmailRegistered(String email);
 
     void updatePassword(String email, String newPassword);
+
+    List<Role> getUserRoles(Long id);
+
+    List<GroupDTO> getUserGroups(Long id);
+
+    List<UserAttributeDTO> getUserAttributes(Long id);
+
+    void updateUserRoles(Long userId, Set<Long> roleIds);
+
+    void updateUserGroups(Long userId, Set<Long> groupIds);
+
+    User updateUserStatus(Long id, UserStatusUpdateRequest request);
+
+    User updateUserSecurity(Long id, UserSecurityUpdateRequest request);
+
+
 }
 

@@ -33,7 +33,7 @@ const CreateGroupDialog = ({ open, onClose, onGroupCreated }) => {
         setError("");
         setSuccess("");
         try {
-            const response = await ApiClient.post("/groups", group);
+            const response = await ApiClient.post("/api/secure/groups", group);
             setSuccess("Group created successfully!");
             onGroupCreated(response.data); // Notify parent about the new group
             setTimeout(() => {

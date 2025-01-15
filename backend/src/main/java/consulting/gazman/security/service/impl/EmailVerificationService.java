@@ -46,8 +46,7 @@ public class EmailVerificationService {
         }
 
         // Find the user by email
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> AppException.resourceNotFound("User not found for email: " + email));
+        User user = userService.findByEmail(email);
 
         // Mark the user's email as verified
         userService.verifyEmail(user.getId());

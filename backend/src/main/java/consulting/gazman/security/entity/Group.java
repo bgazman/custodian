@@ -1,8 +1,7 @@
 package consulting.gazman.security.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +11,8 @@ import java.time.LocalDateTime;
 @Table(name = "groups")
 @Getter
 @Setter
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class Group {
 
     @Id
@@ -34,4 +35,7 @@ public class Group {
     @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+
+
 }

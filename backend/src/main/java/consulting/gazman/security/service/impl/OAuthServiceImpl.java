@@ -69,7 +69,7 @@ public class OAuthServiceImpl implements OAuthService {
     }
     public LoginResponse loginWrapped(LoginRequest loginRequest) {
 
-        Optional<User> optionalUser = userService.findByEmail(loginRequest.getEmail());
+        Optional<User> optionalUser = userService.findByEmailOptional(loginRequest.getEmail());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
 
@@ -131,9 +131,7 @@ public class OAuthServiceImpl implements OAuthService {
                 .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
         // Fetch the user by email
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> AppException.userNotFound("No user found with email: " + email));
-
+        User user = userService.findByEmail(email);
         // Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
         Map<Long, List<String>> permissions = groupMemberships.stream()
@@ -218,8 +216,7 @@ public class OAuthServiceImpl implements OAuthService {
         OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
                 .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
-        User user = userService.findByEmail(userId)
-                .orElseThrow(() -> AppException.userNotFound("No user found with ID: " + userId));
+        User user = userService.findByEmail(userId);
 
         // Step 4: Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());

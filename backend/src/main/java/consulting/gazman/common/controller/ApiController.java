@@ -12,11 +12,27 @@ import org.springframework.http.ResponseEntity;
 import java.time.Instant;
 
 import java.util.UUID;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 @Slf4j
 public abstract class ApiController {
 
     // Log request details with Sleuth traceId
+//    protected void logRequest() {
+//        // Get current HTTP request
+//        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+//        if (attributes != null) {
+//            HttpServletRequest request = attributes.getRequest();
+//            String traceId = MDC.get("traceId"); // For distributed tracing
+//            traceId = (traceId != null) ? traceId : "UNKNOWN";
+//            log.info("Request received: traceId={}, method={}, endpoint={}", traceId, request.getMethod(), request.getRequestURI());
+//        } else {
+//            log.warn("Unable to log request - no HTTP request context available.");
+//        }
+//    }
+
     protected void logRequest(String method, String endpoint) {
         String traceId = MDC.get("traceId"); // Retrieve Sleuth's traceId
         if (traceId == null) {
@@ -24,7 +40,6 @@ public abstract class ApiController {
         }
         log.info("Request received: traceId={}, method={}, endpoint={}", traceId, method, endpoint);
     }
-
     // Wrap a successful result into an ApiResponse and map to ResponseEntity
     protected <T> ResponseEntity<T> wrapSuccessResponse(T data, String message) {
         // Retrieve metadata for headers

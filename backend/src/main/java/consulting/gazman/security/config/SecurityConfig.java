@@ -3,6 +3,7 @@ package consulting.gazman.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.filter.JwtExceptionFilter;
+import consulting.gazman.security.filter.LoggingFilter;
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 import org.springframework.security.web.SecurityFilterChain;
 
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @EnableWebSecurity
@@ -31,16 +33,18 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final CorsConfigurationSource corsConfigurationSource;
     private final ObjectMapper objectMapper;
+    private final LoggingFilter loggingFilter;
     public SecurityConfig(PasswordEncoder passwordEncoder,
                           UserDetailsService userDetailsService,
                           CorsConfigurationSource corsConfigurationSource,
-                          ObjectMapper objectMapper
+                          ObjectMapper objectMapper, LoggingFilter loggingFilter
     ) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;
         this.corsConfigurationSource = corsConfigurationSource;
 
         this.objectMapper = objectMapper;
+        this.loggingFilter = loggingFilter;
     }
     @Bean
     @Order(1)
@@ -71,7 +75,8 @@ public class SecurityConfig {
                 // CSRF ignoring configuration
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/oauth/**", "/mfa/**", "/forgot-password/**")
-                );
+                )                .addFilterBefore(new LoggingFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -92,7 +97,8 @@ public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exce
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                     .jwt(Customizer.withDefaults())
-            );
+            )                .addFilterBefore(new LoggingFilter(), UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
 }
 

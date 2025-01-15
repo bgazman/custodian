@@ -1,184 +1,157 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-
-// Utility to generate or fetch the traceId (UUID)
-function getTraceId(): string {
-    const existingTraceId = localStorage.getItem('traceId');
-    if (existingTraceId) {
-        return existingTraceId;
-    }
-    const newTraceId = crypto.randomUUID(); // Use crypto to generate UUID
-    localStorage.setItem('traceId', newTraceId); // Store it for reuse
-    return newTraceId;
+// types/auth.types.ts
+interface AuthResponse {
+    accessToken: string;
+    refreshToken: string;
 }
+
+interface RefreshTokenResponse {
+    accessToken: string;
+}
+
+// api/client.ts
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
 export class ApiClient {
-    private static instance: AxiosInstance = axios.create({
-        baseURL: import.meta.env.VITE_BACKEND_URL,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        timeout: 10000, // Set a default timeout of 10 seconds
-    });
+    private static instance: AxiosInstance;
+    private static isRefreshing = false;
+    private static refreshSubscribers: ((token: string) => void)[] = [];
 
+    static {
+        this.instance = axios.create({
+            baseURL: import.meta.env.VITE_BACKEND_URL,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+        });
+        this.setupInterceptors();
+    }
 
-// Update the token retrieval in interceptor
-    static init() {
-        this.instance.interceptors.request.use((config) => {
-            const token = sessionStorage.getItem("access-token");
-            // const tokenData = token ? JSON.parse(token) : null;
-            const traceId = getTraceId();
+    private static setupInterceptors() {
+        this.instance.interceptors.request.use(
+            (config) => {
+                const token = sessionStorage.getItem("access-token");
+                const traceId = this.getTraceId();
 
-            config.headers = {
-                ...config.headers,
-                'X-B3-TraceId': traceId,
-            };
+                config.headers = {
+                    ...config.headers,
+                    'X-B3-TraceId': traceId,
+                };
 
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+
+                return config;
+            },
+            (error) => Promise.reject(error)
+        );
+
+        this.instance.interceptors.response.use(
+            (response) => response,
+            async (error: AxiosError) => {
+                const originalRequest = error.config;
+
+                if (!originalRequest) {
+                    return Promise.reject(error);
+                }
+
+                // Handle 401 Unauthorized errors
+                if (error.response?.status === 401 && !originalRequest._retry) {
+                    if (this.isRefreshing) {
+                        try {
+                            const token = await new Promise<string>((resolve) => {
+                                this.refreshSubscribers.push((token: string) => {
+                                    resolve(token);
+                                });
+                            });
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            return this.instance(originalRequest);
+                        } catch (err) {
+                            return Promise.reject(err);
+                        }
+                    }
+
+                    originalRequest._retry = true;
+                    this.isRefreshing = true;
+
+                    try {
+                        const token = await this.refreshAccessToken();
+                        this.refreshSubscribers.forEach((callback) => callback(token));
+                        this.refreshSubscribers = [];
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return this.instance(originalRequest);
+                    } catch (refreshError) {
+                        this.handleAuthError();
+                        return Promise.reject(refreshError);
+                    } finally {
+                        this.isRefreshing = false;
+                    }
+                }
+
+                return Promise.reject(error);
+            }
+        );
+    }
+
+    private static async refreshAccessToken(): Promise<string> {
+        try {
+            const refreshToken = sessionStorage.getItem('refresh-token');
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
             }
 
-            return config;
-        });
-    }
+            const response = await this.instance.post<RefreshTokenResponse>('/auth/refresh', {
+                refreshToken
+            });
 
-    /**
-     * Set a custom header to be used in all requests.
-     * @param key - The header name.
-     * @param value - The header value.
-     */
-    static setHeader(key: string, value: string): void {
-        this.instance.defaults.headers.common[key] = value;
-    }
-
-    /**
-     * Sends a POST request.
-     * @param url - The endpoint URL.
-     * @param data - The request payload.
-     * @param config - Optional Axios configuration.
-     * @returns The response data.
-     */
-    static async post<T, U = any>(url: string, data: U, config?: AxiosRequestConfig): Promise<T> {
-        try {
-            console.log(`POST Request: ${url}`, data); // Log request
-            const response = await this.instance.post<T>(url, data, config);
-            console.log(`POST Response: ${url}`, response.data); // Log response data
-            console.log('Response Headers:', response.headers); // Log response headers
-            return response.data;
-        } catch (error: any) {
-            console.error(`POST Error: ${url}`, error.response?.data || error.message); // Log error
-            throw this.handleError(error);
+            const { accessToken } = response.data;
+            sessionStorage.setItem('access-token', accessToken);
+            return accessToken;
+        } catch (error) {
+            this.handleAuthError();
+            throw error;
         }
     }
 
-    /**
-     * Sends a GET request.
-     * @param url - The endpoint URL.
-     * @param config - Optional Axios configuration.
-     * @returns The response data.
-     */
+    private static handleAuthError(): void {
+        sessionStorage.clear();
+        window.location.href = '/login';
+    }
+
+    private static getTraceId(): string {
+        let traceId = localStorage.getItem('traceId');
+        if (!traceId) {
+            traceId = crypto.randomUUID();
+            localStorage.setItem('traceId', traceId);
+        }
+        return traceId;
+    }
+
+    // API Methods
     static async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        try {
-            console.log(`GET Request: ${url}`); // Log request
-            const response = await this.instance.get<T>(url, config);
-            console.log(`GET Response: ${url}`, response.data); // Log response data
-            console.log('Response Headers:', response.headers); // Log response headers
-            return response.data;
-        } catch (error: any) {
-            console.error(`GET Error: ${url}`, error.response?.data || error.message); // Log error
-            throw this.handleError(error);
-        }
+        const response = await this.instance.get<T>(url, config);
+        return response.data;
     }
 
-    /**
-     * Sends a PUT request.
-     * @param url - The endpoint URL.
-     * @param data - The request payload.
-     * @param config - Optional Axios configuration.
-     * @returns The response data.
-     */
-    static async put<T, U = any>(url: string, data: U, config?: AxiosRequestConfig): Promise<T> {
-        try {
-            console.log(`PUT Request: ${url}`, data);
-            const response = await this.instance.put<T>(url, data, config);
-            console.log(`PUT Response: ${url}`, response.data);
-            return response.data;
-        } catch (error: any) {
-            console.error(`PUT Error: ${url}`, error.response?.data || error.message);
-            throw this.handleError(error);
-        }
+    static async post<T, D = any>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.post<T>(url, data, config);
+        return response.data;
     }
 
-    /**
-     * Sends a DELETE request.
-     * @param url - The endpoint URL.
-     * @param config - Optional Axios configuration.
-     * @returns The response data.
-     */
+    static async put<T, D = any>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.put<T>(url, data, config);
+        return response.data;
+    }
+
     static async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        try {
-            console.log(`DELETE Request: ${url}`);
-            const response = await this.instance.delete<T>(url, config);
-            console.log(`DELETE Response: ${url}`, response.data);
-            return response.data;
-        } catch (error: any) {
-            console.error(`DELETE Error: ${url}`, error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
-    static async patch<T>(
-        url: string,
-        data: unknown,
-        config?: AxiosRequestConfig
-    ): Promise<T> {
-        try {
-            console.log(`PATCH Request: ${url}`, data);
-            const response = await this.instance.patch<T>(url, data, config);
-            console.log(`PATCH Response: ${url}`, response.data);
-            return response.data;
-        } catch (error: any) {
-            console.error(`PATCH Error: ${url}`, error.response?.data || error.message);
-            throw this.handleError(error);
-        }
+        const response = await this.instance.delete<T>(url, config);
+        return response.data;
     }
 
-    /**
-     * Processes and standardizes error responses.
-     * @param error - The Axios error object.
-     * @returns A standardized error object.
-     */
-    private static handleError(error: any): any {
-        if (error.response) {
-            // Server responded with a non-2xx status code
-            console.error('Error Status Code:', error.response.status); // Log status code
-            return {
-                status: 'error',
-                message: error.response.data?.message || error.message,
-                statusCode: error.response.status,
-            };
-        } else if (error.request) {
-            // Request was sent but no response received
-            return {
-                status: 'error',
-                message: 'No response received from server.',
-                statusCode: 0,
-            };
-        } else if (error.code === 'ECONNABORTED') {
-            // Timeout handling
-            return {
-                status: 'error',
-                message: 'Request timed out. Please try again later.',
-                statusCode: 0,
-            };
-        } else {
-            // Something happened in setting up the request
-            return {
-                status: 'error',
-                message: error.message,
-                statusCode: 0,
-            };
-        }
+    static async patch<T, D = any>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.patch<T>(url, data, config);
+        return response.data;
     }
 }
 
-// Initialize the interceptor
-ApiClient.init();

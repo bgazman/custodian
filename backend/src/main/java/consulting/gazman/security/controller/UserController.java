@@ -1,28 +1,26 @@
 package consulting.gazman.security.controller;
 
 import consulting.gazman.common.controller.ApiController;
-import consulting.gazman.common.dto.ApiResponse;
-import consulting.gazman.security.dto.UserRequest;
+import consulting.gazman.security.dto.*;
+import consulting.gazman.security.entity.Role;
 import consulting.gazman.security.entity.User;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.service.RoleService;
 import consulting.gazman.security.service.UserRoleService;
 import consulting.gazman.security.service.UserService;
-import consulting.gazman.security.utils.UserMapper;
+import consulting.gazman.security.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+import java.util.Set;
 
 
 @RestController
-@RequestMapping("/api/secure/users")
 
-public class UserController extends ApiController {
+public class UserController extends ApiController implements IUserController {
 
     @Autowired
     private UserService userService;
@@ -30,166 +28,194 @@ public class UserController extends ApiController {
     RoleService roleService;
     @Autowired
     UserRoleService userRoleService;
+    @Autowired
+    UserMapper userMapper;
+
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
-        logRequest("GET", "/api/secure/users");
+    @Override
+    public ResponseEntity<List<UserBasicDTO>> getAllUsers() {
         try {
+            // Fetch users and map to DTOs
             List<User> users = userService.getAllUsers();
-            return wrapSuccessResponse(users, "Users retrieved successfully");
+            List<UserBasicDTO> userDTOs = userMapper.toBasicDTOList(users);
+
+            // Use the abstract controller's utility method
+            return super.wrapSuccessResponse(userDTOs,"User list retrieved");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            // Application-specific error
+            return (ResponseEntity) super.wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            // General error
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable Long id) {
-        logRequest("GET", "/api/users/" + id);
+    @Override
+    public ResponseEntity<UserDetailsDTO> getUser(Long id) {
         try {
             User user = userService.findById(id);
-            return wrapSuccessResponse(user, "User retrieved successfully");
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(user);
+
+            return super.wrapSuccessResponse(userDetailsDTO,"User found");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.NOT_FOUND);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserRequest userRequest) {
-        logRequest("POST", "/api/secure/users");
+    @Override
+    public ResponseEntity<UserDetailsDTO> createUser(UserCreateRequest request) {
         try {
+            // Map the UserCreateRequest to a User entity
+            User user = userMapper.toEntity(request);
 
-            User createdUser = userService.createUser(UserMapper.toEntity(userRequest,roleService,null));
-            return wrapSuccessResponse(createdUser, "User created successfully");
+            // Extract role IDs and group IDs from the request
+            Set<Long> roleIds = request.getRoleIds();
+            Set<Long> groupIds = request.getGroupIds();
+
+            // Call the service method to create the user with roles and groups
+            User createdUser = userService.createUser(user, roleIds, groupIds);
+
+            // Map the created user to a UserDetailsDTO
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(createdUser);
+
+            // Return the success response
+            return super.wrapSuccessResponse(userDetailsDTO, "User created successfully");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            // Handle application-specific validation errors
+            return (ResponseEntity) super.wrapErrorResponse("VALIDATION_ERROR", e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            // Handle unexpected errors
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id,  @RequestBody UserRequest userRequest) {
-        logRequest("PUT", "/api/users/" + id);
+
+    @Override
+    public ResponseEntity<UserDetailsDTO> updateUser(Long id, UserUpdateRequest request) {
         try {
+            // Fetch the existing user by ID
             User existingUser = userService.findById(id);
-            existingUser.getUserRoles().clear();
-            userRoleService.deleteByUserId(existingUser.getId());
-            userRoleService.flush();
 
-            User updatedUser = UserMapper.toEntity(userRequest, roleService, existingUser);
-            userService.save(updatedUser);
-            return wrapSuccessResponse(updatedUser, "User updated successfully");
+            // Update the existing user with the fields from UserUpdateRequest using the mapper
+            userMapper.updateEntity(request, existingUser);
+
+            // Update roles and groups if provided
+            Set<Long> roleIds = request.getRoleIds();
+            Set<Long> groupIds = request.getGroupIds();
+            if (roleIds != null && !roleIds.isEmpty()) {
+                userService.updateUserRoles(existingUser.getId(), roleIds);
+            }
+            if (groupIds != null && !groupIds.isEmpty()) {
+                userService.updateUserGroups(existingUser.getId(), groupIds);
+            }
+
+            // Save the updated user
+// Update the existing user with the request data
+            userMapper.updateEntity(request, existingUser);
+
+// Save the updated user
+            User updatedUser = userService.updateUser(existingUser);
+
+            // Map the updated user to UserDetailsDTO
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(updatedUser);
+
+            // Return the success response
+            return super.wrapSuccessResponse(userDetailsDTO, "User updated successfully");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            // Handle case where the user is not found
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            // Handle unexpected errors
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        logRequest("DELETE", "/api/users/" + id);
+
+    @Override
+    public ResponseEntity<Void> deleteUser(Long id) {
         try {
             userService.delete(id);
-            return wrapSuccessResponse(null, "User deleted successfully");
+            return ResponseEntity.noContent().build(); // RESTful DELETE with no content
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @GetMapping("/email/{email}")
-    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
-        logRequest("GET", "/api/users/email/" + email);
+    @Override
+    public ResponseEntity<UserStatusDTO> updateUserStatus(Long id, UserStatusUpdateRequest request) {
         try {
-            User user = userService.findByEmail(email)
-                    .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));
-            return wrapSuccessResponse(user, "User retrieved successfully");
+            User user = userService.updateUserStatus(id, request);
+            UserStatusDTO userStatusDTO = userMapper.toStatusDTO(user);
+
+            return super.wrapSuccessResponse(userStatusDTO,"User status details retrieved");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.NOT_FOUND);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    @PostMapping("/enable/{id}")
-    public ResponseEntity<?> enableUser(@PathVariable Long id) {
-        logRequest("POST", "/api/users/enable/" + id);
-        try {
-            userService.enableUser(id);
-            return wrapSuccessResponse(null, "User enabled successfully");
-        } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/disable/{id}")
-    public ResponseEntity<?> disableUser(@PathVariable Long id) {
-        logRequest("POST", "/api/users/disable/" + id);
+    @Override
+    public ResponseEntity<UserSecurityDTO> updateUserSecurity(Long id, UserSecurityUpdateRequest request) {
         try {
-            userService.disableUser(id);
-            return wrapSuccessResponse(null, "User disabled successfully");
+            User user = userService.updateUserSecurity(id, request);
+            UserSecurityDTO userSecurityDTO = userMapper.toSecurityDTO(user);
+
+            return super.wrapSuccessResponse(userSecurityDTO,"User security details retrieved");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PutMapping("/password/{id}")
-    public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody String newPassword) {
-        logRequest("PUT", "/api/users/password/" + id);
+    @Override
+    public ResponseEntity<UserAccessDTO> getUserAccess(Long id) {
         try {
-            userService.changePassword(id, newPassword);
-            return wrapSuccessResponse(null, "Password changed successfully");
+            User user = userService.findById(id);
+
+            // Map the User entity to UserAccessDTO using the mapper
+            UserAccessDTO userAccessDTO = userMapper.toAccessDTO(user);
+
+            return super.wrapSuccessResponse(userAccessDTO,"User access details retrieved");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/verify-email/{id}")
-    public ResponseEntity<?> verifyEmail(@PathVariable Long id) {
-        logRequest("POST", "/api/users/verify-email/" + id);
+    @Override
+    public ResponseEntity<UserProfileDTO> getUserProfile(Long id) {
         try {
-            userService.verifyEmail(id);
-            return wrapSuccessResponse(null, "Email verified successfully");
+            // Fetch the User entity from the service
+            User user = userService.findById(id);
+
+            // Map the User entity to UserProfileDTO using the mapper
+            UserProfileDTO userProfileDTO = userMapper.toProfileDTO(user);
+            return super.wrapSuccessResponse(userProfileDTO,"User profile retrieved");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/reset-failed-attempts/{id}")
-    public ResponseEntity<?> resetFailedLoginAttempts(@PathVariable Long id) {
-        logRequest("POST", "/api/users/reset-failed-attempts/" + id);
+    @Override
+    public ResponseEntity<UserBasicDTO> getUserByEmail(String email) {
         try {
-            userService.resetFailedLoginAttempts(id);
-            return wrapSuccessResponse(null, "Failed login attempts reset successfully");
-        } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+            User user = userService.findByEmail(email);
+            UserBasicDTO userBasicDTO = userMapper.toBasicDTO(user);
 
-    @PostMapping("/track-login/{id}")
-    public ResponseEntity<?> trackLogin(@PathVariable Long id) {
-        logRequest("POST", "/api/users/track-login/" + id);
-        try {
-            userService.trackLogin(id);
-            return wrapSuccessResponse(null, "Login tracked successfully");
+            return super.wrapSuccessResponse(userBasicDTO,"User found");
         } catch (AppException e) {
-            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

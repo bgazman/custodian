@@ -102,8 +102,7 @@ public class MfaServiceImpl implements MfaService {
     @Override
     public boolean resendMfaCode(String email) {
         // Check if user exists
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> AppException.userNotFound("No user found with email: " + email));
+        User user = userService.findByEmail(email);
 
         // Check resend attempts using Redis
         String resendKey = "mfa:resend:" + email;
@@ -154,8 +153,7 @@ public class MfaServiceImpl implements MfaService {
     @Override
     public boolean validateBackupCode(String email, String token) {
         // Check if user exists
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> AppException.userNotFound("No user found with email: " + email));
+        User user = userService.findByEmail(email);
 
 
         // Check if account is locked

@@ -1,13 +1,13 @@
 package consulting.gazman.security.service.impl;
 
-import consulting.gazman.security.entity.Role;
-import consulting.gazman.security.entity.User;
-import consulting.gazman.security.entity.UserRole;
+import consulting.gazman.security.dto.GroupDTO;
+import consulting.gazman.security.dto.UserAttributeDTO;
+import consulting.gazman.security.dto.UserSecurityUpdateRequest;
+import consulting.gazman.security.dto.UserStatusUpdateRequest;
+import consulting.gazman.security.entity.*;
 import consulting.gazman.security.exception.AppException;
 import consulting.gazman.security.repository.UserRepository;
-import consulting.gazman.security.service.RoleService;
-import consulting.gazman.security.service.UserRoleService;
-import consulting.gazman.security.service.UserService;
+import consulting.gazman.security.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +35,10 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserRoleService userRoleService;
 
+    @Autowired
+    GroupService groupService;
+    @Autowired
+    GroupMembershipService groupMembershipService;
     @Override
     public List<User> getAllUsers() {
         // Fetch all users from the database
@@ -79,8 +83,13 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email); // Assuming the repository method returns Optional<User>
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.userNotFound("User with email " + email + " not found"));
+    }
+    @Override
+    public Optional<User> findByEmailOptional(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
@@ -132,36 +141,47 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+
+
     @Override
-    public User createUser(User user) {
-        // Check if the email already exists
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw AppException.userAlreadyExists("A user with this email already exists");
+    public User createUser(User user, Set<Long> roleIds, Set<Long> groupIds) {
+        // Step 1: Save the user (persist the User entity)
+        User savedUser = userRepository.save(user);
+
+        // Step 2: Assign roles to the user
+        if (roleIds != null && !roleIds.isEmpty()) {
+            Set<UserRole> userRoles = roleService.resolveRolesForUser(savedUser, roleIds);
+            savedUser.setUserRoles(userRoles); // In-memory update
         }
 
-        // Hash the password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Assign roles to the user
-        if (user.getUserRoles() == null || user.getUserRoles().isEmpty()) {
-            throw AppException.badRequest("At least one role is required for the user");
+        // Step 3: Assign groups to the user
+        if (groupIds != null && !groupIds.isEmpty()) {
+            groupMembershipService.assignUserToGroups(savedUser.getId(), groupIds);
         }
 
-        Set<UserRole> userRoles = user.getUserRoles().stream()
-                .map(userRole -> {
-                    Role role = roleService.findById(userRole.getRole().getId());
+        // Return the saved user
+        return savedUser;
+    }
 
-                    UserRole newUserRole = new UserRole();
-                    newUserRole.setUser(user);
-                    newUserRole.setRole(role);
-                    return newUserRole;
-                })
-                .collect(Collectors.toSet());
+    // Update an existing user
+    public User updateUser(Long userId, User updatedUser, Set<Long> roleIds, Set<Long> groupIds) {
+        // Fetch the existing user
+        User existingUser = findById(userId);
 
-        user.setUserRoles(userRoles);
+        // Update fields (basic details like name, email, etc.)
+        existingUser.setName(updatedUser.getName());
+        existingUser.setEmail(updatedUser.getEmail());
+        existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
+        existingUser.setEnabled(updatedUser.isEnabled());
 
-        // Save the user to the database
-        return userRepository.save(user);
+        // Update roles
+        Set<UserRole> updatedRoles = roleService.resolveRolesForUser(existingUser, roleIds);
+        existingUser.getUserRoles().clear();
+        existingUser.getUserRoles().addAll(updatedRoles);
+
+
+        // Save the updated user
+        return userRepository.save(existingUser);
     }
 
 
@@ -174,12 +194,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(User user) {
+    public User updateUser(User user) {
         User existingUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> AppException.userNotFound("User not found"));
 
         BeanUtils.copyProperties(user, existingUser, "id", "userRoles", "password");
-        userRepository.save(existingUser);
+        return userRepository.save(existingUser);
+
 
     }
 
@@ -204,6 +225,107 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
     }
+
+    @Override
+    public List<Role> getUserRoles(Long id) {
+        return List.of();
+    }
+
+    @Override
+    public List<GroupDTO> getUserGroups(Long id) {
+        return List.of();
+    }
+
+    @Override
+    public List<UserAttributeDTO> getUserAttributes(Long id) {
+        return List.of();
+    }
+    @Override
+    public void updateUserRoles(Long userId, Set<Long> newRoleIds) {
+        // Fetch the user, throw AppException if not found
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.userNotFound("User with ID " + userId + " not found"));
+
+        // Validate the provided role IDs by fetching them from the roles table
+        Set<Role> validRoles = roleService.findAllById(newRoleIds).stream().collect(Collectors.toSet());
+        if (validRoles.size() != newRoleIds.size()) {
+            throw AppException.badRequest("One or more roles do not exist");
+        }
+
+        // Use the UserRoleService to update the user's roles
+        userRoleService.updateUserRoles(user, newRoleIds);
+    }
+
+
+
+    @Override
+    public void updateUserGroups(Long userId, Set<Long> groupIds) {
+        // Fetch the user, throw AppException if not found
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.userNotFound("User with ID " + userId + " not found"));
+
+        // Fetch and validate group IDs by retrieving the actual Group entities from the database
+        Set<Group> groups = groupService.findAllById(groupIds).stream().collect(Collectors.toSet());
+        if (groups.size() != groupIds.size()) {
+            throw AppException.badRequest("One or more groups do not exist");
+        }
+
+        // Delete existing group memberships for the user
+        groupMembershipService.deleteByUserId(userId);
+
+        // Create new group memberships using the fetched Group entities
+        List<GroupMembership> newMemberships = groups.stream()
+                .map(group -> new GroupMembership(user, group))  // Constructor without Role
+                .collect(Collectors.toList());
+
+        // Save the new group memberships
+        groupMembershipService.saveAll(newMemberships);
+    }
+
+
+
+
+
+    @Override
+    public User updateUserSecurity(Long userId, UserSecurityUpdateRequest request) {
+        // Fetch the user, throw AppException if not found
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.userNotFound("User with ID " + userId + " not found"));
+
+        // Update the user's password (assume the password is hashed elsewhere, e.g., in a service)
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            String hashedPassword = passwordEncoder.encode(request.getPassword()); // Assuming passwordEncoder is a Bean
+            user.setPassword(hashedPassword);
+        }
+
+        // Update other security-related fields (if any)
+        if (request.isMfaEnabled()) {
+            user.setMfaEnabled(true);
+        }
+
+        // Save the updated user
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User updateUserStatus(Long userId, UserStatusUpdateRequest request) {
+        // Fetch the user, throw AppException if not found
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.userNotFound("User with ID " + userId + " not found"));
+
+        // Update the user's status fields
+        if (request.isEnabled()) {
+            user.setEnabled(true);
+        }
+        if (request.isEmailVerified()) {
+            user.setEmailVerified(true);
+        }
+
+        // Save the updated user
+        return userRepository.save(user);
+
+    }
+
 }
 
 

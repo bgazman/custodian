@@ -43,8 +43,7 @@ public class MfaController extends ApiController {
         ModelAndView mav = new ModelAndView("mfa");
 
         // Add user object to the model
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "No user found with email: " + email));
+        User user = userService.findByEmail(email);
         mav.addObject("user", user);
 
         // Add other parameters
@@ -60,7 +59,6 @@ public class MfaController extends ApiController {
     }
     @PostMapping("/resend")
     public ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest) {
-        logRequest("POST", "/mfa/resend");
         try {
             boolean sent = mfaService.resendMfaCode(mfaRequest.getEmail());
             if (sent) {
@@ -88,7 +86,6 @@ public class MfaController extends ApiController {
 
     @PostMapping("/verify-backup")
     public ResponseEntity<?> verifyBackupCode(@RequestBody MfaRequest mfaRequest) {
-        logRequest("POST", "/mfa/verify-backup");
         try {
             boolean isValid = mfaService.validateBackupCode(
                     mfaRequest.getEmail(),

@@ -36,7 +36,7 @@ export const useGroups = () => {
     // Optimistic delete
     const deleteGroup = async (id: number) => {
         try {
-            await ApiClient.delete(`/groups/${id}`);
+            await ApiClient.delete(`/api/secure/groups/${id}`);
             setGroups((prevGroups) => prevGroups.filter((group) => group.id !== id));
         } catch (err) {
             console.error("Failed to delete group:", err);
@@ -47,7 +47,7 @@ export const useGroups = () => {
     // Optimistic update (e.g., changing description, enabled state, etc.)
     const updateGroup = async (id: number, updates: Partial<Group>) => {
         try {
-            const updatedGroup = await ApiClient.patch(`/groups/${id}`, updates);
+            const updatedGroup = await ApiClient.patch(`api/secure/groups/${id}`, updates);
             setGroups((prevGroups) =>
                 prevGroups.map((group) => (group.id === id ? { ...group, ...updatedGroup } : group))
             );
