@@ -19,3 +19,24 @@
 .hidden {
     display: none !important;
 }
+
+.success-message {
+    text-align: center;
+    padding: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    background: #f9f9f9;
+}
+
+.success-message h2 {
+    color: #4CAF50; /* Green success color */
+}
+
+.success-message a {
+    color: #007BFF; /* Link color */
+    text-decoration: underline;
+}
+
+.success-message a:hover {
+    text-decoration: none;
+}

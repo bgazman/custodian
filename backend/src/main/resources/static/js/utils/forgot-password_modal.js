@@ -19,6 +19,8 @@ export const forgotPasswordModal = {
      */
     show() {
         try {
+                console.log('Showing Forgot Password Modal...');
+
             this.initElements();
 
             if (!this.elements.modal || !this.elements.overlay) {

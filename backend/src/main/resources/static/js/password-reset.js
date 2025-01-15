@@ -62,5 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (passwordResetForm) {
         passwordResetForm.addEventListener('submit', submitPasswordReset);
     }
+
+    // Attach close event listener to the modal close button
+    const closeModalButton = document.querySelector('.modal-close-button'); // Replace with your actual button class or ID
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', modal.close);
+    }
+
+    // Initialize modal
     modal.init();
 });

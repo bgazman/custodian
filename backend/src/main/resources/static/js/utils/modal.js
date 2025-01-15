@@ -1,3 +1,4 @@
+
 export const modal = {
     elements: {
         modal: null,
@@ -8,43 +9,42 @@ export const modal = {
 
     },
 
-    /**
-     * Shows the modal with the specified message.
-     * @param {string} message - The message to display in the modal.
-     */
-    show(message = 'An unknown error occurred') {
-        try {
-            this.initElements();
+show(message = 'An unknown error occurred') {
+    try {
+        this.initElements();
 
-            if (!this.elements.modal || !this.elements.overlay || !this.elements.message) {
-                console.error('Modal elements not found');
-                return;
-            }
-
-            // Set message content
-            this.elements.message.textContent = message;
-
-            // Make modal and overlay visible
-            this.elements.overlay.style.display = 'block';
-            this.elements.modal.style.display = 'block';
-
-            // Trigger reflow to ensure CSS transitions work
-            void this.elements.modal.offsetWidth;
-
-            this.elements.overlay.classList.add('visible');
-            this.elements.modal.classList.add('visible');
-
-            // Focus the modal for accessibility
-            this.elements.modal.setAttribute('tabindex', '-1');
-            this.elements.modal.focus();
-        } catch (error) {
-            console.error('Error showing modal:', error);
+        if (!this.elements.modal || !this.elements.overlay || !this.elements.message) {
+            console.error('Modal elements not found');
+            return;
         }
-    },
 
-    /**
-     * Closes the modal and restores focus to the active form or document.
-     */
+        // Set message content
+        this.elements.message.textContent = message;
+
+        // Make modal and overlay visible
+        this.elements.overlay.style.display = 'block';
+        this.elements.modal.style.display = 'block';
+
+        // Trigger reflow to ensure CSS transitions work
+        void this.elements.modal.offsetWidth;
+
+        this.elements.overlay.classList.add('visible');
+        this.elements.modal.classList.add('visible');
+
+        // Focus the modal for accessibility
+        this.elements.modal.setAttribute('tabindex', '-1');
+        this.elements.modal.focus();
+
+        // Disable interactions with background elements
+        this.disableBackground();
+
+        // Trap focus within the modal
+        this.trapFocus();
+    } catch (error) {
+        console.error('Error showing modal:', error);
+    }
+},
+
 close() {
     try {
         this.initElements();
@@ -60,6 +60,9 @@ close() {
             this.elements.overlay.style.display = 'none';
             this.elements.modal.style.display = 'none';
 
+            // Re-enable interactions with background elements
+            this.enableBackground();
+
             // Restore focus to the first visible and enabled form element
             const activeForm = Array.from(document.forms).find((form) => {
                 return form.offsetParent !== null; // Check if form is visible
@@ -71,6 +74,7 @@ close() {
         console.error('Error closing modal:', error);
     }
 }
+
 ,
 
     /**
