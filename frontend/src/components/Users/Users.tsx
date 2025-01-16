@@ -99,13 +99,13 @@ const UsersComponent: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex flex-wrap gap-1">
-                                    {user.userRoles.map((userRole) => (
+                                    {user.roleNames.map((role) => (
                                         <span
-                                            key={userRole.role.id}
+                                            key={role}
                                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                         >
-                            {userRole.role.name}
-                        </span>
+                {role}
+            </span>
                                     ))}
                                 </div>
                             </td>

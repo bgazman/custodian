@@ -4,13 +4,13 @@ export interface User {
     id: string;
     name: string;
     email: string;
+    phoneNumber: string | null;
     enabled: boolean;
+    accountNonLocked: boolean;
+    lockedUntil: string | null;
+    roleNames: string[];
+    lastLoginTime: string;
     createdAt: Date;
-    lastLogin?: Date;
-    permissions: string[];
-    userRoles: UserRole[];
-    status: "active" | "suspended" | "inactive";
-    requiredMFA: boolean;
+
 
 }
-

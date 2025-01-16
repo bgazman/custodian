@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserCircle, Shield, Key, Settings } from 'lucide-react';
+import {Users, UserCircle, Shield, Key, Settings, FileJson} from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import UsersComponent from "../components/Users/Users";
 import Groups from "../components/Groups/Groups";
-
+import SwaggerUI from 'swagger-ui-react';
+import 'swagger-ui-react/swagger-ui.css';
 const IamDashboard = () => {
     const navigate = useNavigate();
     const [currentSection, setCurrentSection] = useState('users');
@@ -41,6 +42,8 @@ const IamDashboard = () => {
                             <p className="text-gray-500">Token configuration coming soon</p>
                         </div>
                     );
+                case 'api-docs':
+                    return <SwaggerUI url="http://localhost:8080/v3/api-docs" />;
                 default:
                     return (
                         <div className="flex items-center justify-center h-64">
@@ -59,7 +62,9 @@ const IamDashboard = () => {
         { name: 'Groups', path: 'groups', icon: <Users className="w-5 h-5" /> },
         { name: 'Permissions', path: 'permissions', icon: <Shield className="w-5 h-5" /> },
         { name: 'Secrets', path: 'secrets', icon: <Key className="w-5 h-5" /> },
-        { name: 'Token Configurations', path: 'tokens', icon: <Settings className="w-5 h-5" /> }
+        { name: 'Token Configurations', path: 'tokens', icon: <Settings className="w-5 h-5" /> },
+        { name: 'API Docs', path: 'api-docs', icon: <FileJson className="w-5 h-5" /> }
+
     ];
 
     return (

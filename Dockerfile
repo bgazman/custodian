@@ -1,9 +1,11 @@
-# Build React app
 FROM node:18-alpine AS frontend-build
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
+ARG VITE_BACKEND_URL
+ARG VITE_CLIENT_ID
+ARG VITE_REDIRECT_URI
 RUN npm run build
 
 # Build Spring Boot app

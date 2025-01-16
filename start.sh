@@ -60,6 +60,9 @@ setup_oauth_parameters() {
 update_docker_compose_env() {
     echo "Updating Docker Compose environment variables..."
     cat <<EOF > .env
+VITE_BACKEND_URL=$APP_BASE_URL
+VITE_CLIENT_ID=$CLIENT_ID
+VITE_REDIRECT_URI=$REDIRECT_URI
 SPRING_DATA_REDIS_HOST=$REDIS_HOST
 SPRING_DATA_REDIS_PORT=$REDIS_PORT
 SPRING_DATASOURCE_URL=$SPRING_DATASOURCE_URL
