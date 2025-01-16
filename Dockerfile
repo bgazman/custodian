@@ -1,11 +1,23 @@
 FROM node:18-alpine AS frontend-build
 WORKDIR /app
+
+# Declare build args
+ARG VITE_BACKEND_URL
+ARG VITE_CLIENT_ID 
+ARG VITE_REDIRECT_URI
+
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
-ARG VITE_BACKEND_URL
-ARG VITE_CLIENT_ID
-ARG VITE_REDIRECT_URI
+
+# Create env files using build args
+RUN echo "VITE_BACKEND_URL=$VITE_BACKEND_URL" > .env && \
+    echo "VITE_CLIENT_ID=$VITE_CLIENT_ID" >> .env && \
+    echo "VITE_REDIRECT_URI=$VITE_REDIRECT_URI" >> .env && \
+    echo "VITE_BACKEND_URL=$VITE_BACKEND_URL" > .env.production && \
+    echo "VITE_CLIENT_ID=$VITE_CLIENT_ID" >> .env.production && \
+    echo "VITE_REDIRECT_URI=$VITE_REDIRECT_URI" >> .env.production
+
 RUN npm run build
 
 # Build Spring Boot app

@@ -83,22 +83,7 @@ EOF
     cat .env
 }
 
-update_react_env() {
-    echo "Updating React environment variables..."
 
-    cat <<EOF > "$FRONTEND_DIR/.env"
-VITE_BACKEND_URL=$APP_BASE_URL
-VITE_CLIENT_ID=$CLIENT_ID
-VITE_REDIRECT_URI=$APP_BASE_URL/oauth-callback
-EOF
-
-    cat <<EOF > "$FRONTEND_DIR/.env.production"
-VITE_BACKEND_URL=$APP_BASE_URL
-VITE_CLIENT_ID=$CLIENT_ID
-VITE_REDIRECT_URI=$APP_BASE_URL/oauth-callback
-EOF
-    echo "React environment variables updated."
-}
 
 cleanup() {
     echo "Stopping and removing all Docker containers, networks, and volumes..."
@@ -130,5 +115,4 @@ check_dependencies
 generate_client_credentials
 setup_oauth_parameters
 update_docker_compose_env
-update_react_env
 start_services "$1"

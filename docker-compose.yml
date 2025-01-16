@@ -31,6 +31,10 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:  # For build-time
+      - VITE_BACKEND_URL=${APP_BASE_URL}
+      - VITE_CLIENT_ID=${APP_CLIENT_ID}
+      - VITE_REDIRECT_URI=${APP_REDIRECT_URIS}
     container_name: custodian-app
     ports:
       - "8080:8080"
