@@ -12,11 +12,10 @@ public class CommonSecurityConfig {
     @Bean
     public SecurityFilterChain commonSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/webjars/**", "/actuator/**")
+                .securityMatcher("/v3/api-docs/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/webjars/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .anyRequest().authenticated() // Adjust this as per your needs
                 )
                 .csrf(csrf -> csrf.disable());
         return http.build();
