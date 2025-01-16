@@ -9,6 +9,7 @@ import consulting.gazman.security.user.service.RolePermissionService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -62,4 +63,16 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     public Optional<RolePermission> findByIdOptional(RolePermissionId rolePermissionId) {
         return rolePermissionRepository.findById(rolePermissionId);
     }
+
+    @Override
+    public List<RolePermission> findPermissionsByRoleIds(List<Long> roleIds) {
+        return rolePermissionRepository.findByRoleIdIn(roleIds);
+    }
+
+    @Override
+    public boolean existsById(RolePermissionId rolePermissionId) {
+        return rolePermissionRepository.existsById(rolePermissionId);
+    }
+
+
 }

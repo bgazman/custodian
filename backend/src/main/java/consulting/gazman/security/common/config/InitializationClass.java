@@ -1,6 +1,5 @@
 package consulting.gazman.security.common.config;
 
-import consulting.gazman.security.common.constants.SecurityDefaults;
 import consulting.gazman.security.oauth.dto.ClientRegistrationRequest;
 import consulting.gazman.security.oauth.service.ClientRegistrationService;
 import consulting.gazman.security.oauth.service.OAuthClientService;
@@ -36,6 +35,7 @@ public class InitializationClass implements CommandLineRunner {
     private final ResourcePermissionService resourcePermissionService;
     private final GroupService groupService;
     private final GroupMembershipService groupMembershipService;
+    private final GroupPermissionService groupPermissionService;
     // Constructor Injection for all required dependencies
     public InitializationClass(
             Environment environment,
@@ -52,7 +52,7 @@ public class InitializationClass implements CommandLineRunner {
             ResourceService resourceService,
             ResourcePermissionService resourcePermissionService, RoleRepository roleRepository, PermissionRepository permissionRepository, RolePermissionRepository rolePermissionRepository, UserRoleRepository userRoleRepository, PolicyRepository policyRepository, PolicyAssignmentRepository policyAssignmentRepository, ResourceRepository resourceRepository, ResourcePermissionRepository resourcePermissionRepository, ResourcePermissionService resourcePermissionService1,
             GroupService groupService,
-            GroupMembershipService groupMembershipService) {
+            GroupMembershipService groupMembershipService, GroupPermissionService groupPermissionService) {
         this.environment = environment;
         this.oAuthClientService = oAuthClientService;
         this.userService = userService;
@@ -70,6 +70,7 @@ public class InitializationClass implements CommandLineRunner {
 
         this.groupService = groupService;
         this.groupMembershipService = groupMembershipService;
+        this.groupPermissionService = groupPermissionService;
     }
 
     @Override
@@ -89,8 +90,10 @@ public class InitializationClass implements CommandLineRunner {
         // Create base roles and permissions
         Role superAdminRole = createRoles();
         List<Permission> permissions = createPermissions();
+        assignPermissionsToRoles(superAdminRole, permissions);
         createPolicies();
         Map<String, Group> groups = createGroups(); // Now it's a Map<String, Group>
+        assignPermissionsToGroups(groups, permissions);
         User rootUser = createRootUser(superAdminRole);
         assignRoleToUser(rootUser,superAdminRole);
         assignUserToGroup(rootUser, groups.get("ROOT")); // Fetch the ROOT group by name
@@ -228,6 +231,14 @@ public class InitializationClass implements CommandLineRunner {
             throw new RuntimeException("Group is null or has not been persisted: " + group);
         }
 
+        // Check if the membership already exists
+        boolean membershipExists = groupMembershipService.existsByUserIdAndGroupId(user.getId(), group.getId());
+        if (membershipExists) {
+            System.out.println("User is already assigned to the group: " + group.getName());
+            return; // Exit early if the user is already assigned to the group
+        }
+
+        // Create and save the membership
         GroupMembership membership = new GroupMembership();
         membership.setUser(user);
         membership.setGroup(group);
@@ -237,17 +248,51 @@ public class InitializationClass implements CommandLineRunner {
 
 
 
+
     private void assignRoleToUser(User user, Role role) {
         UserRoleId userRoleId = new UserRoleId(user.getId(), role.getId());
-        userRoleService.findById(userRoleId).orElseGet(() -> {
-            UserRole userRole = new UserRole();
-            userRole.setId(userRoleId);
-            userRole.setUser(user);
-            userRole.setRole(role);
-            return userRoleService.save(userRole);
+
+        // Check if the user-role relationship already exists
+        boolean roleExists = userRoleService.existsById(userRoleId);
+        if (roleExists) {
+            System.out.println("User already has the role: " + role.getName());
+            return; // Exit early if the user already has the role
+        }
+
+        // Create and save the user-role relationship
+        UserRole userRole = new UserRole();
+        userRole.setId(userRoleId);
+        userRole.setUser(user);
+        userRole.setRole(role);
+        userRoleService.save(userRole);
+    }
+
+    private void assignPermissionsToRoles(Role superAdminRole, List<Permission> permissions) {
+        permissions.forEach(permission -> {
+            RolePermissionId rolePermissionId = new RolePermissionId(superAdminRole.getId(), permission.getId());
+            if (!rolePermissionService.existsById(rolePermissionId)) {
+                RolePermission rolePermission = new RolePermission();
+                rolePermission.setId(rolePermissionId);
+                rolePermission.setRole(superAdminRole);
+                rolePermission.setPermission(permission);
+                rolePermissionService.save(rolePermission);
+            }
         });
     }
 
+    private void assignPermissionsToGroups(Map<String, Group> groups, List<Permission> permissions) {
+        Group adminGroup = groups.get("SYSTEM_ADMINS");
+        permissions.forEach(permission -> {
+            GroupPermissionId groupPermissionId = new GroupPermissionId(adminGroup.getId(), permission.getId());
+            if (!groupPermissionService.existsById(groupPermissionId)) {
+                GroupPermission groupPermission = new GroupPermission();
+                groupPermission.setId(groupPermissionId);
+                groupPermission.setGroup(adminGroup);
+                groupPermission.setPermission(permission);
+                groupPermissionService.save(groupPermission);
+            }
+        });
+    }
 
     private void createResourcesAndPermissions() {
         Resource resource = resourceService.findByName("SystemLogs")

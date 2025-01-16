@@ -71,7 +71,7 @@ public class User implements UserDetails {
 
 
     @JsonManagedReference("user-group-memberships") // Add JSON management for group memberships
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true) // Lazy loading preferred
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER) // Lazy loading preferred
     private Set<GroupMembership> groupMemberships = new HashSet<>();
 
     @Column(name = "failed_login_attempts", nullable = false)

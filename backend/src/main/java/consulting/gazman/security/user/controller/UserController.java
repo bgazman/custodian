@@ -1,11 +1,11 @@
 package consulting.gazman.security.user.controller;
 
 import consulting.gazman.security.common.controller.ApiController;
+import consulting.gazman.security.user.entity.GroupMembership;
 import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.common.exception.AppException;
-import consulting.gazman.security.user.service.RoleService;
-import consulting.gazman.security.user.service.UserRoleService;
-import consulting.gazman.security.user.service.UserService;
+import consulting.gazman.security.user.entity.UserRole;
+import consulting.gazman.security.user.service.*;
 import consulting.gazman.security.user.dto.*;
 import consulting.gazman.security.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @RestController
@@ -29,7 +30,12 @@ public class UserController extends ApiController implements IUserController {
     UserRoleService userRoleService;
     @Autowired
     UserMapper userMapper;
-
+    @Autowired
+    GroupMembershipService groupMembershipService;
+    @Autowired
+    GroupPermissionService groupPermissionService;
+    @Autowired
+    RolePermissionService rolePermissionService;
     @GetMapping
     @Override
     public ResponseEntity<List<UserBasicDTO>> getAllUsers() {
@@ -53,9 +59,35 @@ public class UserController extends ApiController implements IUserController {
     public ResponseEntity<UserDetailsDTO> getUser(Long id) {
         try {
             User user = userService.findById(id);
-            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(user);
 
-            return super.wrapSuccessResponse(userDetailsDTO,"User found");
+            // Get user roles
+            List<UserRole> userRoles = userRoleService.getRolesForUser(id);
+            List<Long> roleIds = userRoles.stream()
+                    .map(userRole -> userRole.getRole().getId())
+                    .collect(Collectors.toList());
+
+            // Get user groups
+            List<GroupMembership> userGroups = groupMembershipService.getGroupsForUser(id);
+            List<Long> groupIds = userGroups.stream()
+                    .map(groupMembership -> groupMembership.getGroup().getId())
+                    .collect(Collectors.toList());
+
+
+            Map<Long, List<String>> rolePermissions = rolePermissionService.findPermissionsByRoleIds(roleIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            rp -> rp.getRole().getId(),
+                            Collectors.mapping(rp -> rp.getPermission().getName(), Collectors.toList())
+                    ));
+            Map<Long, List<String>> groupPermissions = groupPermissionService.findPermissionsByGroupIds(groupIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            gp -> gp.getGroup().getId(),
+                            Collectors.mapping(gp -> gp.getPermission().getName(), Collectors.toList())
+                    ));
+
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(user, rolePermissions, groupPermissions);
+            return super.wrapSuccessResponse(userDetailsDTO, "User found");
         } catch (AppException e) {
             return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -63,29 +95,35 @@ public class UserController extends ApiController implements IUserController {
         }
     }
 
+
+
     @Override
     public ResponseEntity<UserDetailsDTO> createUser(UserCreateRequest request) {
         try {
-            // Map the UserCreateRequest to a User entity
             User user = userMapper.toEntity(request);
+            User createdUser = userService.createUser(user, request.getRoleIds(), request.getGroupIds());
 
-            // Extract role IDs and group IDs from the request
-            Set<Long> roleIds = request.getRoleIds();
-            Set<Long> groupIds = request.getGroupIds();
+            // Fetch role permissions
+            Map<Long, List<String>> rolePermissions = rolePermissionService.findPermissionsByRoleIds(request.getRoleIds().stream().toList())
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            rp -> rp.getRole().getId(),
+                            Collectors.mapping(rp -> rp.getPermission().getName(), Collectors.toList())
+                    ));
 
-            // Call the service method to create the user with roles and groups
-            User createdUser = userService.createUser(user, roleIds, groupIds);
+            // Fetch group permissions
+            Map<Long, List<String>> groupPermissions = groupPermissionService.findPermissionsByGroupIds(request.getGroupIds().stream().toList())
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            gp -> gp.getGroup().getId(),
+                            Collectors.mapping(gp -> gp.getPermission().getName(), Collectors.toList())
+                    ));
 
-            // Map the created user to a UserDetailsDTO
-            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(createdUser);
-
-            // Return the success response
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(createdUser, rolePermissions, groupPermissions);
             return super.wrapSuccessResponse(userDetailsDTO, "User created successfully");
         } catch (AppException e) {
-            // Handle application-specific validation errors
             return (ResponseEntity) super.wrapErrorResponse("VALIDATION_ERROR", e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            // Handle unexpected errors
             return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -94,15 +132,12 @@ public class UserController extends ApiController implements IUserController {
     @Override
     public ResponseEntity<UserDetailsDTO> updateUser(Long id, UserUpdateRequest request) {
         try {
-            // Fetch the existing user by ID
             User existingUser = userService.findById(id);
-
-            // Update the existing user with the fields from UserUpdateRequest using the mapper
             userMapper.updateEntity(request, existingUser);
 
-            // Update roles and groups if provided
             Set<Long> roleIds = request.getRoleIds();
             Set<Long> groupIds = request.getGroupIds();
+
             if (roleIds != null && !roleIds.isEmpty()) {
                 userService.updateUserRoles(existingUser.getId(), roleIds);
             }
@@ -110,26 +145,34 @@ public class UserController extends ApiController implements IUserController {
                 userService.updateUserGroups(existingUser.getId(), groupIds);
             }
 
-            // Save the updated user
-// Update the existing user with the request data
-            userMapper.updateEntity(request, existingUser);
-
-// Save the updated user
             User updatedUser = userService.updateUser(existingUser);
 
-            // Map the updated user to UserDetailsDTO
-            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(updatedUser);
+            // Fetch role permissions
+            Map<Long, List<String>> rolePermissions = rolePermissionService.findPermissionsByRoleIds(new ArrayList<>(roleIds))
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            rp -> rp.getRole().getId(),
+                            Collectors.mapping(rp -> rp.getPermission().getName(), Collectors.toList())
+                    ));
 
-            // Return the success response
+            // Fetch group permissions
+            Map<Long, List<String>> groupPermissions = groupPermissionService.findPermissionsByGroupIds(new ArrayList<>(groupIds))
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            gp -> gp.getGroup().getId(),
+                            Collectors.mapping(gp -> gp.getPermission().getName(), Collectors.toList())
+                    ));
+
+            UserDetailsDTO userDetailsDTO = userMapper.toDetailsDTO(updatedUser, rolePermissions, groupPermissions);
             return super.wrapSuccessResponse(userDetailsDTO, "User updated successfully");
         } catch (AppException e) {
-            // Handle case where the user is not found
             return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            // Handle unexpected errors
             return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 
     @Override
@@ -175,18 +218,46 @@ public class UserController extends ApiController implements IUserController {
     @Override
     public ResponseEntity<UserAccessDTO> getUserAccess(Long id) {
         try {
-            User user = userService.findById(id);
+            Set<UserRole> userRoles = new HashSet<>(userRoleService.getRolesForUser(id));
+            Set<GroupMembership> groupMemberships = new HashSet<>(groupMembershipService.getGroupsForUser(id));
 
-            // Map the User entity to UserAccessDTO using the mapper
-            UserAccessDTO userAccessDTO = userMapper.toAccessDTO(user);
+// Get permissions for each role and group
+            Map<Long, List<String>> rolePermissions = userRoles.stream()
+                    .collect(Collectors.toMap(
+                            ur -> ur.getRole().getId(),
+                            ur -> {
+                                List<String> permissions = rolePermissionService.findByRoleId(ur.getRole().getId())
+                                        .stream()
+                                        .map(rp -> rp.getPermission().getName())
+                                        .collect(Collectors.toList());
+                                System.out.println("Role " + ur.getRole().getId() + " permissions: " + permissions);
+                                return permissions;
+                            }
+                    ));
 
-            return super.wrapSuccessResponse(userAccessDTO,"User access details retrieved");
+            Map<Long, List<String>> groupPermissions = groupMemberships.stream()
+                    .collect(Collectors.toMap(
+                            gm -> gm.getGroup().getId(),
+                            gm -> {
+                                List<String> permissions = groupPermissionService.getGroupPermissions(gm.getGroup().getId());
+                                System.out.println("Group " + gm.getGroup().getId() + " permissions: " + permissions);
+                                return permissions;
+                            }
+                    ));
+
+            System.out.println("Role permissions map: " + rolePermissions);
+            System.out.println("Group permissions map: " + groupPermissions);
+
+            UserAccessDTO userAccessDTO = userMapper.toAccessDTO(userRoles, groupMemberships, rolePermissions, groupPermissions);
+
+            return super.wrapSuccessResponse(userAccessDTO, "User access details retrieved");
         } catch (AppException e) {
             return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @Override
     public ResponseEntity<UserProfileDTO> getUserProfile(Long id) {

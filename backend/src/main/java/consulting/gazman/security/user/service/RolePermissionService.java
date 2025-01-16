@@ -4,6 +4,7 @@ import consulting.gazman.security.user.entity.RolePermission;
 import consulting.gazman.security.user.entity.RolePermissionId;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface RolePermissionService {
@@ -23,4 +24,8 @@ public interface RolePermissionService {
     Optional<RolePermission> findByRoleAndPermission(Long roleId, Long permissionId); // Find a specific mapping
 
     Optional<RolePermission> findByIdOptional(RolePermissionId rolePermissionId);
+
+    List<RolePermission> findPermissionsByRoleIds(List<Long> roleIds);
+
+    boolean existsById(RolePermissionId rolePermissionId);
 }

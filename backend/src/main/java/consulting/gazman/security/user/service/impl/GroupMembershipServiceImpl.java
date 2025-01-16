@@ -80,21 +80,28 @@ public class GroupMembershipServiceImpl implements GroupMembershipService {
     @Override
     @Transactional
     public void assignUserToGroups(Long userId, Set<Long> groupIds) {
-        // Fetch groups from the database
+        // Fetch the user from the database
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Fetch the groups from the database
         List<Group> groups = groupRepository.findAllById(groupIds);
 
-        // Create and save group memberships
+        // Check if memberships already exist and create new ones if necessary
         List<GroupMembership> groupMemberships = groups.stream()
+                .filter(group -> !groupMembershipRepository.existsByUserIdAndGroupId(userId, group.getId())) // Avoid duplicates
                 .map(group -> {
                     GroupMembership membership = new GroupMembership();
-                    membership.setId(new GroupMembershipId());
-                    membership.setGroup(group);
+                    membership.setUser(user); // Set the user
+                    membership.setGroup(group); // Set the group
                     return membership;
                 })
                 .toList();
 
+        // Save all new memberships
         groupMembershipRepository.saveAll(groupMemberships);
     }
+
 
     @Override
     @Transactional
@@ -122,5 +129,10 @@ public class GroupMembershipServiceImpl implements GroupMembershipService {
     @Override
     public void save(GroupMembership membership) {
         groupMembershipRepository.save(membership);
+    }
+
+    @Override
+    public boolean existsByUserIdAndGroupId(Long id, Long id1) {
+        return groupMembershipRepository.existsByUserIdAndGroupId(id,id1);
     }
 }

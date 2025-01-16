@@ -1,6 +1,7 @@
 package consulting.gazman.security.user.service;
 
 import consulting.gazman.security.user.entity.GroupPermission;
+import consulting.gazman.security.user.entity.GroupPermissionId;
 
 import java.util.List;
 
@@ -19,4 +20,10 @@ public interface GroupPermissionService {
 
     // List all groups associated with a specific permission
     List<GroupPermission> getGroupsForPermission(Long permissionId);
+
+    List<GroupPermission> findPermissionsByGroupIds(List<Long> groupIds);
+
+    boolean existsById(GroupPermissionId groupPermissionId);
+
+    void save(GroupPermission groupPermission);
 }

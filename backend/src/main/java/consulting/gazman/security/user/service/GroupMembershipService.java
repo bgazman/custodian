@@ -32,4 +32,6 @@ public interface GroupMembershipService {
     void saveAll(List<GroupMembership> newMemberships);
 
     void save(GroupMembership membership);
+
+    boolean existsByUserIdAndGroupId(Long id, Long id1);
 }

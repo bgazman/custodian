@@ -71,4 +71,19 @@ public class GroupPermissionServiceImpl implements GroupPermissionService {
     public List<GroupPermission> getGroupsForPermission(Long permissionId) {
         return groupPermissionRepository.findByPermissionId(permissionId);
     }
+    @Override
+    public List<GroupPermission> findPermissionsByGroupIds(List<Long> groupIds) {
+        return groupPermissionRepository.findByGroupIdIn(groupIds);
+    }
+
+    @Override
+    public boolean existsById(GroupPermissionId groupPermissionId) {
+        return groupPermissionRepository.existsById(groupPermissionId);
+    }
+
+    @Override
+    public void save(GroupPermission groupPermission) {
+            groupPermissionRepository.save(groupPermission);
+    }
+
 }

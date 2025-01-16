@@ -25,4 +25,6 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
 
     // Delete all group associations for a specific permission
     void deleteByPermissionId(Long permissionId);
+
+    List<GroupPermission> findByGroupIdIn(List<Long> groupIds);
 }

@@ -26,4 +26,6 @@ public interface GroupMembershipRepository extends JpaRepository<GroupMembership
 
     // Delete all memberships for a specific user
     void deleteByUserId(Long userId);
+
+    boolean existsByUserIdAndGroupId(Long id, Long id1);
 }

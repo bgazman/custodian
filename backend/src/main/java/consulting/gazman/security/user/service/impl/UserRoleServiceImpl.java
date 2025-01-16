@@ -1,5 +1,6 @@
 package consulting.gazman.security.user.service.impl;
 
+import consulting.gazman.security.user.dto.RoleDTO;
 import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.user.entity.UserRole;
 import consulting.gazman.security.user.entity.UserRoleId;
@@ -10,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,5 +74,15 @@ public class UserRoleServiceImpl implements UserRoleService {
     @Override
     public UserRole save(UserRole userRole) {
         return userRoleRepository.save(userRole);
+    }
+
+    @Override
+    public boolean existsById(UserRoleId userRoleId) {
+        return userRoleRepository.existsById(userRoleId);
+    }
+
+    @Override
+    public List<UserRole> getRolesForUser(Long id) {
+        return userRoleRepository.findByUserId(id);
     }
 }
