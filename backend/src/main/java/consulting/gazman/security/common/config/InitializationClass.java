@@ -1,11 +1,11 @@
 package consulting.gazman.security.common.config;
 
-import consulting.gazman.security.oauth.dto.ClientRegistrationRequest;
-import consulting.gazman.security.oauth.service.ClientRegistrationService;
-import consulting.gazman.security.oauth.service.OAuthClientService;
-import consulting.gazman.security.user.entity.*;
-import consulting.gazman.security.user.repository.*;
-import consulting.gazman.security.user.service.*;
+import consulting.gazman.security.client.user.entity.*;
+import consulting.gazman.security.client.user.repository.*;
+import consulting.gazman.security.client.user.service.*;
+import consulting.gazman.security.idp.oauth.dto.ClientRegistrationRequest;
+import consulting.gazman.security.idp.oauth.service.ClientRegistrationService;
+import consulting.gazman.security.idp.oauth.service.OAuthClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.env.Environment;
@@ -317,34 +317,6 @@ public class InitializationClass implements CommandLineRunner {
         });
     }
 
-//    private void createRootUserAndAssignRole(Role superAdminRole) {
-//        // Fetch properties from the environment with defaults
-//        String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
-//        String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
-//        String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
-//
-//        User rootUser = userService.findByEmailOptional("root@system.local")
-//                .orElseGet(() -> {
-//                    User user = new User();
-//                    user.setName(rootUserName);
-//                    user.setEmail(rootUserEmail);
-//                    user.setPassword(passwordEncoder.encode(rootUserPassword));
-//                    user.setEnabled(true);
-//                    user.setEmailVerified(true);
-//                    return userService.save(user);
-//                });
-//
-//        UserRoleId userRoleId = new UserRoleId();
-//        userRoleId.setRoleId(superAdminRole.getId());
-//        userRoleId.setUserId(rootUser.getId());
-//        userRoleService.findById(userRoleId).orElseGet(() -> {
-//            UserRole userRole = new UserRole();
-//            userRole.setId(userRoleId);
-//            userRole.setUser(rootUser);
-//            userRole.setRole(superAdminRole);
-//            return userRoleService.save(userRole);
-//        });
-//    }
 private User createRootUser(Role superAdminRole) {
     // Fetch properties from the environment with defaults
     String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
