@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RequestMapping("/api/secure/users")
 public interface IUserController {
     @GetMapping
@@ -33,6 +34,11 @@ public interface IUserController {
             @PathVariable Long id,
             @RequestBody UserSecurityUpdateRequest request
     );
+    @PutMapping("/{id}/access")
+    ResponseEntity<UserAccessDTO> updateUserAccess(
+            @PathVariable Long id,
+            @RequestBody UserAccessUpdateRequest request
+    );
 
     @GetMapping("/{id}/access")
     ResponseEntity<UserAccessDTO> getUserAccess(@PathVariable Long id);
@@ -42,4 +48,13 @@ public interface IUserController {
 
     @GetMapping("/email/{email}")
     ResponseEntity<UserBasicDTO> getUserByEmail(@PathVariable String email);
+
+    @GetMapping("/{id}/basic")
+    ResponseEntity<UserBasicDTO> getUserBasic(@PathVariable Long id);
+
+
+    @GetMapping("/{id}/status")
+    ResponseEntity<UserStatusDTO> getUserStatus(@PathVariable Long id);
+
+
 }

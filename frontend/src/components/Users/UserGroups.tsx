@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import EditableInfoItem from "../../components/EditableInfoItem";
 import SectionHeader from "../../components/SectionHeader";
 import ErrorDisplay from "../../components/ErrorDisplay";
-import { useGroups } from "../../hooks/useGroups";
+import { getAllGroups } from '../../api/generated/group-controller/group-controller';
 import { User } from "../../types/User";
 
 const UserGroups = ({ user: initialUser }: { user: User }) => {
-    const { groups: availableGroups, loading, error, refetch } = useGroups();
+    const { groups: availableGroups, loading, error, refetch } = getAllGroups();
 
     const [user, setUser] = useState(initialUser);
     const [editingGroups, setEditingGroups] = useState(false);

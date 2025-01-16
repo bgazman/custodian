@@ -3,10 +3,10 @@ import EditableInfoItem from "../../components/EditableInfoItem";
 import SectionHeader from "../../components/SectionHeader";
 import { User } from "../../types/User";
 import ErrorDisplay from "../../components/ErrorDisplay";
-import { useUserDetails } from "../../hooks/useUserDetails";
+import { useGetUser } from "../../api/generated/user-controller/user-controller";
 
 const UserSecurityDetails = ({ user: initialUser }: { user: User }) => {
-    const { user: fetchedUser, updateUser, loading, error } = useUserDetails(initialUser);
+    const { user: fetchedUser, updateUser, loading, error } = useGetUser(initialUser);
     const [user, setUser] = useState(fetchedUser || initialUser);
     const [editingMFA, setEditingMFA] = useState(false);
     const [editingPassword, setEditingPassword] = useState(false);

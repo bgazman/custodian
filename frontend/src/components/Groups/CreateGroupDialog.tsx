@@ -1,55 +1,34 @@
 import React, { useState } from "react";
-import {ApiClient} from "../../api/common/ApiClient.ts";
-
-
+import { useCreateGroup } from "../../api/generated/group-controller/group-controller";
 
 const CreateGroupDialog = ({ open, onClose, onGroupCreated }) => {
-    const initialGroupState = {
-        name: "",
-        description: "",
-    };
-
-    const [group, setGroup] = useState(initialGroupState);
+    const [group, setGroup] = useState({ name: "", description: "" });
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setGroup((prevGroup) => ({
-            ...prevGroup,
-            [name]: value,
-        }));
-    };
+    const { mutate: createGroup } = useCreateGroup({
+        onSuccess: (data) => {
+            setSuccess("Group created successfully!");
+            onGroupCreated(data);
+            setTimeout(() => {
+                setGroup({ name: "", description: "" });
+                setSuccess("");
+                onClose();
+            }, 2000);
+        },
+        onError: (err) => {
+            setError(err.response?.data?.message || "Failed to create group");
+        }
+    });
 
-    const handleCancel = () => {
-        setGroup(initialGroupState);
-        setError("");
-        setSuccess("");
-        onClose();
-    };
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setError("");
         setSuccess("");
-        try {
-            const response = await ApiClient.post("/api/secure/groups", group);
-            setSuccess("Group created successfully!");
-            onGroupCreated(response.data); // Notify parent about the new group
-            setTimeout(() => {
-                setGroup(initialGroupState); // Reset the form
-                setSuccess("");
-                onClose(); // Close the dialog
-            }, 2000);
-        } catch (error) {
-            console.error("Error creating group:", error);
-            setError(
-                error.response?.data?.message || "An error occurred while creating the group."
-            );
-        }
+        createGroup({ data: group });
     };
 
-
+    // Rest of your component remains the same
     if (!open) return null;
 
     return (

@@ -35,7 +35,7 @@ public class UserController extends ApiController implements IUserController {
     GroupPermissionService groupPermissionService;
     @Autowired
     RolePermissionService rolePermissionService;
-    @GetMapping
+
     @Override
     public ResponseEntity<List<UserBasicDTO>> getAllUsers() {
         try {
@@ -229,7 +229,6 @@ public class UserController extends ApiController implements IUserController {
                                         .stream()
                                         .map(rp -> rp.getPermission().getName())
                                         .collect(Collectors.toList());
-                                System.out.println("Role " + ur.getRole().getId() + " permissions: " + permissions);
                                 return permissions;
                             }
                     ));
@@ -239,13 +238,10 @@ public class UserController extends ApiController implements IUserController {
                             gm -> gm.getGroup().getId(),
                             gm -> {
                                 List<String> permissions = groupPermissionService.getGroupPermissions(gm.getGroup().getId());
-                                System.out.println("Group " + gm.getGroup().getId() + " permissions: " + permissions);
                                 return permissions;
                             }
                     ));
 
-            System.out.println("Role permissions map: " + rolePermissions);
-            System.out.println("Group permissions map: " + groupPermissions);
 
             UserAccessDTO userAccessDTO = userMapper.toAccessDTO(userRoles, groupMemberships, rolePermissions, groupPermissions);
 
@@ -283,6 +279,79 @@ public class UserController extends ApiController implements IUserController {
             return super.wrapSuccessResponse(userBasicDTO,"User found");
         } catch (AppException e) {
             return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<UserBasicDTO> getUserBasic(Long id) {
+        try {
+            User currentUser = userService.findById(id);
+            UserBasicDTO userBasicDTO = userMapper.toBasicDTO(currentUser);
+
+            return super.wrapSuccessResponse(userBasicDTO, "Current user details retrieved");
+        } catch (AppException e) {
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+    @Override
+    public ResponseEntity<UserStatusDTO> getUserStatus(Long id) {
+        try {
+            User user = userService.findById(id);
+            UserStatusDTO userStatusDTO = userMapper.toStatusDTO(user);
+
+            return super.wrapSuccessResponse(userStatusDTO, "User status retrieved");
+        } catch (AppException e) {
+            return (ResponseEntity) super.wrapErrorResponse("USER_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+    @Override
+    public ResponseEntity<UserAccessDTO> updateUserAccess(Long id, UserAccessUpdateRequest request) {
+        try {
+            User existingUser = userService.findById(id);
+            if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
+                userRoleService.updateUserRoles(existingUser, request.getRoleIds());
+            }
+            if (request.getGroupIds() != null && !request.getGroupIds().isEmpty()) {
+                groupMembershipService.assignUserToGroups(id, request.getGroupIds());
+            }
+
+            // Fetch updated roles and groups
+            Set<UserRole> userRoles = new HashSet<>(userRoleService.getRolesForUser(id));
+            Set<GroupMembership> groupMemberships = new HashSet<>(groupMembershipService.getGroupsForUser(id));
+
+            // Get permissions for each role
+            Map<Long, List<String>> rolePermissions = userRoles.stream()
+                    .collect(Collectors.toMap(
+                            ur -> ur.getRole().getId(),
+                            ur -> rolePermissionService.findByRoleId(ur.getRole().getId())
+                                    .stream()
+                                    .map(rp -> rp.getPermission().getName())
+                                    .collect(Collectors.toList())
+                    ));
+
+            // Get permissions for each group
+            Map<Long, List<String>> groupPermissions = groupMemberships.stream()
+                    .collect(Collectors.toMap(
+                            gm -> gm.getGroup().getId(),
+                            gm -> groupPermissionService.getGroupPermissions(gm.getGroup().getId())
+                    ));
+
+            UserAccessDTO userAccessDTO = userMapper.toAccessDTO(userRoles, groupMemberships, rolePermissions, groupPermissions);
+            return super.wrapSuccessResponse(userAccessDTO, "User access updated successfully");
+        } catch (AppException e) {
+            return (ResponseEntity) super.wrapErrorResponse("UPDATE_ACCESS_FAILED", e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return (ResponseEntity) super.wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }

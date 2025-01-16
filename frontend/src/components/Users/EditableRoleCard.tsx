@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash } from "lucide-react";
-import { useRoles } from "../../hooks/useRoles";
+import { useGetAllRoles } from "../../api/generated/role-controller/role-controller";
 interface EditableRolesCardProps {
     label: string;
     roles: { id: string; name: string }[];
@@ -13,7 +13,7 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
                                                                  isEditing,
                                                                  onEdit,
                                                              }) => {
-    const { roles: availableRoles, loading: rolesLoading, error: rolesError } = useRoles();
+    const { roles: availableRoles, loading: rolesLoading, error: rolesError } = useGetAllRoles();
     const [selectedRoleId, setSelectedRoleId] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false); // Track saving state

@@ -1,12 +1,9 @@
 package consulting.gazman.security.client.user.service;
 
 
+import consulting.gazman.security.client.user.dto.*;
 import consulting.gazman.security.client.user.entity.Role;
 import consulting.gazman.security.client.user.entity.User;
-import consulting.gazman.security.client.user.dto.GroupDTO;
-import consulting.gazman.security.client.user.dto.UserAttributeDTO;
-import consulting.gazman.security.client.user.dto.UserSecurityUpdateRequest;
-import consulting.gazman.security.client.user.dto.UserStatusUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +57,7 @@ public interface UserService {
 
     User updateUserSecurity(Long id, UserSecurityUpdateRequest request);
 
+    User updateUserAccess(Long id, UserAccessUpdateRequest request);
 
 
 }

@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import {Loader, Loader2} from "lucide-react";
-import {useUsers} from "../hooks/userUsers.tsx";
+import React from 'react';
+import { Loader } from "lucide-react";
+import { useGetAllUsers } from "../api/generated/user-controller/user-controller"; // Note the 'use' prefix
+
 const Dashboard: React.FC = () => {
+    // Use the React Query hook with proper destructuring
+    const { data: users, isLoading, error, refetch } = useGetAllUsers();
 
-
-    const { users, loading, error, refetch } = useUsers();
-
-    // useEffect(() => {
-    //     if (!isAdmin) {
-    //         navigate('/', { replace: true });
-    //     }
-    // }, [isAdmin, navigate]);
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <Loader className="animate-spin h-8 w-8" />
@@ -23,9 +17,9 @@ const Dashboard: React.FC = () => {
     if (error) {
         return (
             <div className="p-4 text-red-500">
-                {error}
+                {(error as Error).message}
                 <button
-                    onClick={refetch}
+                    onClick={() => refetch()}
                     className="ml-2 text-blue-500 hover:underline"
                 >
                     Retry
@@ -39,16 +33,9 @@ const Dashboard: React.FC = () => {
             <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
-                    </tr>
-                    </thead>
+                    {/* ... table header ... */}
                     <tbody className="divide-y divide-gray-200">
-                    {users.map((user) => (
+                    {Array.isArray(users) && users.map((user) => (
                         <tr key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
@@ -58,6 +45,7 @@ const Dashboard: React.FC = () => {
                             </td>
                         </tr>
                     ))}
+
                     </tbody>
                 </table>
             </div>

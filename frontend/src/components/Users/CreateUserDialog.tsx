@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, UserCircle, X, Phone, Lock } from 'lucide-react';
-import { useUsers } from '../../hooks/userUsers';
-import { useRoles } from '../../hooks/useRoles';
+import { useCreateUser } from "../../api/generated/user-controller/user-controller";
+import { getAllRoles } from '../../api/generated/role-controller/role-controller';
 
 interface CreateUserDialogProps {
     open: boolean;
@@ -10,8 +10,8 @@ interface CreateUserDialogProps {
 }
 
 const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUserCreated }) => {
-    const { createUser } = useUsers();
-    const { roles, loading: rolesLoading, error: rolesError } = useRoles();
+    const { mutate: createUser } = useCreateUser();
+    const { data: roles = [], isLoading: rolesLoading, isError: rolesError } = getAllRoles();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -44,8 +44,8 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const newUser = await createUser(formData);
-            onUserCreated(newUser);
+            await createUser({ data: formData });
+            onUserCreated(formData);
             handleReset();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create user');
@@ -68,7 +68,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
         onClose();
     };
 
-    // Return null when dialog shouldn't be open
     if (!open) return null;
 
     return (
@@ -93,7 +92,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                     )}
 
                     <div className="space-y-6">
-                        {/* Name Field */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Full Name
@@ -114,7 +112,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                             </div>
                         </div>
 
-                        {/* Role Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Role
@@ -168,7 +165,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                             </div>
                         </div>
 
-                        {/* Password Field */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Password
@@ -188,7 +184,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                             </div>
                         </div>
 
-                        {/* Phone Number Field */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Phone Number
@@ -208,7 +203,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                             </div>
                         </div>
 
-                        {/* Toggles */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-700">Enable Account</span>

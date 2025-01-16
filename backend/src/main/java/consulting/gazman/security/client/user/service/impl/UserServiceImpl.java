@@ -1,9 +1,6 @@
 package consulting.gazman.security.client.user.service.impl;
 
-import consulting.gazman.security.client.user.dto.GroupDTO;
-import consulting.gazman.security.client.user.dto.UserAttributeDTO;
-import consulting.gazman.security.client.user.dto.UserSecurityUpdateRequest;
-import consulting.gazman.security.client.user.dto.UserStatusUpdateRequest;
+import consulting.gazman.security.client.user.dto.*;
 import consulting.gazman.security.client.user.entity.*;
 import consulting.gazman.security.client.user.service.*;
 import consulting.gazman.security.common.exception.AppException;
@@ -308,6 +305,25 @@ public class UserServiceImpl implements UserService {
 
         // Save the updated user
         return userRepository.save(user);
+    }
+
+    @Override
+    public User updateUserAccess(Long userId, UserAccessUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.userNotFound("User with ID " + userId + " not found"));
+
+        if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
+            Set<UserRole> userRoles = roleService.resolveRolesForUser(user, request.getRoleIds());
+            user.setUserRoles(userRoles);
+        }
+
+        if (request.getGroupIds() != null && !request.getGroupIds().isEmpty()) {
+            groupMembershipService.assignUserToGroups(userId, request.getGroupIds());
+        }
+
+
+
+        return user;
     }
 
     @Override

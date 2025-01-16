@@ -1,18 +1,18 @@
-import {useUsers} from "../hooks/userUsers";
-import {useNavigate, useParams} from "react-router-dom";
-import {useState} from "react";
-import {ShieldCheck, UserCircle, Users,Lock} from "lucide-react";
+import { useGetUser, useGetUserAccess, useGetUserProfile } from "../api/generated/user-controller/user-controller";
+import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
+import { ShieldCheck, UserCircle, Users, Lock } from "lucide-react";
 import UserBasicDetails from "../components/Users/UserBasicDetails.tsx";
 import UserSecurityDetails from "../components/Users/UserSecurityDetails";
 import UserGroups from "../components/Users/UserGroups";
+
 const UserDetailsPage: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { users, loading } = useUsers();
+    const { data: user, isLoading } = useGetUser(Number(id));
     const [currentSection, setCurrentSection] = useState('details');
-    const user = users.find(u => u.id === Number(id));
 
-    if (loading) return <div>Loading...</div>;
+    if (isLoading) return <div>Loading...</div>;
     if (!user) return <div>User not found</div>;
 
     const navigationItems = [

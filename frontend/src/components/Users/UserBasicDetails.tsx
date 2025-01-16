@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import EditableInfoItem from "../../components/EditableInfoItem";
 import SectionHeader from "../../components/SectionHeader";
 import ErrorDisplay from "../../components/ErrorDisplay";
-import { useUserDetails } from "../../hooks/useUserDetails";
-import { useRoles } from "../../hooks/useRoles";
+import { getAllUsers } from "../../api/generated/user-controller/user-controller";
+import { getAllRoles } from '../../api/generated/role-controller/role-controller';
 import RoleInfoItem from "../../components/RoleInfoItem";
 
 const UserBasicDetails = ({ user: initialUser }) => {
-    const { user, updateUser, loading, error } = useUserDetails(initialUser);
-    const { roles } = useRoles();
+    const { user, updateUser, loading, error } = getAllUsers(initialUser);
+    const { roles } = getAllRoles();
 
     const [editingBasic, setEditingBasic] = useState(false);
     const [editingAccount, setEditingAccount] = useState(false);

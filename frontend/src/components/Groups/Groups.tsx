@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { useGroups } from "../../hooks/useGroups.tsx";
+import { getAllGroups } from "../../api/generated/group-controller/group-controller";
 import CreateGroupDialog from "../../components/Groups/CreateGroupDialog.tsx";
 import GroupDetails from "../../components/Groups/GroupDetails.tsx";
 import { Group } from "../../types/Group.ts";
 
 const Groups: React.FC = () => {
-    const { groups, loading, error, deleteGroup, toggleGroupEnabled, refetch } = useGroups();
+    const { groups, loading, error, deleteGroup, toggleGroupEnabled, refetch } = getAllGroups();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 

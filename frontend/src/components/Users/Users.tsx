@@ -1,35 +1,63 @@
-import React, { useEffect, useState } from "react";
+import { getAllUsers, useDeleteUser, useUpdateUserStatus } from "../../api/generated/user-controller/user-controller";
 import { useNavigate } from "react-router-dom";
-import { useUsers } from "../../hooks/userUsers.tsx";
-import CreateUserDialog from "../../components/Users/CreateUserDialog.tsx";
-import UserDetailsDialog from "./UserDetailsDialog.tsx";
-import {User} from "../../types/User.ts";
-import DeleteUserDialog from "../../components/Users/DeleteUserDialog.tsx";
+import { useState } from "react";
+import CreateUserDialog from "./CreateUserDialog";
+import UserDetailsDialog from "./UserDetailsDialog";
+import DeleteUserDialog from "./DeleteUserDialog";
 
-const UsersComponent: React.FC = () => {
-    const { users, loading, error, deleteUser, toggleUserEnabled, refetch } = useUsers();
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    enabled: boolean;
+    roleNames: string[];
+    createdAt: string;
+}
+
+const UsersComponent = () => {
+    const { data: users = [], isLoading, isError, refetch } = getAllUsers();
+    const { mutate: deleteUserMutation, isLoading: isDeleting } = useDeleteUser();
+    const { mutate: updateStatus, isLoading: isUpdating } = useUpdateUserStatus();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const navigate = useNavigate();
 
-    const handleDeleteClick = (user: User) => {
-        setUserToDelete(user);
-        setDeleteDialogOpen(true);
+    const handleDelete = async () => {
+        try {
+            if (userToDelete) {
+                await deleteUserMutation({ id: userToDelete.id });
+                await refetch();
+                setDeleteDialogOpen(false);
+                setUserToDelete(null);
+            }
+        } catch (error) {
+            console.error('Failed to delete user:', error);
+        }
+    };
+
+    const handleToggleEnabled = async (id: number, enabled: boolean) => {
+        try {
+            await updateStatus({
+                id,
+                data: { enabled: !enabled }
+            });
+            await refetch();
+        } catch (error) {
+            console.error('Failed to update status:', error);
+        }
+    };
+
+    const handleCreateUser = () => {
+        refetch();
+        setIsCreateDialogOpen(false);
     };
 
     const handleDeleteConfirm = async () => {
-        if (userToDelete) {
-            try {
-                await deleteUser(userToDelete.id);
-                setDeleteDialogOpen(false);
-                setUserToDelete(null);
-            } catch (err) {
-                console.error('Failed to delete user:', err);
-            }
-        }
+        await handleDelete();
     };
+
     const handleViewDetails = (user: User) => {
         setSelectedUser(user);
     };
@@ -38,33 +66,27 @@ const UsersComponent: React.FC = () => {
         setSelectedUser(null);
     };
 
-
-    const handleCreateUser = (newUser: User) => {
-        setIsCreateDialogOpen(false);
-        refetch(); // Refetch the users list to include the new user
+    const toggleUserEnabled = async (id: number, enabled: boolean) => {
+        await handleToggleEnabled(id, enabled);
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-            </div>
-        );
-    }
+    const handleDeleteClick = (user: User) => {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
+    };
 
-    if (error) {
-        return (
-            <div className="p-4 text-red-500">
-                {error}
-                <button
-                    onClick={refetch}
-                    className="ml-2 text-blue-500 hover:underline"
-                >
-                    Retry
-                </button>
-            </div>
-        );
-    }
+    if (isLoading) return (
+        <div className="flex justify-center items-center min-h-screen">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent" />
+        </div>
+    );
+
+    if (isError) return (
+        <div className="p-4 text-red-500">
+            Error loading users
+            <button onClick={() => refetch()} className="ml-2 text-blue-500 hover:underline">Retry</button>
+        </div>
+    );
 
     return (
         <div className="p-6">
@@ -92,33 +114,33 @@ const UsersComponent: React.FC = () => {
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {users.map((user) => (
-                        <tr key={user.id}> {/* Add key here */}
+                    {users?.map((user) => (
+                        <tr key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex flex-wrap gap-1">
-                                    {user.roleNames.map((role) => (
+                                    {user.roleNames?.map((role) => (
                                         <span
                                             key={role}
                                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                         >
-                {role}
-            </span>
+                                               {role}
+                                           </span>
                                     ))}
                                 </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.enabled
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                    }`}
-                >
-                    {user.enabled ? "Yes" : "No"}
-                </span>
+                                   <span
+                                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                           user.enabled
+                                               ? "bg-green-100 text-green-800"
+                                               : "bg-red-100 text-red-800"
+                                       }`}
+                                   >
+                                       {user.enabled ? "Yes" : "No"}
+                                   </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {new Date(user.createdAt).toLocaleDateString()}
@@ -127,6 +149,7 @@ const UsersComponent: React.FC = () => {
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => toggleUserEnabled(user.id, user.enabled)}
+                                        disabled={isUpdating}
                                         className={`text-sm ${
                                             user.enabled
                                                 ? "text-red-500 hover:underline"
@@ -137,6 +160,7 @@ const UsersComponent: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => handleDeleteClick(user)}
+                                        disabled={isDeleting}
                                         className="text-red-500 hover:underline text-sm"
                                     >
                                         Delete
@@ -158,7 +182,6 @@ const UsersComponent: React.FC = () => {
                         </tr>
                     ))}
                     </tbody>
-
                 </table>
             </div>
 

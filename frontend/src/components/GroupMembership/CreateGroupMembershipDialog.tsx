@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ApiClient } from "../../api/common/ApiClient";
+// import { ApiClient } from "../../api/common/ApiClient";
 
 const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => {
     const initialMembershipState = {
@@ -22,7 +22,7 @@ const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => 
         setError("");
         setSuccess("");
         try {
-            const response = await ApiClient.post("/group_memberships", membership);
+            const response = null;
             setSuccess("Membership created successfully!");
             onMembershipCreated(response.data);
             setTimeout(() => {
