@@ -15,4 +15,6 @@ public interface SecretRepository extends JpaRepository<Secret, Long> {
     boolean existsByName(String name); // Check if a secret exists by its name
 
     List<Secret> findAllByActiveTrue();
+
+    List<Secret> findByActiveTrue();
 }

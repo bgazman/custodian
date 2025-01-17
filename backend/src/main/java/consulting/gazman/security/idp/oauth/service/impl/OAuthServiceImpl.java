@@ -1,6 +1,8 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
 
+import consulting.gazman.security.client.user.entity.UserRole;
+import consulting.gazman.security.client.user.service.*;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
 import consulting.gazman.security.idp.oauth.dto.*;
@@ -9,15 +11,7 @@ import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Token;
 import consulting.gazman.security.client.user.entity.User;
 import consulting.gazman.security.common.exception.AppException;
-import consulting.gazman.security.idp.oauth.service.JwtService;
-import consulting.gazman.security.idp.oauth.service.OAuthClientService;
-import consulting.gazman.security.idp.oauth.service.OAuthService;
-import consulting.gazman.security.idp.oauth.service.TokenService;
-import consulting.gazman.security.client.user.service.UserService;
-import consulting.gazman.security.client.user.service.impl.GroupMembershipServiceImpl;
-import consulting.gazman.security.client.user.service.impl.GroupPermissionServiceImpl;
-import consulting.gazman.security.client.user.service.impl.GroupServiceImpl;
-import consulting.gazman.security.client.user.service.impl.RoleServiceImpl;
+import consulting.gazman.security.idp.oauth.service.*;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +22,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,12 +31,15 @@ import consulting.gazman.security.idp.oauth.utils.TokenUtils;
 @Service
 @Transactional
 public class OAuthServiceImpl implements OAuthService {
-    @Autowired private AuthCodeServiceImpl authCodeServiceImpl;
+    @Autowired private AuthCodeService authCodeService;
     @Autowired private AuthService authService;
     @Autowired private OAuthClientService clientService;
     @Autowired private JwtService jwtService;
-    @Autowired private GroupMembershipServiceImpl groupMembershipService;
-    @Autowired private GroupPermissionServiceImpl groupPermissionService;
+    @Autowired private GroupMembershipService groupMembershipService;
+    @Autowired private GroupPermissionService groupPermissionService;
+    @Autowired private UserRoleService userRoleService;
+    @Autowired private RolePermissionService rolePermissionService;
+
     @Autowired
     UserService userService;
     @Autowired
@@ -50,13 +48,13 @@ public class OAuthServiceImpl implements OAuthService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    RoleServiceImpl roleService;
+    RoleService roleService;
 
     @Autowired
-    GroupServiceImpl groupService;
+    GroupService groupService;
 
     @Autowired
-    OAuthClientServiceImpl oAuthClientService;
+    OAuthClientService oAuthClientService;
 
     @Autowired
     TokenService tokenService;
@@ -98,7 +96,7 @@ public class OAuthServiceImpl implements OAuthService {
             }
 
             resetLoginAttempts(user);
-            String authorizationCode = authCodeServiceImpl.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
+            String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
 
             return LoginResponse.builder()
                     .code(authorizationCode)
@@ -117,7 +115,7 @@ public class OAuthServiceImpl implements OAuthService {
     @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {
 
-        String code = authCodeServiceImpl.generateCode(request.getEmail(),request.getClientId());
+        String code = authCodeService.generateCode(request.getEmail(),request.getClientId());
         // Store code with user/client mapping
         return AuthorizeResponse.builder()
                 .code(code)
@@ -129,7 +127,7 @@ public class OAuthServiceImpl implements OAuthService {
     @Override
     public TokenResponse exchangeToken(TokenRequest request) {
         // Validate the authorization code
-        String value = authCodeServiceImpl.validateCode(request.getCode());
+        String value = authCodeService.validateCode(request.getCode());
 
         // Extract email and clientId from the value
         String[] parts = value.split(":");
@@ -142,14 +140,28 @@ public class OAuthServiceImpl implements OAuthService {
 
         // Fetch the user by email
         User user = userService.findByEmail(email);
-        // Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
-        Map<Long, List<String>> permissions = groupMemberships.stream()
+        List<UserRole> userRoles = userRoleService.getRolesForUser(user.getId());
+
+        Map<Long, List<String>> rolePermissions = userRoles.stream()
                 .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(),
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
+                        ur -> ur.getRole().getId(),
+                        ur -> rolePermissionService.findByRoleId(ur.getRole().getId())
+                                .stream()
+                                .map(rp -> rp.getPermission().getName())
+                                .collect(Collectors.toList())
                 ));
 
+        Map<Long, List<String>> groupPermissions = groupMemberships.stream()
+                .collect(Collectors.toMap(
+                        gm -> gm.getGroup().getId(),
+                        gm -> groupPermissionService.getGroupPermissions(gm.getGroup().getId())
+                ));
+
+// Combine both permissions maps
+        Map<Long, List<String>> permissions = new HashMap<>();
+        permissions.putAll(rolePermissions);
+        permissions.putAll(groupPermissions);
         // Generate a new refresh token
         String rawRefreshToken = TokenUtils.generateOpaqueToken();
         LocalDateTime refreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
@@ -157,7 +169,7 @@ public class OAuthServiceImpl implements OAuthService {
 
         // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions))
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions,userRoles))
                 .refreshToken(rawRefreshToken) // Return raw token to client
                 .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
@@ -181,13 +193,28 @@ public class OAuthServiceImpl implements OAuthService {
         // Fetch the associated user
         User user = existingToken.getUser();
 
-        // Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
-        Map<Long, List<String>> permissions = groupMemberships.stream()
+        List<UserRole> userRoles = userRoleService.getRolesForUser(user.getId());
+
+        Map<Long, List<String>> rolePermissions = userRoles.stream()
                 .collect(Collectors.toMap(
-                        groupMembership -> groupMembership.getGroup().getId(),
-                        groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
+                        ur -> ur.getRole().getId(),
+                        ur -> rolePermissionService.findByRoleId(ur.getRole().getId())
+                                .stream()
+                                .map(rp -> rp.getPermission().getName())
+                                .collect(Collectors.toList())
                 ));
+
+        Map<Long, List<String>> groupPermissions = groupMemberships.stream()
+                .collect(Collectors.toMap(
+                        gm -> gm.getGroup().getId(),
+                        gm -> groupPermissionService.getGroupPermissions(gm.getGroup().getId())
+                ));
+
+// Combine both permissions maps
+        Map<Long, List<String>> permissions = new HashMap<>();
+        permissions.putAll(rolePermissions);
+        permissions.putAll(groupPermissions);
 
         // Rotate the refresh token
         String rawNewRefreshToken = TokenUtils.generateOpaqueToken();
@@ -196,7 +223,7 @@ public class OAuthServiceImpl implements OAuthService {
 
         // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions))
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions,userRoles))
                 .refreshToken(rawNewRefreshToken) // Provide new refresh token
                 .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();

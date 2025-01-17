@@ -1,4 +1,5 @@
-package consulting.gazman.security.client.user.controller;
+package consulting.gazman.security.client.user.controller.impl;
+import consulting.gazman.security.client.user.controller.IGroupMembershipController;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.client.user.entity.GroupMembership;
 import consulting.gazman.security.common.exception.AppException;

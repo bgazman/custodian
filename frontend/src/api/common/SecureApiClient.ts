@@ -66,9 +66,41 @@ function getTraceId(): string {
 }
 
 async function refreshAccessToken(): Promise<string> {
-    // Implement your token refresh logic here
-    throw new Error('Not implemented');
+    try {
+        // Retrieve the current refreshToken from sessionStorage
+        const refreshToken = sessionStorage.getItem("refresh-token");
+        const clientId = import.meta.env.VITE_CLIENT_ID; // Use client ID from environment variable
+        const grantType = "refresh_token";
+
+        if (!refreshToken) {
+            throw new Error("No refresh token available");
+        }
+
+        // Make the refresh token request
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {
+            refreshToken,
+            clientId,
+            grantType,
+        });
+
+        // Extract tokens from the response
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+        if (!accessToken || !newRefreshToken) {
+            throw new Error("Failed to retrieve new tokens");
+        }
+
+        // Update tokens in sessionStorage
+        sessionStorage.setItem("access-token", accessToken);
+        sessionStorage.setItem("refresh-token", newRefreshToken);
+
+        return accessToken;
+    } catch (error) {
+        console.error("Error refreshing access token:", error);
+        throw error;
+    }
 }
+
 
 function handleAuthError(): void {
     sessionStorage.clear();

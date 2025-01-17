@@ -1,5 +1,7 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
+import consulting.gazman.security.client.user.entity.Role;
+import consulting.gazman.security.client.user.entity.UserRole;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Secret;
@@ -37,7 +39,7 @@ public class JwtServiceImpl implements JwtService {
     private String baseUrl;
 
     @Override
-    public String generateAccessToken(User user, OAuthClient oAuthClient, List<GroupMembership> groups, Map<Long, List<String>> permissions) {
+    public String generateAccessToken(User user, OAuthClient oAuthClient, List<GroupMembership> groups, Map<Long, List<String>> permissions,List<UserRole> roles) {
         // Validate expiration
         if (oAuthClient.getAccessTokenExpirySeconds() == null) {
             throw new IllegalArgumentException("Access token expiry seconds must not be null");
@@ -68,17 +70,13 @@ public class JwtServiceImpl implements JwtService {
         claims.put("sub", user.getEmail());
         claims.put("roles", userRoles);
         claims.put("groups", userGroups);
+        claims.put("permissions", userPermissions);
         claims.put("iss", baseUrl); // Replace with production issuer
         claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
         claims.put("iat", issuedAt);
         claims.put("exp", expiration);
-        claims.put("resource_access", Map.of(
-                oAuthClient.getClientId(), Map.of(
-                        "roles", userRoles,
-                        "permissions", userPermissions
-                )
-        ));
+
 
         // Generate and return the access token
         return generateToken(user.getEmail(), oAuthClient, claims, oAuthClient.getAccessTokenExpirySeconds());

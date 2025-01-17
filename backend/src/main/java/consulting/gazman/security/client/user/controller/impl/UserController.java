@@ -1,5 +1,6 @@
-package consulting.gazman.security.client.user.controller;
+package consulting.gazman.security.client.user.controller.impl;
 
+import consulting.gazman.security.client.user.controller.IUserController;
 import consulting.gazman.security.client.user.dto.*;
 import consulting.gazman.security.client.user.service.*;
 import consulting.gazman.security.common.controller.ApiController;

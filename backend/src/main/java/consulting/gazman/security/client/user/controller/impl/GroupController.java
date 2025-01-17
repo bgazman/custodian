@@ -1,5 +1,6 @@
-package consulting.gazman.security.client.user.controller;
+package consulting.gazman.security.client.user.controller.impl;
 
+import consulting.gazman.security.client.user.controller.IGroupController;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.client.user.entity.Group;
 import consulting.gazman.security.common.exception.AppException;
@@ -12,15 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/secure/groups")
-public class GroupController extends ApiController {
+public class GroupController extends ApiController implements IGroupController {
 
     @Autowired
     private GroupService groupService;
 
     @GetMapping
+    @Override
     public ResponseEntity<?> getAllGroups() {
-        logRequest("GET", "/api/secure/groups");
         try {
             List<Group> groups = groupService.getAllGroups();
             return wrapSuccessResponse(groups, "Groups retrieved successfully");
@@ -31,9 +31,8 @@ public class GroupController extends ApiController {
         }
     }
 
-    @GetMapping("/{id}")
+    @Override
     public ResponseEntity<?> getGroupById(@PathVariable Long id) {
-        logRequest("GET", "/api/secure/groups/" + id);
         try {
             Group group = groupService.findById(id);
             return wrapSuccessResponse(group, "Group retrieved successfully");
@@ -44,9 +43,8 @@ public class GroupController extends ApiController {
         }
     }
 
-    @PostMapping
+    @Override
     public ResponseEntity<?> createGroup(@RequestBody Group group) {
-        logRequest("POST", "/api/secure/groups");
         try {
             Group createdGroup = groupService.save(group);
             return wrapSuccessResponse(createdGroup, "Group created successfully");
@@ -57,9 +55,8 @@ public class GroupController extends ApiController {
         }
     }
 
-    @PutMapping("/{id}")
+    @Override
     public ResponseEntity<?> updateGroup(@PathVariable Long id, @RequestBody Group group) {
-        logRequest("PUT", "/api/secure/groups/" + id);
         try {
             group.setId(id); // Ensure the ID is set for update
             Group updatedGroup = groupService.save(group);
@@ -71,9 +68,8 @@ public class GroupController extends ApiController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<?> deleteGroup(@PathVariable Long id) {
-        logRequest("DELETE", "/api/secure/groups/" + id);
         try {
             groupService.delete(id);
             return wrapSuccessResponse(null, "Group deleted successfully");
@@ -84,9 +80,8 @@ public class GroupController extends ApiController {
         }
     }
 
-    @GetMapping("/search")
+    @Override
     public ResponseEntity<?> searchGroups(@RequestParam String name) {
-        logRequest("GET", "/api/secure/groups/search?name=" + name);
         try {
             List<Group> groups = groupService.searchByName(name);
             return wrapSuccessResponse(groups, "Groups retrieved successfully");

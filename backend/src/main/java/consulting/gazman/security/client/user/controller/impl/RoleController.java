@@ -1,5 +1,6 @@
-package consulting.gazman.security.client.user.controller;
+package consulting.gazman.security.client.user.controller.impl;
 
+import consulting.gazman.security.client.user.controller.IRoleController;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.client.user.entity.Role;
 import consulting.gazman.security.common.exception.AppException;
@@ -12,13 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/secure/roles")
-public class RoleController extends ApiController {
+public class RoleController extends ApiController implements IRoleController {
 
     @Autowired
     private RoleService roleService;
 
     @GetMapping
+    @Override
     public ResponseEntity<?> getAllRoles() {
         logRequest("GET", "/api/secure/roles");
         try {
@@ -33,7 +34,7 @@ public class RoleController extends ApiController {
         }
     }
 
-    @GetMapping("/{id}")
+    @Override
     public ResponseEntity<?> getRoleById(@PathVariable Long id) {
         logRequest("GET", "/api/secure/roles/" + id);
         try {
@@ -48,7 +49,7 @@ public class RoleController extends ApiController {
         }
     }
 
-    @PostMapping
+    @Override
     public ResponseEntity<?> createRole(@RequestBody Role role) {
         logRequest("POST", "/api/secure/roles");
         try {
@@ -63,7 +64,7 @@ public class RoleController extends ApiController {
         }
     }
 
-    @PutMapping("/{id}")
+    @Override
     public ResponseEntity<?> updateRole(@PathVariable Long id, @RequestBody Role role) {
         logRequest("PUT", "/api/secure/roles/" + id);
         try {
@@ -79,7 +80,7 @@ public class RoleController extends ApiController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<?> deleteRole(@PathVariable Long id) {
         logRequest("DELETE", "/api/secure/roles/" + id);
         try {
@@ -94,7 +95,7 @@ public class RoleController extends ApiController {
         }
     }
 
-    @GetMapping("/search")
+    @Override
     public ResponseEntity<?> searchRoles(@RequestParam String name) {
         logRequest("GET", "/api/secure/roles/search?name=" + name);
         try {

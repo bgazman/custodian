@@ -1,6 +1,7 @@
 package consulting.gazman.security.idp.auth.service.impl;
 
 
+import consulting.gazman.security.client.user.service.UserRoleService;
 import consulting.gazman.security.client.user.service.impl.*;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationRequest;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationResponse;
@@ -42,6 +43,8 @@ public class AuthServiceImpl implements AuthService {
     private UserServiceImpl userService;
     @Autowired
     RoleServiceImpl roleService;
+    @Autowired
+    UserRoleService userRoleService;
     @Autowired
     GroupPermissionServiceImpl groupPermissionService;
     @Autowired
@@ -133,9 +136,9 @@ public class AuthServiceImpl implements AuthService {
                         groupMembership -> groupMembership.getGroup().getId(),
                         groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
                 ));
-
+        List<UserRole> roles = userRoleService.getRolesForUser(savedUser.getId());
         // Generate access token
-        String accessToken = jwtService.generateAccessToken(savedUser, oAuthClient, groupMemberships, permissions);
+                String accessToken = jwtService.generateAccessToken(savedUser, oAuthClient, groupMemberships, permissions,roles);
 
         // Generate refresh token
         String rawRefreshToken = TokenUtils.generateOpaqueToken();

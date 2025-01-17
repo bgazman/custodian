@@ -6,6 +6,7 @@ import Groups from "../components/Groups/Groups";
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import Permissions from "../components/Permissions/Permissions";
+import Secrets from "../components/Secrets/Secrets";
 
 const IamDashboard = () => {
     const [currentSection, setCurrentSection] = useState('users');
@@ -24,11 +25,12 @@ const IamDashboard = () => {
                     return <SwaggerUI url={apiUrl} />;
                 case 'permissions':
                     return <Permissions />;
+                case 'secrets':
+                    return <Secrets />;
                 default:
                     return (
                         <div className="flex items-center justify-center h-64">
                             <p className="text-gray-500">
-                                {currentSection === 'secrets' && 'Secrets management coming soon'}
                                 {currentSection === 'tokens' && 'Token configuration coming soon'}
                             </p>
                         </div>

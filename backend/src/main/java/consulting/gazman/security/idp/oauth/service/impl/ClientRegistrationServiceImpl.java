@@ -9,6 +9,7 @@ import consulting.gazman.security.idp.oauth.entity.Secret;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.service.ClientRegistrationService;
 import consulting.gazman.security.idp.oauth.service.OAuthClientService;
+import consulting.gazman.security.idp.oauth.service.SecretService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -20,7 +21,7 @@ import java.util.UUID;
 
 @Service
 public class ClientRegistrationServiceImpl implements ClientRegistrationService {
-    private final SecretServiceImpl secretService;
+    private final SecretService secretService;
     private final OAuthClientService oAuthClientService;
     private final ObjectMapper objectMapper;
     public ClientRegistrationServiceImpl(SecretServiceImpl secretService, OAuthClientService oAuthClientService, ObjectMapper objectMapper) {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.*;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -22,10 +23,46 @@ public class SecretServiceImpl implements SecretService {
     }
 
     @Override
+    public List<Secret> findAll() {
+        return secretRepository.findAll();
+    }
+
+    @Override
+    public Optional<Secret> findById(Long id) {
+        return secretRepository.findById(id);
+    }
+
+    @Override
     public Optional<Secret> findByName(String name) {
         return secretRepository.findByName(name);
     }
 
+    @Override
+    public Secret save(Secret secret) {
+        if (secret.getId() == null) {
+            secret.setCreatedAt(LocalDateTime.now());
+            secret.setLastRotatedAt(LocalDateTime.now());
+            secret.setActive(true);
+        }
+        secret.setUpdatedAt(LocalDateTime.now());
+        return secretRepository.save(secret);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        Optional<Secret> secret = findById(id);
+        if (secret.isPresent()) {
+            Secret existingSecret = secret.get();
+            existingSecret.setActive(false);
+            existingSecret.setUpdatedAt(LocalDateTime.now());
+            secretRepository.save(existingSecret);
+        }
+    }
+
+    @Override
+    public List<Secret> findAllActiveSecrets() {
+        return secretRepository.findByActiveTrue();
+    }
     @Override
     public Secret createSecret(String name, String keyType) {
         try {
@@ -57,10 +94,6 @@ public class SecretServiceImpl implements SecretService {
         return createSecret(keyName, "RSA");
     }
 
-    @Override
-    public List<Secret> findAllActiveSecrets() {
-        return secretRepository.findAllByActiveTrue();
-    }
 
     private String encodePublicKeyToPem(PublicKey publicKey) {
         try {
