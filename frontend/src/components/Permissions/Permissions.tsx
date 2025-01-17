@@ -1,54 +1,56 @@
 import React, { useState } from "react";
-import { getAllGroups, deleteGroup as deleteGroupApi, updateGroup } from "../../api/generated/group-controller/group-controller";
+import { getAllPermissions, deletePermission as deletePermissionApi } from "../../api/generated/permission-controller/permission-controller";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import CreateGroupDialog from "../../components/Groups/CreateGroupDialog";
-import GroupDetailsDialog from "./GroupDetailsDialog";
-import { GroupDTO as Group} from "../../api/generated/model";
+import CreatePermissionDialog from "./CreatePermissionDialog";
+import PermissionDetailsDialog from "../../components/Permissions/PermissionDetailsDialog";
+import { Permission } from "../../api/generated/model";
 
-const Groups: React.FC = () => {
+const Permissions: React.FC = () => {
     const queryClient = useQueryClient();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+    const [selectedPermission, setSelectedPermission] = useState<Permission | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+    const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
 
-    const { data: groups = [], isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['groups'],
+    const { data: permissions = [], isLoading } = useQuery({
+        queryKey: ['permissions'],
         queryFn: async () => {
-            const response = await getAllGroups();
+            const response = await getAllPermissions();
             return Array.isArray(response) ? response : response.data || [];
         }
     });
 
-    const { mutate: deleteGroup, isPending: isDeleting } = useMutation({
-        mutationFn: (groupId: number) => deleteGroupApi(groupId),
-        onSuccess: async () => {
-            await refetch();
+    const { mutate: deletePermission, isPending: isDeleting } = useMutation({
+        mutationFn: (permissionId: number) => deletePermissionApi(permissionId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['permissions'] });
             setDeleteDialogOpen(false);
-            setGroupToDelete(null);
+            setPermissionToDelete(null);
         }
     });
 
-    const handleDeleteClick = (group: Group) => {
-        setGroupToDelete(group);
+    const handleDeleteClick = (permission: Permission) => {
+        setPermissionToDelete(permission);
         setDeleteDialogOpen(true);
     };
 
     const handleDelete = () => {
-        if (groupToDelete) {
-            deleteGroup(groupToDelete.id);
+        if (permissionToDelete?.id) {
+            deletePermission(permissionToDelete.id);
         }
     };
+
+    if (isLoading) return <div className="p-6">Loading...</div>;
 
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Manage Groups</h1>
+                <h1 className="text-2xl font-bold">Manage Permissions</h1>
                 <button
                     onClick={() => setIsCreateDialogOpen(true)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
-                    Create Group
+                    Create Permission
                 </button>
             </div>
 
@@ -59,32 +61,30 @@ const Groups: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Group</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {groups.map((group) => (
-                        <tr key={group.id}>
-                            <td className="px-6 py-4 whitespace-nowrap">{group.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{group.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{group.description}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">-</td>
+                    {permissions.map((permission) => (
+                        <tr key={permission.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">{permission.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{permission.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{permission.description}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                {group.createdAt ? new Date(group.createdAt).toLocaleDateString() : '-'}
+                                {permission.createdAt ? new Date(permission.createdAt).toLocaleDateString() : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex space-x-2">
                                     <button
-                                        onClick={() => handleDeleteClick(group)}
+                                        onClick={() => handleDeleteClick(permission)}
                                         disabled={isDeleting}
                                         className="text-red-500 hover:underline text-sm disabled:opacity-50"
                                     >
                                         Delete
                                     </button>
                                     <button
-                                        onClick={() => setSelectedGroup(group)}
+                                        onClick={() => setSelectedPermission(permission)}
                                         className="text-blue-500 hover:underline text-sm"
                                     >
                                         View Details
@@ -97,19 +97,19 @@ const Groups: React.FC = () => {
                 </table>
             </div>
 
-            <CreateGroupDialog
+            <CreatePermissionDialog
                 open={isCreateDialogOpen}
                 onClose={() => {
                     setIsCreateDialogOpen(false);
-                    refetch();
+                    queryClient.invalidateQueries({ queryKey: ['permissions'] });
                 }}
             />
 
             {deleteDialogOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                        <h2 className="text-xl font-semibold mb-4">Delete Group</h2>
-                        <p className="mb-6">Are you sure you want to delete {groupToDelete?.name}? This action cannot be undone.</p>
+                        <h2 className="text-xl font-semibold mb-4">Delete Permission</h2>
+                        <p className="mb-6">Are you sure you want to delete {permissionToDelete?.name}? This action cannot be undone.</p>
                         <div className="flex justify-end space-x-3">
                             <button
                                 onClick={() => setDeleteDialogOpen(false)}
@@ -130,13 +130,13 @@ const Groups: React.FC = () => {
                 </div>
             )}
 
-            {selectedGroup && (
+            {selectedPermission && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-                        <GroupDetailsDialog group={selectedGroup} />
+                        <PermissionDetailsDialog permission={selectedPermission} />
                         <button
-                            className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-                            onClick={() => setSelectedGroup(null)}
+                            className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                            onClick={() => setSelectedPermission(null)}
                         >
                             Close
                         </button>
@@ -147,4 +147,4 @@ const Groups: React.FC = () => {
     );
 };
 
-export default Groups;
+export default Permissions;

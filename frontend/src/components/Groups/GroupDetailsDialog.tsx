@@ -1,11 +1,11 @@
 import React from "react";
-import { Group } from "../../types/Group";
+import { Group } from "../../api/generated/model";
 
-interface GroupDetailsProps {
+interface GroupDetailsDialogProps {
     group: Group;
 }
 
-const GroupDetails: React.FC<GroupDetailsProps> = ({ group }) => {
+const GroupDetailsDialog: React.FC<GroupDetailsDialogProps> = ({ group }) => {
     return (
         <div>
             <h2 className="text-xl font-bold mb-4">Group Details</h2>
@@ -18,4 +18,4 @@ const GroupDetails: React.FC<GroupDetailsProps> = ({ group }) => {
     );
 };
 
-export default GroupDetails;
+export default GroupDetailsDialog;

@@ -18,7 +18,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
         queryFn: async () => {
             try {
                 const response = await getAllRoles();
-                console.log('Roles response:', response); // Debug log
                 return Array.isArray(response) ? response : response.data || [];
             } catch (error) {
                 console.error('Error fetching roles:', error);

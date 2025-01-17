@@ -5,7 +5,7 @@ import CreateUserDialog from "./CreateUserDialog";
 import UserDetailsDialog from "./UserDetailsDialog";
 import DeleteUserDialog from "./DeleteUserDialog";
 import { useQuery } from '@tanstack/react-query';
-import {UserBasicDTO} from "../../api/generated/model"
+import {UserBasicDTO,Secret} from "../../api/generated/model"
 const UsersComponent = () => {
     const { data: users, isLoading, isError, refetch } = useQuery({
         queryKey: ['users'],

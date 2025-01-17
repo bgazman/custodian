@@ -3,8 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { ShieldCheck, UserCircle, Users, Lock } from "lucide-react";
 import UserBasicDetails from "../components/Users/UserBasicDetails.tsx";
-import UserSecurityDetails from "../components/Users/UserSecurityDetails";
-import UserGroups from "../components/Users/UserGroups";
 
 const UserDetailsPage: React.FC = () => {
     const { id } = useParams();
