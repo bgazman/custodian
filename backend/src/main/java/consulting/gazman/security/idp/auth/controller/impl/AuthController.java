@@ -1,6 +1,7 @@
-package consulting.gazman.security.idp.auth.controller;
+package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.common.controller.ApiController;
+import consulting.gazman.security.idp.auth.controller.IAuthController;
 import consulting.gazman.security.idp.auth.dto.LogoutRequest;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationRequest;
 import consulting.gazman.security.common.exception.AppException;

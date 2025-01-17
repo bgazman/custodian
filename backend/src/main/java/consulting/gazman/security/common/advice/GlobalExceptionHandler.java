@@ -5,14 +5,23 @@ import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @ControllerAdvice
@@ -48,7 +57,24 @@ public class GlobalExceptionHandler {
                         .message("Please contact support if the problem persists")
                         .build());
     }
+    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
+    public ResponseEntity<ApiError> handleAccessDenied(Exception ex, WebRequest request) {
+        ApiError error = ApiError.builder()
+                .code("FORBIDDEN")
+                .message("You don't have permission to access this resource")
+                .details(Map.of(
+                        "path", ((ServletWebRequest) request).getRequest().getRequestURI(),
+                        "traceId", MDC.get("traceId"),
+                        "timestamp", Instant.now().toString()
+                ))
+                .build();
 
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .header("X-Trace-Id", MDC.get("traceId"))
+                .header("X-Response-Id", UUID.randomUUID().toString())
+                .header("X-Timestamp", Instant.now().toString())
+                .body(error);
+    }
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<?> handleNotFound(NoHandlerFoundException ex) {
         return ResponseEntity

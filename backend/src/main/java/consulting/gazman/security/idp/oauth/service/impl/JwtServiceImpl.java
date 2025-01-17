@@ -51,18 +51,19 @@ public class JwtServiceImpl implements JwtService {
         long expiration = now.plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond();
 
         Set<String> userRoles = user.getUserRoles().stream()
-                .map(userRole -> userRole.getRole().getName())
+                .map(userRole -> userRole.getRole().getName()) // Add "ROLE_" prefix to roles
                 .collect(Collectors.toSet());
 
         List<String> userGroups = groups.stream()
                 .map(group -> group.getGroup().getName())
                 .collect(Collectors.toList());
 
+// Permissions/Scopes - store without SCOPE_ prefix
         List<String> userPermissions = permissions.values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+
         Set<String> scopes = userPermissions.stream()
-                .map(permission -> "SCOPE_" + permission) // Prefix scopes for consistency
                 .collect(Collectors.toSet());
         // Prepare claims
         Map<String, Object> claims = new HashMap<>();

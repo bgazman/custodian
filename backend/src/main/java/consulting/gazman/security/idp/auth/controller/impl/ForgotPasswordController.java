@@ -1,6 +1,7 @@
-package consulting.gazman.security.idp.auth.controller;
+package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.common.controller.ApiController;
+import consulting.gazman.security.idp.auth.controller.IForgotPasswordController;
 import consulting.gazman.security.idp.auth.dto.ResetPasswordRequest;
 import consulting.gazman.security.idp.auth.service.PasswordResetService;
 import org.springframework.http.HttpStatus;
@@ -11,8 +12,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/forgot-password")
-public class ForgotPasswordController extends ApiController {
+public class ForgotPasswordController extends ApiController implements IForgotPasswordController {
 
     private final PasswordResetService passwordResetService;
 
@@ -20,7 +20,7 @@ public class ForgotPasswordController extends ApiController {
         this.passwordResetService = passwordResetService;
     }
 
-    @GetMapping
+    @Override
     public ModelAndView showResetPasswordPage(
             @RequestParam String email,
             @RequestParam String token) {
@@ -35,7 +35,7 @@ public class ForgotPasswordController extends ApiController {
         return mav;
     }
 
-    @PostMapping("/reset")
+    @Override
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
         logRequest("POST", "/forgot-password/reset-password");
 
@@ -65,7 +65,7 @@ public class ForgotPasswordController extends ApiController {
         }
     }
 
-    @PostMapping("/initiate")
+    @Override
     public ResponseEntity<?> initiatePasswordReset(@RequestBody Map<String, String> request) {
         logRequest("POST", "/forgot-password/initiate");
 

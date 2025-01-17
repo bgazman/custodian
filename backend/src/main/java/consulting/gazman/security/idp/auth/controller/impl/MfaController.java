@@ -1,6 +1,7 @@
-package consulting.gazman.security.idp.auth.controller;
+package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.common.controller.ApiController;
+import consulting.gazman.security.idp.auth.controller.IMfaController;
 import consulting.gazman.security.idp.oauth.dto.AuthorizeRequest;
 import consulting.gazman.security.idp.oauth.dto.AuthorizeResponse;
 import consulting.gazman.security.idp.auth.dto.MfaRequest;
@@ -21,8 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/mfa")
-public class MfaController extends ApiController {
+public class MfaController extends ApiController implements IMfaController {
 
     @Autowired
     UserService userService;
@@ -31,6 +31,7 @@ public class MfaController extends ApiController {
     @Autowired
     OAuthService oAuthService;
     @GetMapping
+    @Override
     public ModelAndView showMfaPage(
             @RequestParam String email,
             @RequestParam String client_id,
@@ -56,7 +57,7 @@ public class MfaController extends ApiController {
 
         return mav;
     }
-    @PostMapping("/resend")
+    @Override
     public ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest) {
         try {
             boolean sent = mfaService.resendMfaCode(mfaRequest.getEmail());
@@ -83,7 +84,7 @@ public class MfaController extends ApiController {
         }
     }
 
-    @PostMapping("/verify-backup")
+    @Override
     public ResponseEntity<?> verifyBackupCode(@RequestBody MfaRequest mfaRequest) {
         try {
             boolean isValid = mfaService.validateBackupCode(
@@ -113,7 +114,7 @@ public class MfaController extends ApiController {
             );
         }
     }
-    @PostMapping("/initiate")
+    @Override
     public ResponseEntity<?> initiateMfa(@RequestBody MfaRequest mfaRequest) {
         logRequest("POST", "/mfa/initiate");
         try {
@@ -133,7 +134,7 @@ public class MfaController extends ApiController {
         }
     }
 
-    @PostMapping("/verify")
+    @Override
     public ResponseEntity<?> verifyMfa(@RequestBody MfaRequest request) {
         try {
             boolean isValid = mfaService.validateMfaToken(request.getEmail(), request.getToken(), request.getMethod());

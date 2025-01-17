@@ -1,17 +1,17 @@
-package consulting.gazman.security.idp.auth.controller;
+package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.common.exception.AppException;
+import consulting.gazman.security.idp.auth.controller.ILoginController;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
 @Controller
-public class LoginController {
+public class LoginController implements ILoginController {
 
-    @GetMapping("/login")
+    @Override
     public String login(
             @RequestParam(value = "client_id", required = false) String clientId,
             @RequestParam(value = "state", required = false) String state,
