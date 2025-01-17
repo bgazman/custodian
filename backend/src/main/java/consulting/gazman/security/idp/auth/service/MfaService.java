@@ -1,7 +1,8 @@
 package consulting.gazman.security.idp.auth.service;
 
 public interface MfaService {
-    void initiateMfaChallenge(String email, String method);
+    void initiateMfaChallenge(String clientId,String email);
+
 
     String generateMfaSecret(String email);
 
@@ -12,7 +13,9 @@ public interface MfaService {
 
     String generateRandomCode();
 
-    boolean resendMfaCode(String email);
+
+
+    boolean resendMfaCode(String email, String clientId);
 
     boolean validateBackupCode(String email, String token);
 }

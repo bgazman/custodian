@@ -60,7 +60,7 @@ public class MfaController extends ApiController implements IMfaController {
     @Override
     public ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest) {
         try {
-            boolean sent = mfaService.resendMfaCode(mfaRequest.getEmail());
+            boolean sent = mfaService.resendMfaCode(mfaRequest.getClientId(),mfaRequest.getEmail());
             if (sent) {
                 return wrapSuccessResponse(
                         Map.of("message", "Verification code resent successfully"),
@@ -118,7 +118,7 @@ public class MfaController extends ApiController implements IMfaController {
     public ResponseEntity<?> initiateMfa(@RequestBody MfaRequest mfaRequest) {
         logRequest("POST", "/mfa/initiate");
         try {
-            mfaService.initiateMfaChallenge(mfaRequest.getEmail(), mfaRequest.getMethod());
+            mfaService.initiateMfaChallenge(mfaRequest.getClientId(),mfaRequest.getEmail());
             return wrapSuccessResponse(
                     Map.of("message", "MFA challenge initiated successfully"),
                     "MFA challenge initiated successfully"

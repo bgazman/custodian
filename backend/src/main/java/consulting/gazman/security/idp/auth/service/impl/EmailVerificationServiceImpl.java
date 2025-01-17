@@ -9,9 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -72,5 +74,16 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         String message = "Click the link below to verify your email:\n\n" + verificationLink;
 
         emailService.sendEmail(email, subject, message);
+    }
+
+@Async
+@Override
+public CompletableFuture<Void> sendVerificationEmailAsync(String email, String token) {
+        try {
+            sendVerificationEmail(email, token);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 }

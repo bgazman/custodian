@@ -13,4 +13,5 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, Long> 
 
     boolean existsByName(String name);
 
+    Optional<OAuthClient> findByName(String s);
 }

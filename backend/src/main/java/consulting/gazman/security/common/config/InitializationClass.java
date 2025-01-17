@@ -3,7 +3,9 @@ package consulting.gazman.security.common.config;
 import consulting.gazman.security.client.user.entity.*;
 import consulting.gazman.security.client.user.repository.*;
 import consulting.gazman.security.client.user.service.*;
+import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.dto.ClientRegistrationRequest;
+import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.service.ClientRegistrationService;
 import consulting.gazman.security.idp.oauth.service.OAuthClientService;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Component
@@ -36,6 +39,7 @@ public class InitializationClass implements CommandLineRunner {
     private final GroupService groupService;
     private final GroupMembershipService groupMembershipService;
     private final GroupPermissionService groupPermissionService;
+    private final UserClientRegistrationService userClientRegistrationService;
     // Constructor Injection for all required dependencies
     public InitializationClass(
             Environment environment,
@@ -52,7 +56,7 @@ public class InitializationClass implements CommandLineRunner {
             ResourceService resourceService,
             ResourcePermissionService resourcePermissionService, RoleRepository roleRepository, PermissionRepository permissionRepository, RolePermissionRepository rolePermissionRepository, UserRoleRepository userRoleRepository, PolicyRepository policyRepository, PolicyAssignmentRepository policyAssignmentRepository, ResourceRepository resourceRepository, ResourcePermissionRepository resourcePermissionRepository, ResourcePermissionService resourcePermissionService1,
             GroupService groupService,
-            GroupMembershipService groupMembershipService, GroupPermissionService groupPermissionService) {
+            GroupMembershipService groupMembershipService, GroupPermissionService groupPermissionService, UserClientRegistrationService userClientRegistrationService) {
         this.environment = environment;
         this.oAuthClientService = oAuthClientService;
         this.userService = userService;
@@ -71,6 +75,7 @@ public class InitializationClass implements CommandLineRunner {
         this.groupService = groupService;
         this.groupMembershipService = groupMembershipService;
         this.groupPermissionService = groupPermissionService;
+        this.userClientRegistrationService = userClientRegistrationService;
     }
 
     @Override
@@ -87,17 +92,32 @@ public class InitializationClass implements CommandLineRunner {
     }
 
     private void initializeSystem() {
-        // Create base roles and permissions
-        Role superAdminRole = createRoles();
-        List<Permission> permissions = createPermissions();
-        assignPermissionsToRoles(superAdminRole, permissions);
-        createPolicies();
-        Map<String, Group> groups = createGroups(); // Now it's a Map<String, Group>
-        assignPermissionsToGroups(groups, permissions);
-        User rootUser = createRootUser(superAdminRole);
-        assignRoleToUser(rootUser,superAdminRole);
-        assignUserToGroup(rootUser, groups.get("ROOT")); // Fetch the ROOT group by name
-        createDefaultOAuthClient();
+        try {
+            log.info("Starting system initialization...");
+            // Create base roles and permissions
+            Role superAdminRole = createRoles();
+            List<Permission> permissions = createPermissions();
+            assignPermissionsToRoles(superAdminRole, permissions);
+            createPolicies();
+            Map<String, Group> groups = createGroups();
+            assignPermissionsToGroups(groups, permissions);
+
+            log.info("Creating root user...");
+            User rootUser = createRootUser(superAdminRole);
+            assignRoleToUser(rootUser, superAdminRole);
+            assignUserToGroup(rootUser, groups.get("ROOT"));
+
+            log.info("Setting up OAuth client...");
+            createDefaultOAuthClient();
+
+            log.info("Linking root user with client...");
+            linkRootUserWithClient(rootUser);
+
+            log.info("System initialization completed successfully");
+        } catch (Exception e) {
+            log.error("Error during system initialization: ", e);
+            throw e;
+        }
     }
 
 
@@ -330,7 +350,6 @@ private User createRootUser(Role superAdminRole) {
                 user.setEmail(rootUserEmail);
                 user.setPassword(passwordEncoder.encode(rootUserPassword));
                 user.setEnabled(true);
-                user.setEmailVerified(true);
                 return userService.save(user);
             });
 
@@ -353,5 +372,30 @@ private User createRootUser(Role superAdminRole) {
                     .build();
             clientRegistrationService.registerClient(clientRequest);
         }
+    }
+    private void linkRootUserWithClient(User rootUser) {
+        String clientId = environment.getProperty("app.client-id", "");
+        OAuthClient client = oAuthClientService.findByClientId(clientId)
+                .orElseThrow(() -> AppException.clientNotFound("Root client not found"));
+
+        UserClientRegistration registration = new UserClientRegistration();
+
+        // Create and set the composite key
+        UserClientRegistrationId id = new UserClientRegistrationId();
+        id.setUserId(rootUser.getId());
+        id.setClientId(client.getId());  // This should be the database ID, not the clientId string
+        registration.setId(id);
+
+        // Set the entity references
+        registration.setUser(rootUser);
+        registration.setClient(client);
+
+        registration.setEmailVerified(true);
+        registration.setMfaEnabled(false);
+        registration.setConsentGrantedAt(LocalDateTime.now());
+        registration.setLastUsedAt(LocalDateTime.now());
+
+        userClientRegistrationService.save(registration);
+        log.info("Created user-client registration for root user and client");
     }
 }

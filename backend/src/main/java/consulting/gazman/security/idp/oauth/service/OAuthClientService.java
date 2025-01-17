@@ -25,4 +25,10 @@ public interface OAuthClientService {
     void delete(Long id);
 
     boolean existsByName(String name);
+
+    Optional<OAuthClient> findByName(String s);
+
+    Optional<OAuthClient> findById(Long id);
+
+    Optional<OAuthClient> findByClientId(String clientId);
 }

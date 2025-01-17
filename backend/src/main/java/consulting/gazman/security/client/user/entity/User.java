@@ -45,15 +45,11 @@ public class User implements UserDetails {
     @Column(name = "enabled", nullable = false)
     private boolean enabled = false;
 
-    @Column(name = "mfa_enabled", nullable = false)
-    private boolean mfaEnabled = false;
-    @Column(name = "mfa_method")
-    private String mfaMethod;
+
     @Column(name = "mfa_backup_codes", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String mfaBackupCodes;
-    @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified = false;
+
 
     @Column(name = "account_non_expired", nullable = false)
     private boolean accountNonExpired = true;

@@ -169,6 +169,22 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         return oAuthClientRepository.existsByName(name);
     }
 
+    @Override
+    public Optional<OAuthClient> findByName(String s) {
+        return oAuthClientRepository.findByName(s);
+    }
+
+
+    @Override
+    public Optional<OAuthClient> findById(Long id) {
+        return oAuthClientRepository.findById(id);
+    }
+
+    @Override
+    public Optional<OAuthClient> findByClientId(String clientId) {
+        return oAuthClientRepository.findByClientId(clientId);
+    }
+
 
     // Private utility methods
 

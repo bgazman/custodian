@@ -1,8 +1,10 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
 
+import consulting.gazman.security.client.user.entity.UserClientRegistration;
 import consulting.gazman.security.client.user.entity.UserRole;
 import consulting.gazman.security.client.user.service.*;
+import consulting.gazman.security.client.user.service.UserClientRegistrationService;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
 import consulting.gazman.security.idp.oauth.dto.*;
@@ -39,25 +41,14 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired private GroupPermissionService groupPermissionService;
     @Autowired private UserRoleService userRoleService;
     @Autowired private RolePermissionService rolePermissionService;
-
-    @Autowired
-    UserService userService;
-    @Autowired
-    EmailVerificationServiceImpl emailVerificationServiceImpl;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    RoleService roleService;
-
-    @Autowired
-    GroupService groupService;
-
-    @Autowired
-    OAuthClientService oAuthClientService;
-
-    @Autowired
-    TokenService tokenService;
+    @Autowired private UserClientRegistrationService userClientRegistrationService;
+    @Autowired UserService userService;
+    @Autowired EmailVerificationServiceImpl emailVerificationServiceImpl;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired RoleService roleService;
+    @Autowired GroupService groupService;
+    @Autowired OAuthClientService oAuthClientService;
+    @Autowired TokenService tokenService;
 
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
@@ -94,7 +85,13 @@ public class OAuthServiceImpl implements OAuthService {
                         ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
                         : AppException.accountLocked("Account locked due to attempts");
             }
+            // Get client-specific registration details
+            Optional<UserClientRegistration> clientRegistration =
+                    userClientRegistrationService.findByUserIdAndClientId(user.getId(), loginRequest.getClientId());
 
+            if (!clientRegistration.isPresent()) {
+                throw AppException.unauthorized("User not registered with this client application");
+            }
             resetLoginAttempts(user);
             String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
 
@@ -102,7 +99,8 @@ public class OAuthServiceImpl implements OAuthService {
                     .code(authorizationCode)
                     .state(loginRequest.getState())
                     .redirectUri(loginRequest.getRedirectUri())
-                    .mfaMethod(user.getMfaMethod())
+                    .mfaMethod(clientRegistration.get().getMfaMethod())
+                    .mfaEnabled(clientRegistration.get().getMfaEnabled())
                     .build();        }
         else {
             // Return response indicating that the user was not found

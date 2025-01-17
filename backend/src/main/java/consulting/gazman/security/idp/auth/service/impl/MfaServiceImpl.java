@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.client.user.entity.UserClientRegistration;
+import consulting.gazman.security.client.user.service.UserClientRegistrationService;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.common.service.NotificationService;
 import consulting.gazman.security.idp.auth.service.MfaService;
@@ -30,7 +32,8 @@ public class MfaServiceImpl implements MfaService {
 
     @Autowired
     UserService userService;
-
+    @Autowired
+    UserClientRegistrationService userClientRegistrationService;
     @Autowired
     private NotificationService notificationService; // For sending SMS or Email
 
@@ -39,7 +42,13 @@ public class MfaServiceImpl implements MfaService {
     }
 
     @Override
-    public void initiateMfaChallenge(String email, String method) {
+    public void initiateMfaChallenge(String email, String clientId) {
+        User user = userService.findByEmail(email);
+
+        UserClientRegistration registration = userClientRegistrationService
+                .findByUserIdAndClientId(user.getId(), clientId)
+                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
+        String method = registration.getMfaMethod();
         String token = generateRandomCode(); // 6-digit OTP
         if ("SMS".equalsIgnoreCase(method)) {
             String phoneNumber = userService.getPhoneNumber(email);
@@ -61,11 +70,17 @@ public class MfaServiceImpl implements MfaService {
 
 
     @Override
-    public boolean validateMfaToken(String email, String token, String method) {
-        if (email == null || token == null || method == null) {
-            log.error("Null parameters provided: email={}, token={}, method={}", email, token, method);
+    public boolean validateMfaToken(String email, String token, String clientId) {  // Added clientId, removed method param
+        if (email == null || token == null || clientId == null) {
+            log.error("Null parameters provided: email={}, token={}, clientId={}", email, token, clientId);
             return false;
         }
+        // Get client-specific MFA settings for TOTP check
+        User user = userService.findByEmail(email);
+        UserClientRegistration registration = userClientRegistrationService
+                .findByUserIdAndClientId(user.getId(), clientId)
+                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
+        String method = registration.getMfaMethod();
 
         if ("TOTP".equalsIgnoreCase(method)) {
             return true; // TOTP validation logic
@@ -100,10 +115,13 @@ public class MfaServiceImpl implements MfaService {
     }
 
     @Override
-    public boolean resendMfaCode(String email) {
-        // Check if user exists
+    public boolean resendMfaCode(String email, String clientId) {
+        // Get client-specific MFA settings for TOTP check
         User user = userService.findByEmail(email);
-
+        UserClientRegistration registration = userClientRegistrationService
+                .findByUserIdAndClientId(user.getId(), clientId)
+                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
+        String method = registration.getMfaMethod();
         // Check resend attempts using Redis
         String resendKey = "mfa:resend:" + email;
         String attemptsStr = redisTemplate.opsForValue().get(resendKey);
@@ -117,7 +135,6 @@ public class MfaServiceImpl implements MfaService {
         try {
             // Generate and send new code based on user's MFA method
             String newToken = generateRandomCode();
-            String method = user.getMfaMethod();
 
             if ("SMS".equalsIgnoreCase(method)) {
                 String phoneNumber = user.getPhoneNumber();

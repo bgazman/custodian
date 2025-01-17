@@ -28,6 +28,16 @@ public class AppException extends RuntimeException {
 
     }
 
+
+    public static AppException missingConfiguration(String message) {
+        return new AppException("INVALID_REFRESH_TOKEN", message);
+    }
+
+
+    public static AppException clientNotFound(String message) {
+        return new AppException("CLIENT_NOT_FOUND", message);
+    }
+
     public String getErrorCode() {
         return errorCode;
     }

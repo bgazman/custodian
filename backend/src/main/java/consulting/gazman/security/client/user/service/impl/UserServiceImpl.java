@@ -118,7 +118,6 @@ public class UserServiceImpl implements UserService {
     public void verifyEmail(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> AppException.resourceNotFound("User not found with ID: " + id));
-        user.setEmailVerified(true);
         userRepository.save(user);
     }
 
@@ -298,10 +297,7 @@ public class UserServiceImpl implements UserService {
             user.setPassword(hashedPassword);
         }
 
-        // Update other security-related fields (if any)
-        if (request.isMfaEnabled()) {
-            user.setMfaEnabled(true);
-        }
+
 
         // Save the updated user
         return userRepository.save(user);
@@ -336,9 +332,7 @@ public class UserServiceImpl implements UserService {
         if (request.isEnabled()) {
             user.setEnabled(true);
         }
-        if (request.isEmailVerified()) {
-            user.setEmailVerified(true);
-        }
+
 
         // Save the updated user
         return userRepository.save(user);

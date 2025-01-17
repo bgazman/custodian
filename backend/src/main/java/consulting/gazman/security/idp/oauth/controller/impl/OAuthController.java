@@ -99,11 +99,10 @@ public class OAuthController implements consulting.gazman.security.idp.oauth.con
                         .build();
             }
 
-            // Step 3: Check if MFA is required for the user
-            if (loginResponse.getMfaMethod() != null) {
-                // Generate an MFA challenge using the method from the response
-                mfaService.initiateMfaChallenge(request.getEmail(), loginResponse.getMfaMethod());
-
+            if (loginResponse.isMfaEnabled()) {
+                if (loginResponse.getMfaMethod() == null) {
+                     throw AppException.missingConfiguration("MFA is enabled but no method is configured");
+                }
                 String redirectUrl = "/mfa?email=" + URLEncoder.encode(request.getEmail(), StandardCharsets.UTF_8) +
                         "&client_id=" + URLEncoder.encode(request.getClientId(), StandardCharsets.UTF_8) +
                         "&redirect_uri=" + URLEncoder.encode(request.getRedirectUri(), StandardCharsets.UTF_8) +

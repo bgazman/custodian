@@ -5,11 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     enabled BOOLEAN DEFAULT FALSE,
     avatar_url TEXT,
-    email_verified BOOLEAN DEFAULT FALSE,
     failed_login_attempts INTEGER DEFAULT 0,
     locked_until TIMESTAMP,
-    mfa_enabled BOOLEAN DEFAULT FALSE,
-    mfa_method VARCHAR(50) DEFAULT NULL,
     phone_number VARCHAR(15) DEFAULT NULL,
     mfa_backup_codes JSONB DEFAULT '[]'::jsonb,
     last_login_time TIMESTAMP,
@@ -125,6 +122,9 @@ CREATE TABLE IF NOT EXISTS secrets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+
+
 CREATE TABLE IF NOT EXISTS oauth_clients (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -146,6 +146,20 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS user_client_registrations (
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    client_id BIGINT NOT NULL REFERENCES oauth_clients(id),  --
+    email_verified BOOLEAN DEFAULT FALSE,
+    mfa_enabled BOOLEAN DEFAULT FALSE,
+    mfa_method VARCHAR(50),
+    consent_granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Add unique constraint to prevent duplicate registrations
+    PRIMARY KEY (user_id, client_id)
 );
 
 CREATE TABLE IF NOT EXISTS tokens (
@@ -239,6 +253,8 @@ CREATE INDEX idx_secrets_name ON secrets (name);
 CREATE INDEX idx_secrets_created_at ON secrets (created_at);
 CREATE INDEX idx_secrets_updated_at ON secrets (updated_at);
 
+
+
 -- OAuth Clients Table Indexes
 CREATE INDEX idx_oauth_clients_name ON oauth_clients (name);
 CREATE INDEX idx_oauth_clients_client_id ON oauth_clients (client_id);
@@ -246,6 +262,10 @@ CREATE INDEX idx_oauth_clients_status ON oauth_clients (status);
 CREATE INDEX idx_oauth_clients_created_at ON oauth_clients (created_at);
 CREATE INDEX idx_oauth_clients_updated_at ON oauth_clients (updated_at);
 
+-- User Clients Registrations Table Indexes
+CREATE INDEX idx_user_client_reg_user_id ON user_client_registrations(user_id);
+CREATE INDEX idx_user_client_reg_client_id ON user_client_registrations(client_id);
+CREATE INDEX idx_user_client_reg_lookup ON user_client_registrations(user_id, client_id, email_verified);
 -- Tokens Table Indexes
 CREATE INDEX idx_tokens_client_id ON tokens (client_id);
 CREATE INDEX idx_tokens_user_id ON tokens (user_id);

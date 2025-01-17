@@ -99,7 +99,6 @@ public class JwtServiceImpl implements JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getEmail());  // Email as subject
         claims.put("email", user.getEmail());
-        claims.put("email_verified", user.isEmailVerified());
         claims.put("auth_time", issuedAt);
         claims.put("iat", issuedAt);
         claims.put("exp", expiration);

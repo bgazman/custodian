@@ -8,6 +8,7 @@ import consulting.gazman.security.idp.auth.dto.UserRegistrationResponse;
 
 import consulting.gazman.security.idp.auth.service.AuthService;
 
+import consulting.gazman.security.idp.auth.service.EmailVerificationService;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.service.TokenService;
 import consulting.gazman.security.idp.oauth.service.impl.AuthCodeServiceImpl;
@@ -36,7 +37,7 @@ import consulting.gazman.security.common.exception.AppException;
 @Service
 public class AuthServiceImpl implements AuthService {
     @Autowired
-    EmailVerificationServiceImpl emailVerificationServiceImpl;
+    EmailVerificationService emailVerificationService;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
@@ -87,11 +88,15 @@ public class AuthServiceImpl implements AuthService {
         createUser(request);
 
         // Step 3: Generate a temporary email verification token using EmailVerificationService
-        String verificationToken = emailVerificationServiceImpl.generateVerificationToken(request.getEmail());
+        String verificationToken = emailVerificationService.generateVerificationToken(request.getEmail());
 
         // Step 4: Send verification email using EmailVerificationService
-        emailVerificationServiceImpl.sendVerificationEmail(request.getEmail(), verificationToken);
-    }
+        emailVerificationService.sendVerificationEmailAsync(request.getEmail(), verificationToken)
+                .exceptionally(throwable -> {
+                    // Handle any async failures here
+                    log.error("Async email sending failed", throwable);
+                    return null;
+                });    }
 
     @Override
     public UserRegistrationResponse createUser(UserRegistrationRequest userRegistrationRequest) {
