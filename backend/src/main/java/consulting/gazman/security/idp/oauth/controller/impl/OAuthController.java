@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.oauth.controller;
+package consulting.gazman.security.idp.oauth.controller.impl;
 
 import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
@@ -21,9 +21,8 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RestController
-@RequestMapping("/oauth")
 
-public class OAuthController {
+public class OAuthController implements consulting.gazman.security.idp.oauth.controller.IOAuthController {
 
     @Autowired
     private AuthService authService;
@@ -33,7 +32,7 @@ public class OAuthController {
 
     @Autowired
     MfaService mfaService;
-    @GetMapping("/authorize")
+    @Override
     public ResponseEntity<?> authorize(
             @RequestParam String response_type,
             @RequestParam String client_id,
@@ -77,7 +76,7 @@ public class OAuthController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
 
-    @PostMapping("/login")
+    @Override
     public ResponseEntity<?> login(@RequestBody AuthorizeRequest request) {
         try {
             // Step 1: Build the initial login request
@@ -144,7 +143,7 @@ public class OAuthController {
 
 
 
-    @PostMapping("/token")
+    @Override
     public ResponseEntity<?> token(@RequestBody TokenRequest request) {
         try {
             TokenResponse response;
@@ -176,7 +175,7 @@ public class OAuthController {
         }
     }
 
-    @GetMapping("/introspect")
+    @Override
     public ResponseEntity<?> introspect(@RequestBody String bearerToken) {
         try {
             // Validate and parse the token using your service
@@ -197,7 +196,7 @@ public class OAuthController {
         }
     }
 
-    @PostMapping("/revoke")
+    @Override
     public ResponseEntity<?> revokeToken(@RequestBody String refreshToken) {
         try {
             // Attempt to revoke the token using your service
@@ -218,7 +217,7 @@ public class OAuthController {
         }
     }
 
-    @GetMapping("/userinfo")
+    @Override
     public ResponseEntity<?> userinfo(@RequestHeader("Authorization") String bearerToken) {
         try {
             UserInfoResponse response = oAuthService.getUserInfo(bearerToken);
@@ -233,7 +232,6 @@ public class OAuthController {
                     .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
         }
     }
-
     private String generateAuthorizationCode(String responseType, String clientId, String redirectUri, String scope, String state) {
         return oAuthService.generateAuthCode(AuthorizeRequest.builder()
                 .responseType(responseType)
@@ -243,5 +241,4 @@ public class OAuthController {
                 .state(state)
                 .build()).getCode();
     }
-
 }

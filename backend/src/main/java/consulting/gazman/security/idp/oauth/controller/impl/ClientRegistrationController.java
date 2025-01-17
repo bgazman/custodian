@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.oauth.controller;
+package consulting.gazman.security.idp.oauth.controller.impl;
 
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.idp.oauth.dto.ClientRegistrationRequest;
@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // Controller
 @RestController
-@RequestMapping("/client")
-public class ClientRegistrationController extends ApiController {
+public class ClientRegistrationController extends ApiController implements consulting.gazman.security.idp.oauth.controller.IClientRegistrationController {
 
     private final ClientRegistrationServiceImpl clientRegistrationService;
 
@@ -23,9 +22,8 @@ public class ClientRegistrationController extends ApiController {
         this.clientRegistrationService = clientRegistrationService;
     }
 
-    @PostMapping("/register")
+    @Override
     public ResponseEntity<?> registerClient(@RequestBody ClientRegistrationRequest request) {
-        logRequest("POST", "/client/register");
         try {
             ClientRegistrationResponse response = clientRegistrationService.registerClient(request);
             return wrapSuccessResponse(response, "Client registered successfully");

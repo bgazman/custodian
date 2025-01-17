@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.oauth.controller;
+package consulting.gazman.security.idp.oauth.controller.impl;
 
 
 
@@ -21,8 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/.well-known")
-public class JwksController extends ApiController {
+public class JwksController extends ApiController implements consulting.gazman.security.idp.oauth.controller.IJwksController {
 
     @Autowired
     private OAuthClientServiceImpl oAuthClientService;
@@ -31,9 +30,8 @@ public class JwksController extends ApiController {
     @Value("${app.base-url}")
     private String baseUrl;
 
-    @GetMapping("/jwks.json")
+    @Override
     public ResponseEntity<?> getJwks() {
-        logRequest("GET", "/.well-known/jwks.json");
         try {
             Map<String, Object> serviceResponse = oAuthClientService.getJwks();
             return wrapSuccessResponse(serviceResponse, "Groups retrieved successfully for the permission");
@@ -44,7 +42,7 @@ public class JwksController extends ApiController {
         }
     }
 
-    @GetMapping("/openid-configuration")
+    @Override
     public ResponseEntity<?> getOpenIdConfiguration() {
         logRequest("GET", "/.well-known/openid-configuration");
 
