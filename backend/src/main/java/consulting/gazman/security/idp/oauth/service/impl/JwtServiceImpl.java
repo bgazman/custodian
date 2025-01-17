@@ -50,27 +50,25 @@ public class JwtServiceImpl implements JwtService {
         long issuedAt = now.getEpochSecond();
         long expiration = now.plusSeconds(oAuthClient.getAccessTokenExpirySeconds()).getEpochSecond();
 
-        // Prepare roles
         Set<String> userRoles = user.getUserRoles().stream()
                 .map(userRole -> userRole.getRole().getName())
                 .collect(Collectors.toSet());
 
-        // Prepare groups
         List<String> userGroups = groups.stream()
                 .map(group -> group.getGroup().getName())
                 .collect(Collectors.toList());
 
-        // Prepare permissions
         List<String> userPermissions = permissions.values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-
+        Set<String> scopes = userPermissions.stream()
+                .map(permission -> "SCOPE_" + permission) // Prefix scopes for consistency
+                .collect(Collectors.toSet());
         // Prepare claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getEmail());
         claims.put("roles", userRoles);
-        claims.put("groups", userGroups);
-        claims.put("permissions", userPermissions);
+        claims.put("scope", String.join(" ", scopes));
         claims.put("iss", baseUrl); // Replace with production issuer
         claims.put("aud", oAuthClient.getClientId());
         claims.put("jti", UUID.randomUUID().toString());
