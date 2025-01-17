@@ -2,41 +2,47 @@ import React, { useState } from 'react';
 import { Mail, UserCircle, X, Phone, Lock } from 'lucide-react';
 import { useCreateUser } from "../../api/generated/user-controller/user-controller";
 import { getAllRoles } from '../../api/generated/role-controller/role-controller';
+import { useQuery } from "@tanstack/react-query";
+import {UserCreateRequest} from "../../api/generated/model";
 
 interface CreateUserDialogProps {
     open: boolean;
     onClose: () => void;
-    onUserCreated: (user: any) => void;
+    onUserCreated: (user: UserCreateRequest) => void;
 }
 
 const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUserCreated }) => {
     const { mutate: createUser } = useCreateUser();
-    const { data: roles = [], isLoading: rolesLoading, isError: rolesError } = getAllRoles();
+    const { data: roles = [], isLoading: rolesLoading, isError: rolesError } = useQuery({
+        queryKey: ['roles'],
+        queryFn: async () => {
+            try {
+                const response = await getAllRoles();
+                console.log('Roles response:', response); // Debug log
+                return Array.isArray(response) ? response : response.data || [];
+            } catch (error) {
+                console.error('Error fetching roles:', error);
+                throw error;
+            }
+        }
+    });
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<UserCreateRequest>({
         name: '',
         email: '',
         password: '',
         phoneNumber: '',
-        enabled: true,
-        mfaEnabled: false,
-        mfaMethod: 'SMS',
-        emailVerified: false,
-        userRoles: []
+        roleIds: []
     });
 
     const [error, setError] = useState('');
 
     const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const roleId = Number(e.target.value);
-        const selectedRole = roles.find(role => role.id === roleId);
-        if (selectedRole) {
+        if (roleId) {
             setFormData(prev => ({
                 ...prev,
-                userRoles: [{
-                    id: { roleId },
-                    role: selectedRole
-                }]
+                roleIds: [roleId]
             }));
         }
     };
@@ -58,11 +64,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
             email: '',
             password: '',
             phoneNumber: '',
-            enabled: true,
-            mfaEnabled: false,
-            mfaMethod: 'SMS',
-            emailVerified: false,
-            userRoles: []
+            roleIds: []
         });
         setError('');
         onClose();
@@ -131,7 +133,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                         name="role"
                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                         onChange={handleRoleChange}
-                                        value={formData.userRoles[0]?.role?.id || ''}
+                                        value={formData.roleIds?.[0] || ''}
                                         required
                                     >
                                         <option value="">Select a role</option>
@@ -199,27 +201,6 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                                     placeholder="+1234567890"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-700">Enable Account</span>
-                                <input
-                                    type="checkbox"
-                                    checked={formData.enabled}
-                                    onChange={(e) => setFormData({...formData, enabled: e.target.checked})}
-                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-700">Enable MFA</span>
-                                <input
-                                    type="checkbox"
-                                    checked={formData.mfaEnabled}
-                                    onChange={(e) => setFormData({...formData, mfaEnabled: e.target.checked})}
-                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                 />
                             </div>
                         </div>

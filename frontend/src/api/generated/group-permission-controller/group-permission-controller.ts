@@ -37,7 +37,7 @@ import type {
   RemovePermissionFromGroup200,
   RemovePermissionFromGroup500,
   RemovePermissionFromGroupParams
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

@@ -1,21 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {Users, UserCircle, Shield, Key, Settings, FileJson} from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import UsersComponent from "../components/Users/Users";
 import Groups from "../components/Groups/Groups";
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+
 const IamDashboard = () => {
-    const navigate = useNavigate();
     const [currentSection, setCurrentSection] = useState('users');
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        // const isAdmin = localStorage.getItem("role") === "ADMIN";
-        // if (!isAdmin) {
-        //     navigate("/", { replace: true });
-        // }
-    }, [navigate]);
+    const apiUrl = `${import.meta.env.VITE_BACKEND_URL}/v3/api-docs`;
 
     const renderContent = () => {
         try {
@@ -24,35 +19,21 @@ const IamDashboard = () => {
                     return <UsersComponent />;
                 case 'groups':
                     return <Groups />;
-                case 'permissions':
-                    return (
-                        <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500">Permissions management coming soon</p>
-                        </div>
-                    );
-                case 'secrets':
-                    return (
-                        <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500">Secrets management coming soon</p>
-                        </div>
-                    );
-                case 'tokens':
-                    return (
-                        <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500">Token configuration coming soon</p>
-                        </div>
-                    );
                 case 'api-docs':
-                    return <SwaggerUI url="http://localhost:8080/v3/api-docs" />;
+                    return <SwaggerUI url={apiUrl} />;
                 default:
                     return (
                         <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500">Select a section from the navigation above</p>
+                            <p className="text-gray-500">
+                                {currentSection === 'permissions' && 'Permissions management coming soon'}
+                                {currentSection === 'secrets' && 'Secrets management coming soon'}
+                                {currentSection === 'tokens' && 'Token configuration coming soon'}
+                            </p>
                         </div>
                     );
             }
         } catch (err) {
-            setError(err.message);
+            setError(err instanceof Error ? err.message : 'An error occurred');
             return null;
         }
     };
@@ -64,12 +45,11 @@ const IamDashboard = () => {
         { name: 'Secrets', path: 'secrets', icon: <Key className="w-5 h-5" /> },
         { name: 'Token Configurations', path: 'tokens', icon: <Settings className="w-5 h-5" /> },
         { name: 'API Docs', path: 'api-docs', icon: <FileJson className="w-5 h-5" /> }
-
     ];
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-200   ">
+            <nav className="bg-white border-b border-gray-200">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">
@@ -81,10 +61,9 @@ const IamDashboard = () => {
                                         setCurrentSection(item.path);
                                     }}
                                     className={`inline-flex items-center px-1 pt-1 text-sm font-medium 
-                                        ${currentSection === item.path
+                                       ${currentSection === item.path
                                         ? 'border-b-2 border-indigo-500 text-gray-900'
-                                        : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                                    }`}
+                                        : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
                                 >
                                     <span className="mr-2">{item.icon}</span>
                                     {item.name}
@@ -97,9 +76,9 @@ const IamDashboard = () => {
 
             <main className="p-6">
                 {error && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        <span className="block sm:inline">{error}</span>
+                    </div>
                 )}
                 {renderContent()}
             </main>

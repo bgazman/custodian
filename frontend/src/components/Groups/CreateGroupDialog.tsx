@@ -1,90 +1,97 @@
 import React, { useState } from "react";
 import { useCreateGroup } from "../../api/generated/group-controller/group-controller";
+import { Group } from "../../api/generated/model";
+import { X } from 'lucide-react';
 
-const CreateGroupDialog = ({ open, onClose, onGroupCreated }) => {
-    const [group, setGroup] = useState({ name: "", description: "" });
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+interface CreateGroupDialogProps {
+    open: boolean;
+    onClose: () => void;
+}
 
-    const { mutate: createGroup } = useCreateGroup({
-        onSuccess: (data) => {
-            setSuccess("Group created successfully!");
-            onGroupCreated(data);
-            setTimeout(() => {
-                setGroup({ name: "", description: "" });
-                setSuccess("");
-                onClose();
-            }, 2000);
-        },
-        onError: (err) => {
-            setError(err.response?.data?.message || "Failed to create group");
-        }
+const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) => {
+    const [formData, setFormData] = useState<Partial<Group>>({
+        name: '',
+        description: '',
     });
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const { mutate: createGroup, isPending } = useCreateGroup();
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
-        setSuccess("");
-        createGroup({ data: group });
+        createGroup({
+            data: formData
+        }, {
+            onSuccess: () => {
+                onClose();
+                setFormData({ name: '', description: '' });
+            },
+            onError: (err: Error) => {
+                setError(err.message || 'Failed to create group');
+            }
+        });
     };
 
-    // Rest of your component remains the same
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                    Create New Group
-                </h3>
-                {error && <p className="text-red-500 mb-4">{error}</p>}
-                {success && <p className="text-green-500 mb-4">{success}</p>}
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label
-                            htmlFor="name"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Group Name
-                        </label>
-                        <input
-                            type="text"
-                            name="name"
-                            id="name"
-                            value={group.name}
-                            onChange={handleChange}
-                            required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-2xl">
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-900">Create New Group</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Group Name
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Description
+                            </label>
+                            <textarea
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                value={formData.description}
+                                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                rows={4}
+                            />
+                        </div>
                     </div>
-                    <div className="mb-4">
-                        <label
-                            htmlFor="description"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Description
-                        </label>
-                        <textarea
-                            name="description"
-                            id="description"
-                            value={group.description}
-                            onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                        ></textarea>
-                    </div>
-                    <div className="mt-5 sm:mt-6 flex justify-end">
+
+                    <div className="mt-6 flex justify-end space-x-3">
                         <button
                             type="button"
-                            onClick={handleCancel}
-                            className="mr-2 inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                            onClick={onClose}
+                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                            disabled={isPending}
+                            className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            Create
+                            {isPending ? 'Creating...' : 'Create Group'}
                         </button>
                     </div>
                 </form>

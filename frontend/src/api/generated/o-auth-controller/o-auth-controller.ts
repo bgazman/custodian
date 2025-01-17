@@ -43,7 +43,7 @@ import type {
   TokenRequest,
   Userinfo200,
   Userinfo500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

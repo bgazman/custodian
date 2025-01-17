@@ -8,6 +8,7 @@ export default defineConfig({
         output: {
             mode: 'tags-split',
             target: './src/api/generated/index.ts',
+            schemas: './src/api/generated/model',
             client: 'react-query',
             baseUrl: 'http://localhost:8080',
             override: {

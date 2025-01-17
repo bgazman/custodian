@@ -44,7 +44,7 @@ import type {
   Permission,
   UpdatePermission200,
   UpdatePermission500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

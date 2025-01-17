@@ -1,52 +1,47 @@
 import React, { useState } from "react";
-import { getAllGroups } from "../../api/generated/group-controller/group-controller";
-import CreateGroupDialog from "../../components/Groups/CreateGroupDialog.tsx";
-import GroupDetails from "../../components/Groups/GroupDetails.tsx";
-import { Group } from "../../types/Group.ts";
+import { getAllGroups, deleteGroup as deleteGroupApi, updateGroup } from "../../api/generated/group-controller/group-controller";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import CreateGroupDialog from "../../components/Groups/CreateGroupDialog";
+import GroupDetails from "../../components/Groups/GroupDetails";
+import { GroupDTO as Group} from "../../api/generated/model";
 
 const Groups: React.FC = () => {
-    const { groups, loading, error, deleteGroup, toggleGroupEnabled, refetch } = getAllGroups();
+    const queryClient = useQueryClient();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
-    const handleViewDetails = (group: Group) => {
-        setSelectedGroup(group);
+    const { data: groups = [], isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['groups'],
+        queryFn: async () => {
+            const response = await getAllGroups();
+            return Array.isArray(response) ? response : response.data || [];
+        }
+    });
+
+    const { mutate: deleteGroup, isPending: isDeleting } = useMutation({
+        mutationFn: (groupId: number) => deleteGroupApi(groupId),
+        onSuccess: async () => {
+            await refetch();
+            setDeleteDialogOpen(false);
+            setGroupToDelete(null);
+        }
+    });
+
+    const handleDeleteClick = (group: Group) => {
+        setGroupToDelete(group);
+        setDeleteDialogOpen(true);
     };
 
-    const closeGroupDetails = () => {
-        setSelectedGroup(null);
+    const handleDelete = () => {
+        if (groupToDelete) {
+            deleteGroup(groupToDelete.id);
+        }
     };
-
-    const handleCreateGroup = (newGroup: Group) => {
-        setIsCreateDialogOpen(false);
-        refetch(); // Refetch the groups list to include the new group
-    };
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-4 text-red-500">
-                {error}
-                <button
-                    onClick={refetch}
-                    className="ml-2 text-blue-500 hover:underline"
-                >
-                    Retry
-                </button>
-            </div>
-        );
-    }
 
     return (
         <div className="p-6">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Manage Groups</h1>
                 <button
@@ -57,7 +52,6 @@ const Groups: React.FC = () => {
                 </button>
             </div>
 
-            {/* Groups Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
                     <thead className="bg-gray-50">
@@ -65,41 +59,32 @@ const Groups: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Members</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Group</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {groups && groups.map((group) => (
+                    {groups.map((group) => (
                         <tr key={group.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{group.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{group.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{group.description}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{group.members?.length || 0}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">-</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                {new Date(group.createdAt).toLocaleDateString()}
+                                {group.createdAt ? new Date(group.createdAt).toLocaleDateString() : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex space-x-2">
                                     <button
-                                        onClick={() => toggleGroupEnabled(group.id, group.enabled)}
-                                        className={`text-sm ${
-                                            group.enabled
-                                                ? "text-red-500 hover:underline"
-                                                : "text-green-500 hover:underline"
-                                        }`}
-                                    >
-                                        {group.enabled ? "Disable" : "Enable"}
-                                    </button>
-                                    <button
-                                        onClick={() => deleteGroup(group.id)}
-                                        className="text-red-500 hover:underline text-sm"
+                                        onClick={() => handleDeleteClick(group)}
+                                        disabled={isDeleting}
+                                        className="text-red-500 hover:underline text-sm disabled:opacity-50"
                                     >
                                         Delete
                                     </button>
                                     <button
-                                        onClick={() => handleViewDetails(group)}
+                                        onClick={() => setSelectedGroup(group)}
                                         className="text-blue-500 hover:underline text-sm"
                                     >
                                         View Details
@@ -112,21 +97,46 @@ const Groups: React.FC = () => {
                 </table>
             </div>
 
-            {/* Create Group Dialog */}
             <CreateGroupDialog
                 open={isCreateDialogOpen}
-                onClose={() => setIsCreateDialogOpen(false)}
-                onGroupCreated={handleCreateGroup}
+                onClose={() => {
+                    setIsCreateDialogOpen(false);
+                    refetch();
+                }}
             />
 
-            {/* Group Details Modal */}
+            {deleteDialogOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                        <h2 className="text-xl font-semibold mb-4">Delete Group</h2>
+                        <p className="mb-6">Are you sure you want to delete {groupToDelete?.name}? This action cannot be undone.</p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => setDeleteDialogOpen(false)}
+                                disabled={isDeleting}
+                                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 disabled:opacity-50"
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {selectedGroup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
                         <GroupDetails group={selectedGroup} />
                         <button
                             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-                            onClick={closeGroupDetails}
+                            onClick={() => setSelectedGroup(null)}
                         >
                             Close
                         </button>

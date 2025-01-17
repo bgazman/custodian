@@ -19,7 +19,7 @@ import type {
   ResetPassword200,
   ResetPassword500,
   ResetPasswordRequest
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

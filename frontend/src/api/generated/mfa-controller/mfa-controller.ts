@@ -22,7 +22,7 @@ import type {
   VerifyBackupCode500,
   VerifyMfa200,
   VerifyMfa500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

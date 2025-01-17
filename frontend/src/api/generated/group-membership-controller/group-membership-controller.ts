@@ -40,7 +40,7 @@ import type {
   UpdateRole1200,
   UpdateRole1500,
   UpdateRole1Params
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

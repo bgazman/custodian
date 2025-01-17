@@ -25,7 +25,7 @@ import type {
 import type {
   GetProtectedData1200,
   GetProtectedData1500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

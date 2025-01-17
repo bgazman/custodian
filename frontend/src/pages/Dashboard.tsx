@@ -1,10 +1,16 @@
 import React from 'react';
 import { Loader } from "lucide-react";
-import { useGetAllUsers } from "../api/generated/user-controller/user-controller"; // Note the 'use' prefix
+import { getAllUsers } from "../api/generated/user-controller/user-controller";
+import { useQuery } from '@tanstack/react-query';
 
 const Dashboard: React.FC = () => {
-    // Use the React Query hook with proper destructuring
-    const { data: users, isLoading, error, refetch } = useGetAllUsers();
+    const { data: users, isLoading, error, refetch } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const response = await getAllUsers();
+            return response;
+        }
+    });
 
     if (isLoading) {
         return (
@@ -33,7 +39,14 @@ const Dashboard: React.FC = () => {
             <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
-                    {/* ... table header ... */}
+                    <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roles</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
+                    </tr>
+                    </thead>
                     <tbody className="divide-y divide-gray-200">
                     {Array.isArray(users) && users.map((user) => (
                         <tr key={user.id}>
@@ -45,7 +58,6 @@ const Dashboard: React.FC = () => {
                             </td>
                         </tr>
                     ))}
-
                     </tbody>
                 </table>
             </div>

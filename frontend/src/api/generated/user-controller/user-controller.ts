@@ -51,7 +51,7 @@ import type {
   UserStatusDTO,
   UserStatusUpdateRequest,
   UserUpdateRequest
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

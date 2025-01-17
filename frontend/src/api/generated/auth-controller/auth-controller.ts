@@ -22,7 +22,7 @@ import type {
   VerifyEmail200,
   VerifyEmail500,
   VerifyEmailParams
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

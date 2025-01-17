@@ -41,7 +41,7 @@ import type {
   SearchGroupsParams,
   UpdateGroup200,
   UpdateGroup500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

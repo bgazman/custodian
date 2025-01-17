@@ -16,7 +16,7 @@ import type {
   ClientRegistrationRequest,
   RegisterClient200,
   RegisterClient500
-} from '../index.schemas'
+} from '.././model'
 import { customFetcher } from '../../common/SecureApiClient';
 
 

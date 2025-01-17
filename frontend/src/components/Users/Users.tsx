@@ -4,49 +4,48 @@ import { useState } from "react";
 import CreateUserDialog from "./CreateUserDialog";
 import UserDetailsDialog from "./UserDetailsDialog";
 import DeleteUserDialog from "./DeleteUserDialog";
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    enabled: boolean;
-    roleNames: string[];
-    createdAt: string;
-}
-
+import { useQuery } from '@tanstack/react-query';
+import {UserBasicDTO} from "../../api/generated/model"
 const UsersComponent = () => {
-    const { data: users = [], isLoading, isError, refetch } = getAllUsers();
+    const { data: users, isLoading, isError, refetch } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const response = await getAllUsers();
+            return response;
+        },
+        retry: 1,
+        staleTime: 30000,
+        cacheTime: 60000
+    });
+
     const { mutate: deleteUserMutation, isLoading: isDeleting } = useDeleteUser();
     const { mutate: updateStatus, isLoading: isUpdating } = useUpdateUserStatus();
+
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<UserBasicDTO | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [userToDelete, setUserToDelete] = useState<UserBasicDTO | null>(null);
     const navigate = useNavigate();
 
     const handleDelete = async () => {
-        try {
-            if (userToDelete) {
-                await deleteUserMutation({ id: userToDelete.id });
-                await refetch();
-                setDeleteDialogOpen(false);
-                setUserToDelete(null);
-            }
-        } catch (error) {
-            console.error('Failed to delete user:', error);
+        if (userToDelete) {
+            deleteUserMutation({ id: userToDelete.id }, {
+                onSuccess: async () => {
+                    await refetch();
+                    setDeleteDialogOpen(false);
+                    setUserToDelete(null);
+                }
+            });
         }
     };
 
     const handleToggleEnabled = async (id: number, enabled: boolean) => {
-        try {
-            await updateStatus({
-                id,
-                data: { enabled: !enabled }
-            });
-            await refetch();
-        } catch (error) {
-            console.error('Failed to update status:', error);
-        }
+        updateStatus({
+            id,
+            data: { enabled: !enabled }
+        }, {
+            onSuccess: () => refetch()
+        });
     };
 
     const handleCreateUser = () => {
@@ -58,7 +57,7 @@ const UsersComponent = () => {
         await handleDelete();
     };
 
-    const handleViewDetails = (user: User) => {
+    const handleViewDetails = (user: UserBasicDTO) => {
         setSelectedUser(user);
     };
 
@@ -70,23 +69,27 @@ const UsersComponent = () => {
         await handleToggleEnabled(id, enabled);
     };
 
-    const handleDeleteClick = (user: User) => {
+    const handleDeleteClick = (user: UserBasicDTO) => {
         setUserToDelete(user);
         setDeleteDialogOpen(true);
     };
 
-    if (isLoading) return (
-        <div className="flex justify-center items-center min-h-screen">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent" />
-        </div>
-    );
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent" />
+            </div>
+        );
+    }
 
-    if (isError) return (
-        <div className="p-4 text-red-500">
-            Error loading users
-            <button onClick={() => refetch()} className="ml-2 text-blue-500 hover:underline">Retry</button>
-        </div>
-    );
+    if (isError) {
+        return (
+            <div className="p-4 text-red-500">
+                Error loading users
+                <button onClick={() => refetch()} className="ml-2 text-blue-500 hover:underline">Retry</button>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6">
@@ -114,7 +117,7 @@ const UsersComponent = () => {
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {users?.map((user) => (
+                    {Array.isArray(users) && users.map((user) => (
                         <tr key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
