@@ -9,6 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 
 import { ThemeProvider } from './context/ThemeContext'
+import {LayoutProvider} from "./context/LayoutContext";
 const queryClient = new QueryClient()
 
 // Add theme management
@@ -23,10 +24,13 @@ document.documentElement.dataset.theme = getInitialTheme()
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <ThemeProvider>
-            <QueryClientProvider client={queryClient}>
-                <App />
-                <ReactQueryDevtools initialIsOpen={false} />
-            </QueryClientProvider>
+            <LayoutProvider>
+                <QueryClientProvider client={queryClient}>
+                    <App />
+                    <ReactQueryDevtools initialIsOpen={false} />
+                </QueryClientProvider>
+            </LayoutProvider>
         </ThemeProvider>
     </React.StrictMode>
-)
+);
+

@@ -56,7 +56,7 @@ const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => 
                             value={membership.userId}
                             onChange={handleChange}
                             required
-                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary/30 focus:ring-primary/20 focus:ring-opacity-50"
                         />
                     </div>
                     <div className="mb-4">
@@ -70,7 +70,7 @@ const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => 
                             value={membership.groupId}
                             onChange={handleChange}
                             required
-                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary/30 focus:ring focus:ring-primary/20 focus:ring-opacity-50"
                         />
                     </div>
                     <div className="mb-4">
@@ -82,7 +82,7 @@ const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => 
                             id="role"
                             value={membership.role}
                             onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary/30 focus:ring ring-primary/20 focus:ring-opacity-50"
                         >
                             <option value="ADMIN">Admin</option>
                             <option value="MEMBER">Member</option>
@@ -92,13 +92,13 @@ const CreateGroupMembershipDialog = ({ open, onClose, onMembershipCreated }) => 
                         <button
                             type="button"
                             onClick={onClose}
-                            className="mr-2 inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-background text-base font-medium text-text hover:bg-background focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                            className="mr-2 inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-background text-base font-medium text-text hover:bg-background focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+                            className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
                         >
                             Add Membership
                         </button>

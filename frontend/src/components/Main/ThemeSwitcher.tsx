@@ -4,15 +4,16 @@ import { Sun, Moon, Palette } from 'lucide-react';
 const ThemeSwitcher = () => {
     const [isOpen, setIsOpen] = useState(false);
     const themes = [
-        { name: 'light', icon: <Sun /> },
-        { name: 'dark', icon: <Moon /> },
-        { name: 'ocean', label: 'Ocean' },
-        { name: 'ocean-dark', label: 'Ocean Dark' },
-        { name: 'stone', label: 'Stone' },
-        { name: 'stone-dark', label: 'Stone Dark' },
-        { name: 'serif', label: 'Serif' },
-        { name: 'serif-dark', label: 'Serif Dark' }
+        { name: 'minimal', label: 'Minimal', icon: <Sun /> },
+        { name: 'minimal-dark', label: 'Minimal Dark', icon: <Moon /> },
+        { name: 'elegant', label: 'Elegant Serif' },
+        { name: 'elegant-dark', label: 'Elegant Serif Dark' },
+        { name: 'vibrant', label: 'Vibrant' },
+        { name: 'vibrant-dark', label: 'Vibrant Dark' },
+        { name: 'nature', label: 'Nature' },
+        { name: 'nature-dark', label: 'Nature Dark' }
     ];
+
 
     const setTheme = (theme) => {
         document.documentElement.setAttribute('data-theme', theme);

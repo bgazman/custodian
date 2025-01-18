@@ -1,88 +1,218 @@
-/* Theme 1: Modern Forest */
+/* Base Tailwind imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Root variables */
 :root {
+    --header-height: 60px;
+    --sidebar-width: 250px;
+    --content-max-width: 1200px;
+    --content-padding: 2rem;
     /* System States */
-    --error-color: #DC2626;          /* Red */
-    --success-color: #059669;        /* Green */
-    --info-color: #2563EB;           /* Blue */
-    --border-color: #E5E7EB;         /* Light Grey */
-    --primary-color: #2D5A27;        /* Forest Green */
-    --secondary-color: #1B4332;      /* Deep Forest */
-    --accent-color: #95D5B2;         /* Sage */
-    --background-color: #F8FAF8;     /* Off White */
-    --text-color: #2C3E2D;           /* Dark Green-Grey */
-    --font-family: 'Inter', sans-serif;
+    --error-color: #EF4444;
+    --success-color: #10B981;
+    --info-color: #3B82F6;
+    --warning-color: #F59E0B;
+    --border-color: #E5E7EB;
+
+    /* Base typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
     --font-size-base: 16px;
-    --line-height-base: 1.6;
-    --space-md: 16px;
+    --line-height-base: 1.5;
+
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+
+
+}
+[data-layout="sidebar-left"] {
+    --sidebar-position: left;
+    grid-template-areas: "sidebar header" "sidebar main";
+    grid-template-columns: var(--sidebar-width) 1fr;
 }
 
-[data-theme='dark'] {
-    --primary-color: #40916C;        /* Muted Green */
-    --secondary-color: #1B4332;      /* Deep Forest */
-    --accent-color: #95D5B2;         /* Sage */
-    --background-color: #1A271F;     /* Dark Forest */
-    --text-color: #E9F5E9;           /* Light Sage */
+/* Layout: Sidebar Right */
+[data-layout="sidebar-right"] {
+    --sidebar-position: right;
+    grid-template-areas: "header sidebar" "main sidebar";
+    grid-template-columns: 1fr var(--sidebar-width);
 }
 
-/* Theme 2: Ocean Depths */
-[data-theme='ocean'] {
-    --primary-color: #003459;        /* Deep Blue */
-    --secondary-color: #00171F;      /* Navy */
-    --accent-color: #007EA7;         /* Ocean Blue */
-    --background-color: #F8F9FA;     /* Light Grey */
-    --text-color: #00171F;           /* Navy */
+/* Layout: Top Navigation */
+[data-layout="top-nav"] {
+    --header-height: 80px;
+    grid-template-areas: "header" "main";
+    grid-template-rows: var(--header-height) 1fr;
 }
 
-[data-theme='ocean-dark'] {
-    --primary-color: #007EA7;        /* Ocean Blue */
-    --secondary-color: #003459;      /* Deep Blue */
-    --accent-color: #00A8E8;         /* Bright Blue */
-    --background-color: #00171F;     /* Navy */
-    --text-color: #E6F3F8;           /* Light Blue-Grey */
+/* Layout: Centered */
+[data-layout="centered"] {
+    --content-max-width: 800px;
+    grid-template-areas: "header" "main";
+    grid-template-rows: var(--header-height) 1fr;
+    max-width: var(--content-max-width);
+    margin: 0 auto;
 }
 
-/* Theme 4: Modern Serif */
-[data-theme='serif'] {
-    --primary-color: #2B4162;        /* Navy Blue */
-    --secondary-color: #385F71;      /* Steel Blue */
-    --accent-color: #F5853F;         /* Coral */
-    --background-color: #FAFAFA;     /* Off White */
-    --text-color: #293241;           /* Dark Blue */
-    --font-family: 'Playfair Display', serif;
-    --heading-font: 'Cormorant Garamond', serif;
-    --body-font: 'Source Serif Pro', serif;
-    --font-size-base: 18px;
-    --line-height-base: 1.7;
+/* Layout: Split View */
+[data-layout="split"] {
+    grid-template-areas: "header header" "main secondary";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: var(--header-height) 1fr;
 }
 
-[data-theme='serif-dark'] {
-    --primary-color: #385F71;        /* Steel Blue */
-    --secondary-color: #2B4162;      /* Navy Blue */
-    --accent-color: #F5853F;         /* Coral */
-    --background-color: #1D252D;     /* Dark Blue-Grey */
-    --text-color: #F5F5F5;           /* White */
-    --font-family: 'Playfair Display', serif;
-    --heading-font: 'Cormorant Garamond', serif;
-    --body-font: 'Source Serif Pro', serif;
+
+
+/* Theme 1: Modern Minimal */
+[data-theme='minimal'] {
+    --primary-color: #3B82F6;
+    --secondary-color: #1E40AF;
+    --accent-color: #60A5FA;
+    --background-color: #FFFFFF;
+    --text-color: #1F2937;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Theme 3: Warm Stone */
-[data-theme='stone'] {
-    --primary-color: #8B7355;        /* Warm Brown */
-    --secondary-color: #6E5C45;      /* Deep Brown */
-    --accent-color: #C4B5A2;         /* Light Taupe */
-    --background-color: #FAF9F7;     /* Cream */
-    --text-color: #3E3629;           /* Dark Brown */
+[data-theme='minimal-dark'] {
+    --primary-color: #60A5FA;
+    --secondary-color: #3B82F6;
+    --accent-color: #93C5FD;
+    --background-color: #111827;
+    --text-color: #F3F4F6;
 }
 
-[data-theme='stone-dark'] {
-    --primary-color: #A69178;        /* Light Brown */
-    --secondary-color: #8B7355;      /* Warm Brown */
-    --accent-color: #C4B5A2;         /* Light Taupe */
-    --background-color: #2A241D;     /* Deep Brown */
-    --text-color: #F5F0EA;           /* Off White */
+
+
+/* Theme 4: Nature */
+[data-theme='nature'] {
+    --primary-color: #059669;
+    --secondary-color: #047857;
+    --accent-color: #34D399;
+    --background-color: #ECFDF5;
+    --text-color: #064E3B;
+    --font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    --heading-font: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    --body-font: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+[data-theme='nature-dark'] {
+    --primary-color: #34D399;
+    --secondary-color: #059669;
+    --accent-color: #6EE7B7;
+    --background-color: #064E3B;
+    --text-color: #D1FAE5;
+}
+
+/* Layout Themes */
+[data-layout="sidebar-left"] {
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    --content-max-width: 1200px;
+    --content-padding: 2rem;
+    --sidebar-background: var(--background-color);
+}
+
+[data-layout="sidebar-left"] .sidebar {
+    left: 0; /* Ensure the sidebar is positioned on the left */
+    border-right: 1px solid var(--border-color); /* Add a border on the right */
+}
+
+[data-layout="sidebar-left"] .main-content {
+    margin-left: var(--sidebar-width); /* Adjust margin for main content */
+}
+[data-layout="sidebar-left"] .sidebar.collapsed {
+    transform: translateX(-100%); /* Hide the sidebar */
+}
+
+
+
+/* Layout: Sidebar Right */
+[data-layout="sidebar-right"] {
+    --sidebar-width: 250px;
+    --header-height: 60px; /* Make sure header height is consistent */
+    --content-max-width: 1200px; /* Keep max width consistent */
+    --content-padding: 2rem; /* Keep padding consistent */
+}
+
+[data-layout="sidebar-right"] .sidebar {
+    right: 0; /* Ensure the sidebar is positioned on the right */
+    border-left: 1px solid var(--border-color); /* Border on the left */
+}
+
+[data-layout="sidebar-right"] .main-content {
+    margin-right: var(--sidebar-width); /* Adjust margin for main content */
+}
+[data-layout="sidebar-right"] .sidebar.collapsed {
+    transform: translateX(100%); /* Hide the sidebar */
+}
+/* Layout: Sidebar Right */
+
+/* Layout: Top Nav */
+
+[data-layout="top-nav"] {
+    --header-height: 80px;
+    --nav-background: var(--background-color);
+}
+/* Layout: Top Nav */
+
+/* Layout: Centered */
+
+[data-layout="centered"] {
+    --content-max-width: 800px;
+    --content-margin: auto;
+}
+/* Layout: Centered */
+
+/* Layout Components */
+.layout-container {
+    display: grid;
+    min-height: 100vh;
+    transition: grid-template-columns 0.3s ease-in-out;
+}
+
+.header {
+    grid-area: header;
+    height: var(--header-height);
+    padding: 0 var(--content-padding);
+    background: var(--background-color);
+    border-bottom: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.sidebar {
+    grid-area: sidebar;
+    width: var(--sidebar-width);
+    background: var(--background-color);
+    border-right: 1px solid var(--border-color);
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    transition: transform 0.3s ease-in-out; /* Smooth transition */
+
+}
+
+.main-content {
+    grid-area: main;
+    padding: var(--content-padding);
+    background: var(--background-color);
+    margin-top: var(--header-height);
+}
+
+.secondary-content {
+    grid-area: secondary;
+    padding: var(--content-padding);
+    background: var(--background-color);
+    border-left: 1px solid var(--border-color);
+    margin-top: var(--header-height);
 }

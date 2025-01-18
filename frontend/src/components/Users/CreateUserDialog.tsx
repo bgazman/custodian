@@ -105,7 +105,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                     type="text"
                                     name="name"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                     value={formData.name}
                                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                                     placeholder="John Doe"
@@ -130,7 +130,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                 ) : (
                                     <select
                                         name="role"
-                                        className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                        className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                         onChange={handleRoleChange}
                                         value={formData.roleIds?.[0] || ''}
                                         required
@@ -158,7 +158,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                     type="email"
                                     name="email"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                     value={formData.email}
                                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                                     placeholder="john@example.com"
@@ -178,7 +178,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                     type="password"
                                     name="password"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 />
@@ -196,7 +196,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                                 <input
                                     type="tel"
                                     name="phoneNumber"
-                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                                     placeholder="+1234567890"
@@ -215,7 +215,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                            className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary"
                         >
                             Create User
                         </button>

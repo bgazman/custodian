@@ -59,7 +59,7 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
                             <input
                                 type="text"
                                 required
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.name}
                                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                             />
@@ -70,7 +70,7 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
                                 Description
                             </label>
                             <textarea
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.description}
                                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                                 rows={4}
@@ -89,7 +89,7 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                            className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary disabled:opacity-50"
                         >
                             {isPending ? 'Creating...' : 'Create Group'}
                         </button>

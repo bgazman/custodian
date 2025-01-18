@@ -63,7 +63,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                             <input
                                 type="text"
                                 required
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.name}
                                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                             />
@@ -75,7 +75,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                             </label>
                             <select
                                 required
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.type}
                                 onChange={(e) => setFormData({...formData, type: e.target.value})}
                             >
@@ -91,7 +91,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                                 Public Key
                             </label>
                             <textarea
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.publicKey}
                                 onChange={(e) => setFormData({...formData, publicKey: e.target.value})}
                                 rows={3}
@@ -103,7 +103,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                                 Private Key
                             </label>
                             <textarea
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.privateKey}
                                 onChange={(e) => setFormData({...formData, privateKey: e.target.value})}
                                 rows={3}
@@ -116,7 +116,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                             </label>
                             <input
                                 type="datetime-local"
-                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
+                                className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                                 value={formData.expiresAt}
                                 onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
                             />
@@ -126,7 +126,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                             <input
                                 type="checkbox"
                                 id="active"
-                                className="h-4 w-4 text-primary focus:ring-indigo-500 border-border rounded"
+                                className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                                 checked={formData.active}
                                 onChange={(e) => setFormData({...formData, active: e.target.checked})}
                             />
@@ -147,7 +147,7 @@ const CreateSecretDialog: React.FC<CreateSecretDialogProps> = ({ open, onClose }
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                            className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary disabled:opacity-50"
                         >
                             {isPending ? 'Creating...' : 'Create Secret'}
                         </button>
