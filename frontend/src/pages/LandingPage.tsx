@@ -31,8 +31,8 @@ const LandingPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow">
+        <div className="min-h-screen bg-background">
+            <nav className="bg-background shadow">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <h1 className="text-xl font-bold">Crypto Custodian</h1>
                     <button
@@ -45,8 +45,8 @@ const LandingPage = () => {
             </nav>
             <main className="max-w-7xl mx-auto px-4 py-16">
                 <div className="text-center">
-                    <h2 className="text-4xl font-bold text-gray-900">Secure User Management</h2>
-                    <p className="mt-4 text-xl text-gray-600">Manage your users securely</p>
+                    <h2 className="text-4xl font-bold text-text-dark">Secure User Management</h2>
+                    <p className="mt-4 text-xl text-text">Manage your users securely</p>
                 </div>
             </main>
         </div>

@@ -38,7 +38,7 @@ const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false,
     };
 
     return (
-        <div className="p-6 bg-white shadow rounded-md">
+        <div className="p-6 bg-background shadow rounded-md">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <UserCircle className="w-16 h-16 text-blue-500" />
@@ -48,22 +48,22 @@ const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false,
                             type="text"
                             value={formData.username || ""}
                             onChange={(e) => handleChange("username", e.target.value)}
-                            className="text-xl font-bold text-gray-800 border border-gray-300 rounded px-2 py-1"
+                            className="text-xl font-bold text-text-dark border border-border rounded px-2 py-1"
                             placeholder="Username"
                         />
                     ) : (
-                        <h1 className="text-xl font-bold text-gray-800">{user.username}</h1>
+                        <h1 className="text-xl font-bold text-text-dark">{user.username}</h1>
                     )}
                     {editable ? (
                         <input
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleChange("email", e.target.value)}
-                            className="text-sm text-gray-600 border border-gray-300 rounded px-2 py-1 mt-1"
+                            className="text-sm text-text border border-border rounded px-2 py-1 mt-1"
                             placeholder="Email"
                         />
                     ) : (
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-sm text-text">{user.email}</p>
                     )}
                 </div>
             </div>
@@ -71,8 +71,8 @@ const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false,
             {/* User Details */}
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <h2 className="font-semibold text-gray-700">Account Info</h2>
-                    <ul className="text-sm text-gray-600 space-y-1">
+                    <h2 className="font-semibold text-text">Account Info</h2>
+                    <ul className="text-sm text-text space-y-1">
                         <li>
                             Enabled:{" "}
                             {editable ? (
@@ -91,7 +91,7 @@ const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false,
                                 <select
                                     value={formData.role}
                                     onChange={(e) => handleChange("role", e.target.value)}
-                                    className="border border-gray-300 rounded px-2 py-1"
+                                    className="border border-border rounded px-2 py-1"
                                 >
                                     <option value="USER">USER</option>
                                     <option value="ADMIN">ADMIN</option>
@@ -103,18 +103,18 @@ const UserDetailsDialog: React.FC<UserDetailsProps> = ({ user, editable = false,
                     </ul>
                 </div>
                 <div>
-                    <h2 className="font-semibold text-gray-700">Login Info</h2>
+                    <h2 className="font-semibold text-text">Login Info</h2>
                     {editable ? (
                         <div className="space-y-2">
                             <input
                                 type="password"
                                 placeholder="Password"
                                 onChange={(e) => handleChange("password", e.target.value)}
-                                className="border border-gray-300 rounded px-2 py-1 w-full"
+                                className="border border-border rounded px-2 py-1 w-full"
                             />
                         </div>
                     ) : (
-                        <ul className="text-sm text-gray-600 space-y-1">
+                        <ul className="text-sm text-text space-y-1">
                             <li>Last Login Time: {user.lastLoginTime || "N/A"}</li>
                             <li>Last Password Change: {user.lastPasswordChange || "N/A"}</li>
                         </ul>

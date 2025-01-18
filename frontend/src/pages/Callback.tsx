@@ -94,7 +94,7 @@ const CallbackPage = () => {
                     <p>Authenticating...</p>
                 </div>
             ) : error ? (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <div className="bg-info/10 border border-error text-error px-4 py-3 rounded">
                     <p>{error}</p>
                 </div>
             ) : null}

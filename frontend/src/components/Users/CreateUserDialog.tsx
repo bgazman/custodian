@@ -73,12 +73,12 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg w-full max-w-2xl">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-900">Create New User</h2>
+            <div className="bg-background rounded-lg w-full max-w-2xl">
+                <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-text-dark">Create New User</h2>
                     <button
                         onClick={handleReset}
-                        className="text-gray-400 hover:text-gray-500"
+                        className="text-text-light hover:text-text-muted"
                         type="button"
                     >
                         <X className="w-5 h-5" />
@@ -87,25 +87,25 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
 
                 <form onSubmit={handleSubmit} className="p-6">
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-error rounded">
                             {error}
                         </div>
                     )}
 
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-text mb-1">
                                 Full Name
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <UserCircle className="h-5 w-5 text-gray-400" />
+                                    <UserCircle className="h-5 w-5 text-text-light" />
                                 </div>
                                 <input
                                     type="text"
                                     name="name"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
                                     value={formData.name}
                                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                                     placeholder="John Doe"
@@ -114,23 +114,23 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-text mb-1">
                                 Role
                             </label>
                             <div className="relative">
                                 {rolesLoading ? (
-                                    <div className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md text-gray-500">
-                                        <div className="animate-spin h-4 w-4 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
+                                    <div className="flex items-center space-x-2 px-3 py-2 border border-border rounded-md text-text-muted">
+                                        <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
                                         <span>Loading roles...</span>
                                     </div>
                                 ) : rolesError ? (
-                                    <div className="px-3 py-2 border border-red-300 rounded-md text-red-500 bg-red-50">
+                                    <div className="px-3 py-2 border border-red-300 rounded-md text-error bg-red-50">
                                         Failed to load roles
                                     </div>
                                 ) : (
                                     <select
                                         name="role"
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="block w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
                                         onChange={handleRoleChange}
                                         value={formData.roleIds?.[0] || ''}
                                         required
@@ -147,18 +147,18 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-text mb-1">
                                 Email
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-gray-400" />
+                                    <Mail className="h-5 w-5 text-text-light" />
                                 </div>
                                 <input
                                     type="email"
                                     name="email"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
                                     value={formData.email}
                                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                                     placeholder="john@example.com"
@@ -167,18 +167,18 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-text mb-1">
                                 Password
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
+                                    <Lock className="h-5 w-5 text-text-light" />
                                 </div>
                                 <input
                                     type="password"
                                     name="password"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 />
@@ -186,17 +186,17 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-text mb-1">
                                 Phone Number
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Phone className="h-5 w-5 text-gray-400" />
+                                    <Phone className="h-5 w-5 text-text-light" />
                                 </div>
                                 <input
                                     type="tel"
                                     name="phoneNumber"
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="block w-full pl-10 pr-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-primary"
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                                     placeholder="+1234567890"
@@ -209,7 +209,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onUs
                         <button
                             onClick={handleReset}
                             type="button"
-                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            className="px-4 py-2 border border-border rounded-md text-sm font-medium text-text hover:bg-background"
                         >
                             Cancel
                         </button>

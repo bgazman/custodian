@@ -30,7 +30,7 @@ const IamDashboard = () => {
                 default:
                     return (
                         <div className="flex items-center justify-center h-64">
-                            <p className="text-gray-500">
+                            <p className="text-text">
                                 {currentSection === 'tokens' && 'Token configuration coming soon'}
                             </p>
                         </div>
@@ -52,10 +52,10 @@ const IamDashboard = () => {
     ];
 
     return (
-        <div className="relative min-h-screen bg-gray-50">
+        <div className="relative min-h-screen bg-background">
             <div className="relative pt-28">
                 {/* IAM Dashboard Navbar */}
-                <nav className="bg-white fixed top-16 left-0 w-full border-b border-gray-200 z-20">
+                <nav className="bg-background fixed top-16 left-0 w-full border-b border-border z-20">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">
@@ -68,8 +68,8 @@ const IamDashboard = () => {
                                     }}
                                     className={`inline-flex items-center px-1 pt-1 text-sm font-medium 
                                        ${currentSection === item.path
-                                        ? 'border-b-2 border-indigo-500 text-gray-900'
-                                        : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                                        ? 'border-b-2 border-primary text-text-dark'
+                                        : 'text-text-muted hover:border-primary hover:text-text'}`}
                                 >
                                     <span className="mr-2">{item.icon}</span>
                                     {item.name}
@@ -82,7 +82,7 @@ const IamDashboard = () => {
 
             <main className="mt-4">
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <div className="bg-error/10 border border-error text-error px-4 py-3 rounded mb-4">
                         <span className="block sm:inline">{error}</span>
                     </div>
                 )}

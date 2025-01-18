@@ -11,7 +11,7 @@ interface SectionHeaderProps {
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isEditing, onEdit, onSave, onCancel, loading }) => (
-    <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+    <div className="px-6 py-4 border-b border-border flex justify-between items-center">
         <h2 className="text-xl font-semibold">{title}</h2>
         <div>
             {isEditing ? (
@@ -19,8 +19,8 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isEditing, onEdit,
                     <button
                         onClick={onCancel}
                         disabled={loading}
-                        className={`inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium ${
-                            loading ? "text-gray-400 bg-gray-100" : "text-gray-700 bg-white hover:bg-gray-50"
+                        className={`inline-flex items-center px-3 py-1.5 border border-border rounded-md text-sm font-medium ${
+                            loading ? "text-text-light bg-gray-100" : "text-text bg-background hover:bg-background"
                         }`}
                     >
                         <X className="h-4 w-4 mr-1" />
@@ -40,7 +40,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isEditing, onEdit,
             ) : (
                 <button
                     onClick={onEdit}
-                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="inline-flex items-center px-3 py-1.5 border border-border rounded-md text-sm font-medium text-text bg-background hover:bg-background"
                 >
                     <Pencil className="h-4 w-4 mr-1" />
                     Edit

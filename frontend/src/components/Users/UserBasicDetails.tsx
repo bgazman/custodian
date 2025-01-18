@@ -115,7 +115,7 @@ const UserBasicDetails = ({ user: initialUser }) => {
             <ErrorDisplay error={formError || error} />
 
             {/* Basic Information Section */}
-            <div className="bg-white shadow rounded-lg">
+            <div className="bg-background shadow rounded-lg">
                 <SectionHeader
                     title="Basic Information"
                     isEditing={editingBasic}
@@ -159,7 +159,7 @@ const UserBasicDetails = ({ user: initialUser }) => {
             </div>
 
             {/* Account Status Section */}
-            <div className="bg-white shadow rounded-lg">
+            <div className="bg-background shadow rounded-lg">
                 <SectionHeader
                     title="Account Status"
                     isEditing={editingAccount}
@@ -204,7 +204,7 @@ const UserBasicDetails = ({ user: initialUser }) => {
             </div>
 
             {/* User Roles Section */}
-            <div className="bg-white shadow rounded-lg">
+            <div className="bg-background shadow rounded-lg">
                 <SectionHeader
                     title="User Roles"
                     isEditing={editingRoles}

@@ -62,12 +62,12 @@ const RoleInfoItem: React.FC<RoleInfoItemProps> = ({
     if (!isEditing) {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
                     {value.map((userRole) => (
                         <span
                             key={`${userRole.id.userId}-${userRole.id.roleId}`}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info/10 text-blue-800"
                         >
                            {userRole.role.name}
                        </span>
@@ -79,13 +79,13 @@ const RoleInfoItem: React.FC<RoleInfoItemProps> = ({
 
     return (
         <div>
-            <dt className="text-sm font-medium text-gray-500">{label}</dt>
+            <dt className="text-sm font-medium text-text-muted">{label}</dt>
             <dd className="mt-1">
                 <div className="flex flex-wrap gap-2 mb-4">
                     {value.map((userRole) => (
                         <span
                             key={`${userRole.id.userId}-${userRole.id.roleId}`}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info/10 text-blue-800"
                         >
                            {userRole.role.name}
                             <button
@@ -100,7 +100,7 @@ const RoleInfoItem: React.FC<RoleInfoItemProps> = ({
 
                 <div className="flex items-center gap-2">
                     <select
-                        className="border border-gray-300 rounded-md py-1.5 px-3 text-sm"
+                        className="border border-border rounded-md py-1.5 px-3 text-sm"
                         value={selectedRoleId}
                         onChange={(e) => handleAddRole(e.target.value)}
                     >

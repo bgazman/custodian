@@ -53,15 +53,15 @@ const Groups: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="min-w-full bg-white shadow-md rounded-lg">
-                    <thead className="bg-gray-50">
+                <table className="min-w-full bg-background shadow-md rounded-lg">
+                    <thead className="bg-background">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Group</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Description</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Parent Group</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Created At</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Actions</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -79,7 +79,7 @@ const Groups: React.FC = () => {
                                     <button
                                         onClick={() => handleDeleteClick(group)}
                                         disabled={isDeleting}
-                                        className="text-red-500 hover:underline text-sm disabled:opacity-50"
+                                        className="text-error hover:underline text-sm disabled:opacity-50"
                                     >
                                         Delete
                                     </button>
@@ -107,14 +107,14 @@ const Groups: React.FC = () => {
 
             {deleteDialogOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                    <div className="bg-background p-6 rounded-lg shadow-lg w-full max-w-md">
                         <h2 className="text-xl font-semibold mb-4">Delete Group</h2>
                         <p className="mb-6">Are you sure you want to delete {groupToDelete?.name}? This action cannot be undone.</p>
                         <div className="flex justify-end space-x-3">
                             <button
                                 onClick={() => setDeleteDialogOpen(false)}
                                 disabled={isDeleting}
-                                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+                                className="px-4 py-2 text-text bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
@@ -132,7 +132,7 @@ const Groups: React.FC = () => {
 
             {selectedGroup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                    <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+                    <div className="bg-background p-6 rounded shadow-lg w-full max-w-md">
                         <GroupDetailsDialog group={selectedGroup} />
                         <button
                             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"

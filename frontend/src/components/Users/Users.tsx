@@ -84,7 +84,7 @@ const UsersComponent = () => {
 
     if (isError) {
         return (
-            <div className="p-4 text-red-500">
+            <div className="p-4 text-error">
                 Error loading users
                 <button onClick={() => refetch()} className="ml-2 text-blue-500 hover:underline">Retry</button>
             </div>
@@ -104,16 +104,16 @@ const UsersComponent = () => {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="min-w-full bg-white shadow-md rounded-lg">
-                    <thead className="bg-gray-50">
+                <table className="min-w-full bg-background shadow-md rounded-lg">
+                    <thead className="bg-background">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roles</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enabled</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Roles</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Enabled</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Created At</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase">Actions</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -127,7 +127,7 @@ const UsersComponent = () => {
                                     {user.roleNames?.map((role) => (
                                         <span
                                             key={role}
-                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-info/10 text-blue-800"
                                         >
                                                {role}
                                            </span>
@@ -139,7 +139,7 @@ const UsersComponent = () => {
                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                            user.enabled
                                                ? "bg-green-100 text-green-800"
-                                               : "bg-red-100 text-red-800"
+                                               : "bg-info/10 text-red-800"
                                        }`}
                                    >
                                        {user.enabled ? "Yes" : "No"}
@@ -155,7 +155,7 @@ const UsersComponent = () => {
                                         disabled={isUpdating}
                                         className={`text-sm ${
                                             user.enabled
-                                                ? "text-red-500 hover:underline"
+                                                ? "text-error hover:underline"
                                                 : "text-green-500 hover:underline"
                                         }`}
                                     >
@@ -164,7 +164,7 @@ const UsersComponent = () => {
                                     <button
                                         onClick={() => handleDeleteClick(user)}
                                         disabled={isDeleting}
-                                        className="text-red-500 hover:underline text-sm"
+                                        className="text-error hover:underline text-sm"
                                     >
                                         Delete
                                     </button>
@@ -201,7 +201,7 @@ const UsersComponent = () => {
             />
             {selectedUser && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                    <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+                    <div className="bg-background p-6 rounded shadow-lg w-full max-w-md">
                         <UserDetailsDialog user={selectedUser}/>
                         <button
                             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"

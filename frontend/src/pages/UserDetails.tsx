@@ -38,8 +38,8 @@ const UserDetailsPage: React.FC = () => {
 
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-200">
+        <div className="min-h-screen bg-background">
+            <nav className="bg-background border-b border-border">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">
@@ -49,8 +49,8 @@ const UserDetailsPage: React.FC = () => {
                                     onClick={() => setCurrentSection(item.path)}
                                     className={`inline-flex items-center px-1 pt-1 text-sm font-medium 
                                         ${currentSection === item.path
-                                        ? 'border-b-2 border-indigo-500 text-gray-900'
-                                        : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                                        ? 'border-b-2 border-primary text-text-dark'
+                                        : 'text-text-muted hover:border-border hover:text-text'}`}
                                 >
                                     <span className="mr-2">{item.icon}</span>
                                     {item.name}
@@ -72,8 +72,8 @@ const UserDetailsPage: React.FC = () => {
 
 const InfoItem = ({ label, value }: { label: string; value: string }) => (
     <div>
-        <dt className="text-sm font-medium text-gray-500">{label}</dt>
-        <dd className="mt-1 text-sm text-gray-900">{value}</dd>
+        <dt className="text-sm font-medium text-text-muted">{label}</dt>
+        <dd className="mt-1 text-sm text-text-dark">{value}</dd>
     </div>
 );
 

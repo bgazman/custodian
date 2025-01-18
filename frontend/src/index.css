@@ -1,3 +1,88 @@
+/* Theme 1: Modern Forest */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    /* System States */
+    --error-color: #DC2626;          /* Red */
+    --success-color: #059669;        /* Green */
+    --info-color: #2563EB;           /* Blue */
+    --border-color: #E5E7EB;         /* Light Grey */
+    --primary-color: #2D5A27;        /* Forest Green */
+    --secondary-color: #1B4332;      /* Deep Forest */
+    --accent-color: #95D5B2;         /* Sage */
+    --background-color: #F8FAF8;     /* Off White */
+    --text-color: #2C3E2D;           /* Dark Green-Grey */
+    --font-family: 'Inter', sans-serif;
+    --font-size-base: 16px;
+    --line-height-base: 1.6;
+    --space-md: 16px;
+}
+
+[data-theme='dark'] {
+    --primary-color: #40916C;        /* Muted Green */
+    --secondary-color: #1B4332;      /* Deep Forest */
+    --accent-color: #95D5B2;         /* Sage */
+    --background-color: #1A271F;     /* Dark Forest */
+    --text-color: #E9F5E9;           /* Light Sage */
+}
+
+/* Theme 2: Ocean Depths */
+[data-theme='ocean'] {
+    --primary-color: #003459;        /* Deep Blue */
+    --secondary-color: #00171F;      /* Navy */
+    --accent-color: #007EA7;         /* Ocean Blue */
+    --background-color: #F8F9FA;     /* Light Grey */
+    --text-color: #00171F;           /* Navy */
+}
+
+[data-theme='ocean-dark'] {
+    --primary-color: #007EA7;        /* Ocean Blue */
+    --secondary-color: #003459;      /* Deep Blue */
+    --accent-color: #00A8E8;         /* Bright Blue */
+    --background-color: #00171F;     /* Navy */
+    --text-color: #E6F3F8;           /* Light Blue-Grey */
+}
+
+/* Theme 4: Modern Serif */
+[data-theme='serif'] {
+    --primary-color: #2B4162;        /* Navy Blue */
+    --secondary-color: #385F71;      /* Steel Blue */
+    --accent-color: #F5853F;         /* Coral */
+    --background-color: #FAFAFA;     /* Off White */
+    --text-color: #293241;           /* Dark Blue */
+    --font-family: 'Playfair Display', serif;
+    --heading-font: 'Cormorant Garamond', serif;
+    --body-font: 'Source Serif Pro', serif;
+    --font-size-base: 18px;
+    --line-height-base: 1.7;
+}
+
+[data-theme='serif-dark'] {
+    --primary-color: #385F71;        /* Steel Blue */
+    --secondary-color: #2B4162;      /* Navy Blue */
+    --accent-color: #F5853F;         /* Coral */
+    --background-color: #1D252D;     /* Dark Blue-Grey */
+    --text-color: #F5F5F5;           /* White */
+    --font-family: 'Playfair Display', serif;
+    --heading-font: 'Cormorant Garamond', serif;
+    --body-font: 'Source Serif Pro', serif;
+}
+
+/* Theme 3: Warm Stone */
+[data-theme='stone'] {
+    --primary-color: #8B7355;        /* Warm Brown */
+    --secondary-color: #6E5C45;      /* Deep Brown */
+    --accent-color: #C4B5A2;         /* Light Taupe */
+    --background-color: #FAF9F7;     /* Cream */
+    --text-color: #3E3629;           /* Dark Brown */
+}
+
+[data-theme='stone-dark'] {
+    --primary-color: #A69178;        /* Light Brown */
+    --secondary-color: #8B7355;      /* Warm Brown */
+    --accent-color: #C4B5A2;         /* Light Taupe */
+    --background-color: #2A241D;     /* Deep Brown */
+    --text-color: #F5F0EA;           /* Off White */
+}

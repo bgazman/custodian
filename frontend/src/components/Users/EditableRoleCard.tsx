@@ -63,12 +63,12 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
     if (!isEditing) {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
                     {roles.map((role) => (
                         <span
                             key={role.id}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info/10 text-blue-800"
                         >
                             {role.name}
                         </span>
@@ -80,10 +80,10 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
 
     return (
         <div>
-            <dt className="text-sm font-medium text-gray-500">{label}</dt>
+            <dt className="text-sm font-medium text-text-muted">{label}</dt>
             <dd className="mt-1">
                 {error && (
-                    <div className="mb-4 text-red-600 bg-red-100 border border-red-400 p-2 rounded">
+                    <div className="mb-4 text-error bg-info/10 border border-error p-2 rounded">
                         {error}
                     </div>
                 )}
@@ -91,7 +91,7 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
                     {roles.map((role) => (
                         <span
                             key={role.id}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info/10 text-blue-800"
                         >
                             {role.name}
                             <button
@@ -109,7 +109,7 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
                         value={selectedRoleId}
                         onChange={(e) => setSelectedRoleId(e.target.value)}
                         disabled={rolesLoading || saving}
-                        className="border border-gray-300 rounded-md py-1.5 px-3 text-sm"
+                        className="border border-border rounded-md py-1.5 px-3 text-sm"
                     >
                         <option value="">Select a role</option>
                         {availableRoles.map((role) => (
@@ -123,8 +123,8 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
                         disabled={rolesLoading || saving}
                         className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${
                             rolesLoading || saving
-                                ? "border-gray-300 text-gray-400"
-                                : "border-dashed border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-600"
+                                ? "border-border text-text-light"
+                                : "border-dashed border-border text-text-muted hover:border-gray-400 hover:text-text"
                         }`}
                     >
                         <Plus className="h-4 w-4 mr-1" />
@@ -132,10 +132,10 @@ const EditableRolesCard: React.FC<EditableRolesCardProps> = ({
                     </button>
                 </div>
                 {rolesLoading && (
-                    <div className="mt-2 text-gray-500">Loading available roles...</div>
+                    <div className="mt-2 text-text-muted">Loading available roles...</div>
                 )}
                 {rolesError && (
-                    <div className="mt-2 text-red-600">Failed to load roles: {rolesError}</div>
+                    <div className="mt-2 text-error">Failed to load roles: {rolesError}</div>
                 )}
             </dd>
         </div>

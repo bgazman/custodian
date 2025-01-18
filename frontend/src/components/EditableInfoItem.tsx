@@ -28,7 +28,7 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
     if (type === "radio") {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
                 <div className="mt-1 flex gap-4">
                     {radioOptions.map((option) => (
                         <label key={option.id} className="inline-flex items-center">
@@ -40,7 +40,7 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
                                 disabled={!isEditing || disabled}
                                 className="form-radio"
                             />
-                            <span className={`ml-2 ${!isEditing ? "text-gray-400" : ""}`}>
+                            <span className={`ml-2 ${!isEditing ? "text-text-light" : ""}`}>
                                 {option.label}
                             </span>
                         </label>
@@ -53,7 +53,7 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
     if (type === "checkbox") {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
                 <input
                     type="checkbox"
                     checked={value as boolean}
@@ -68,7 +68,7 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
     if (type === "dropdown") {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
                 <select
                     multiple={multiple} // Enable multi-select if the `multiple` prop is true
                     value={
@@ -88,7 +88,7 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
                         }
                     }}
                     disabled={!isEditing || disabled}
-                    className="mt-1 block w-full rounded-md border border-gray-300 py-1.5 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border border-border py-1.5 px-3 text-text-dark shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                     {!multiple && <option value="">None</option>} {/* Single-select default */}
                     {dropdownOptions.map((option) => (
@@ -105,18 +105,18 @@ const EditableInfoItem: React.FC<EditableInfoItemProps> = ({
     if (!editable || !isEditing) {
         return (
             <div>
-                <dt className="text-sm font-medium text-gray-500">{label}</dt>
-                <dd className="mt-1 text-sm text-gray-900">{value || "Not Set"}</dd>
+                <dt className="text-sm font-medium text-text-muted">{label}</dt>
+                <dd className="mt-1 text-sm text-text-dark">{value || "Not Set"}</dd>
             </div>
         );
     }
 
     return (
         <div>
-            <dt className="text-sm font-medium text-gray-500">{label}</dt>
+            <dt className="text-sm font-medium text-text-muted">{label}</dt>
             <input
                 type={type === "number" ? "number" : "text"}
-                className="mt-1 block w-full rounded-md border border-gray-300 py-1.5 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-border py-1.5 px-3 text-text-dark shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={value as string | number}
                 onChange={(e) => {
                     const val = type === "number" ? +e.target.value : e.target.value;
