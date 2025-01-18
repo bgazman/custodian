@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS groups (
 CREATE TABLE IF NOT EXISTS group_memberships (
     user_id BIGINT NOT NULL,
     group_id BIGINT NOT NULL,
+    group_role VARCHAR(50) NOT NULL DEFAULT 'MEMBER',
     PRIMARY KEY (user_id, group_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE

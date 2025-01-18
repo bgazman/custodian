@@ -52,8 +52,10 @@ const IamDashboard = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-200">
+        <div className="relative min-h-screen bg-gray-50">
+            <div className="relative pt-16">
+                {/* Dashboard Navbar */}
+                <nav className="bg-white fixed top-16 left-0 w-full border-b border-gray-200 z-50">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">
@@ -78,7 +80,7 @@ const IamDashboard = () => {
                 </div>
             </nav>
 
-            <main className="p-6">
+            <main className="mt-4">
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                         <span className="block sm:inline">{error}</span>
@@ -87,7 +89,8 @@ const IamDashboard = () => {
                 {renderContent()}
             </main>
         </div>
-    );
+</div>
+);
 };
 
 export default IamDashboard;

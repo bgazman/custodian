@@ -1,5 +1,6 @@
 package consulting.gazman.security.common.config;
 
+import consulting.gazman.security.client.constants.GroupRole;
 import consulting.gazman.security.client.user.entity.*;
 import consulting.gazman.security.client.user.repository.*;
 import consulting.gazman.security.client.user.service.*;
@@ -262,6 +263,7 @@ public class InitializationClass implements CommandLineRunner {
         GroupMembership membership = new GroupMembership();
         membership.setUser(user);
         membership.setGroup(group);
+        membership.setGroupRole(GroupRole.ADMIN); // Set the role
         groupMembershipService.save(membership);
     }
 

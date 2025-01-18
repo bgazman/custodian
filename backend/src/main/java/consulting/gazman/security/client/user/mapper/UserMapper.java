@@ -82,7 +82,7 @@ public interface UserMapper {
             return Collections.emptySet();
         }
         return groupMemberships.stream()
-                .map(groupMembership -> new GroupDTO(groupMembership.getGroup().getId(), groupMembership.getGroup().getName(),groupMembership.getGroup().getDescription()))
+                .map(groupMembership -> new GroupDTO(groupMembership.getGroup().getId(), groupMembership.getGroup().getName(),groupMembership.getGroup().getDescription(),groupMembership.getGroupRole()))
                 .collect(Collectors.toSet());
     }
 
@@ -144,7 +144,7 @@ public interface UserMapper {
         Set<GroupDTO> groupDTOs = groupMemberships.stream()
                 .map(groupMembership -> {
                     Group group = groupMembership.getGroup();
-                    return new GroupDTO(group.getId(), group.getName(), group.getDescription());
+                    return new GroupDTO(group.getId(), group.getName(), group.getDescription(),groupMembership.getGroupRole());
 
                 })
                 .collect(Collectors.toSet());
