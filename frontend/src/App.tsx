@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
+import MainDashboard from "./pages/MainDashboard";
 import {LandingRoute} from "./components/LandingRoute";
-import Navbar from "./components/Navbar";
+import MainNavbar from "./components/MainNavbar";
 import AdminPage from './pages/Admin';
 import IamDashboard from "./pages/IamDashboard";
 import Callback from "./pages/Callback";
@@ -13,10 +13,10 @@ import UserDetailsPage from "./pages/UserDetails";
 
 const AppLayout = () => (
     <div className="min-h-screen bg-gray-100">
-        <Navbar />
+        <MainNavbar />
         <main className="pt-16 h-full">
             <Routes>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<MainDashboard />} />
                 <Route path="/iam-dashboard" element={<IamDashboard />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/users/:id" element={<UserDetailsPage />} />

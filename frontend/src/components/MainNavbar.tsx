@@ -1,44 +1,36 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
-import { useAuthentication } from '../context/AuthenticationContext'; // Ensure the correct path
+import { useAuthentication } from '../context/AuthenticationContext';
 
-const Navbar = () => {
+const MainNavbar = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { logout } = useAuthentication(); // Get logout from AuthenticationContext
+    const { logout } = useAuthentication();
     const navigate = useNavigate();
     const isAdmin = true;
 
     const handleLogout = () => {
-        logout(); // Use the context's logout method
-        // Use a small delay to ensure state updates before navigation
+        logout();
         setTimeout(() => navigate('/', { replace: true }), 100);
     };
 
-
-    const commonLinks = [
-        // { path: "/dashboard", label: "Dashboard" },
-    ];
-
-    const adminLinks = [
-        // { path: "/admin", label: "Admin Settings" },
-        { path: '/iam-dashboard', label: 'IAM Dashboard' },
-    ];
-
+    const commonLinks = [];
+    const adminLinks = [{ path: '/iam-dashboard', label: 'IAM Dashboard' }];
     const links = isAdmin ? [...commonLinks, ...adminLinks] : commonLinks;
 
     return (
         <>
+            {/* Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                    className="fixed inset-0 bg-black/50 z-40"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
             {/* Sidebar */}
-            <div
-                className={`fixed top-0 left-0 h-full w-64 bg-gray-800 transform transition-transform z-50 ${
+            <aside
+                className={`fixed top-0 left-0 h-full w-64 bg-gray-800 transform transition-transform duration-300 ease-in-out z-50 ${
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
@@ -49,29 +41,29 @@ const Navbar = () => {
                     >
                         <X className="h-6 w-6" />
                     </button>
-                    <div className="mt-4 space-y-2">
+                    <nav className="mt-4 space-y-2">
                         {links.map((link) => (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className="text-gray-300 hover:text-white block px-3 py-2"
+                                className="text-gray-300 hover:text-white block px-3 py-2 rounded-md hover:bg-gray-700"
                                 onClick={() => setIsOpen(false)}
                             >
                                 {link.label}
                             </Link>
                         ))}
-                    </div>
+                    </nav>
                 </div>
-            </div>
+            </aside>
 
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 h-16 bg-gray-800 shadow z-50">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex items-center justify-between h-16">
+            <header className="fixed top-0 left-0 right-0 h-16 bg-gray-800 shadow z-30">
+                <div className="px-4 h-full">
+                    <div className="flex items-center justify-between h-full">
                         <div className="flex items-center">
                             <button
                                 onClick={() => setIsOpen(!isOpen)}
-                                className="text-gray-400 hover:text-white"
+                                className="text-gray-400 hover:text-white p-2 rounded-md hover:bg-gray-700"
                             >
                                 <Menu className="h-6 w-6" />
                             </button>
@@ -79,28 +71,28 @@ const Navbar = () => {
                                 to="/dashboard"
                                 className="text-white text-xl font-bold ml-4"
                             >
-                                 Custodian
+                                Custodian
                             </Link>
                         </div>
                         <div className="flex items-center space-x-4">
-                            <button className="text-gray-400 hover:text-white">
+                            <button className="text-gray-400 hover:text-white p-2 rounded-md hover:bg-gray-700">
                                 <Bell className="h-6 w-6" />
                             </button>
-                            <button className="text-gray-400 hover:text-white">
+                            <button className="text-gray-400 hover:text-white p-2 rounded-md hover:bg-gray-700">
                                 <User className="h-6 w-6" />
                             </button>
                             <button
                                 onClick={handleLogout}
-                                className="text-gray-400 hover:text-white"
+                                className="text-gray-400 hover:text-white p-2 rounded-md hover:bg-gray-700"
                             >
                                 <LogOut className="h-6 w-6" />
                             </button>
                         </div>
                     </div>
                 </div>
-            </nav>
+            </header>
         </>
     );
 };
 
-export default Navbar;
+export default MainNavbar;

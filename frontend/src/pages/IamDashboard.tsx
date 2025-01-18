@@ -53,9 +53,9 @@ const IamDashboard = () => {
 
     return (
         <div className="relative min-h-screen bg-gray-50">
-            <div className="relative pt-16">
-                {/* Dashboard Navbar */}
-                <nav className="bg-white fixed top-16 left-0 w-full border-b border-gray-200 z-50">
+            <div className="relative pt-28">
+                {/* IAM Dashboard Navbar */}
+                <nav className="bg-white fixed top-16 left-0 w-full border-b border-gray-200 z-20">
                 <div className="px-4">
                     <div className="flex h-16 items-center justify-between">
                         <div className="flex space-x-8">

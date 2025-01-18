@@ -3,7 +3,7 @@ import { Loader } from "lucide-react";
 import { getAllUsers } from "../api/generated/user-controller/user-controller";
 import { useQuery } from '@tanstack/react-query';
 
-const Dashboard: React.FC = () => {
+const MainDashboard: React.FC = () => {
     const { data: users, isLoading, error, refetch } = useQuery({
         queryKey: ['users'],
         queryFn: async () => {
@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 pt-20"> {/* Adjusted padding */}
             <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
@@ -65,4 +65,4 @@ const Dashboard: React.FC = () => {
     );
 };
 
-export default Dashboard;
+export default MainDashboard;
