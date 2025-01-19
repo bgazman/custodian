@@ -1,4 +1,3 @@
-import {NavItem} from "./navigation";
 import React from "react";
 
 export interface HeaderProps {
@@ -6,8 +5,6 @@ export interface HeaderProps {
     showSearch?: boolean;
     onSearchChange?: (value: string) => void;
     rightContent?: React.ReactNode;
-    collapsed?: boolean;
-    onCollapse?: () => void;
+    onToggle: () => void;
     className?: string;
-    position?: 'left' | 'right'; // New prop to indicate layout position
 }

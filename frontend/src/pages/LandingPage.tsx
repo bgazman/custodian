@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { buildAuthUrl } from "../utils/AuthUtils.ts";
 import { useState } from "react";
-import { useAuthentication } from '../context/AuthenticationContext';
+import { useAuthentication } from '../components/Main/context/AuthenticationContext';
 
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;

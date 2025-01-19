@@ -21,7 +21,7 @@ public class GroupMembership {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @NonNull  // Add this
+        @NonNull  // Add this
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("groupId")
     @JoinColumn(name = "group_id", nullable = false)

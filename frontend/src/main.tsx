@@ -8,8 +8,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 
 
-import { ThemeProvider } from './context/ThemeContext'
-import {LayoutProvider} from "./context/LayoutContext";
+import { ThemeProvider } from './components/Main/context/ThemeContext'
+import {LayoutProvider} from "./components/Main/context/LayoutContext";
 const queryClient = new QueryClient()
 
 // Add theme management

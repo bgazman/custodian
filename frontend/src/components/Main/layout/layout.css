@@ -1,0 +1,32 @@
+/* Static Component Assignments */
+.navigation {
+    grid-area: navigation;
+}
+
+.header {
+    grid-area: header;
+}
+
+.main {
+    grid-area: main;
+}
+
+/* Sidebar-Left Layout */
+[data-layout="sidebar-left"] {
+    display: grid;
+    grid-template-areas:
+        "navigation header"
+        "navigation main";
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: 60px 1fr;
+}
+
+/* Sidebar-Right Layout */
+[data-layout="sidebar-right"] {
+    display: grid;
+    grid-template-areas:
+        "header navigation"
+        "main navigation";
+    grid-template-columns: 1fr 250px;
+    grid-template-rows: 60px 1fr;
+}

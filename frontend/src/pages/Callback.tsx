@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthApiClient } from '../api/common/AuthApiClients';
-import { useAuthentication } from '../context/AuthenticationContext';
+import { useAuthentication } from '../components/Main/context/AuthenticationContext';
 
 const CallbackPage = () => {
     const navigate = useNavigate();

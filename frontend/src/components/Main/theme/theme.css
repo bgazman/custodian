@@ -1,0 +1,84 @@
+
+:root {
+    /* Layout measurements */
+    --header-height: 64px;
+    --navigation-width: 250px;
+    --content-max-width: 1200px;
+    --content-padding: 2rem;
+
+    /* Spacing scale */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+
+    /* Z-index stack */
+    --z-navigation: 50;
+    --z-modal: 100;
+    --z-popup: 150;
+    --z-tooltip: 200;
+
+    /* Base typography */
+    --font-size-base: 16px;
+    --line-height-base: 1.5;
+
+    --transition-duration: 200ms;  /* Standard duration for most transitions */
+    --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);  /* Smooth easing */
+}
+
+/* Theme: Modern Minimal */
+[data-theme='minimal'] {
+    /* Colors */
+    --primary-color: #3B82F6;
+    --primary-light: #60A5FA;
+    --primary-dark: #1E40AF;
+
+    --secondary-color: #1E40AF;
+    --secondary-light: #3B82F6;
+    --secondary-dark: #1E3A8A;
+
+    --accent-color: #60A5FA;
+    --accent-light: #93C5FD;
+    --accent-dark: #2563EB;
+
+    /* Backgrounds */
+    --background-color: #F3F4F6;
+    --background-alt: #E5E7EB;
+    --background-hover: #D1D5DB;
+
+    /* Surface colors */
+    --surface-color: #E2E8F0;
+    --surface-hover: #CBD5E1;
+
+    /* Text colors */
+    --text-color: #1F2937;
+    --text-muted: #64748B;
+    --text-light: #9CA3AF;
+    --text-dark: #111827;
+    --text-inverse: #F9FAFB;
+
+    /* Other */
+    --border-color: #94A3B8;
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+[data-theme='minimal-dark'] {
+    --primary-color: #60A5FA;
+    --secondary-color: #3B82F6;
+    --accent-color: #93C5FD;
+    --background-color: #111827;
+    --text-color: #F3F4F6;
+    --navigation-bg-color: #1F2937;  /* Slightly lighter than background for contrast */
+
+    /* Additional colors for better visibility */
+    --surface-color: #1E293B;  /* For cards and elevated surfaces */
+    --hover-color: #334155;    /* For hover states */
+    --border-color: #475569;   /* More visible borders */
+    --muted-text: #94A3B8;     /* For secondary text */
+}

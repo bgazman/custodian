@@ -1,0 +1,29 @@
+// src/contexts/LayoutContext.tsx
+import React, {createContext, useContext, useState, useEffect, useCallback} from 'react';
+
+
+
+const LayoutContext = createContext(undefined);
+
+export const useLayout = () => {
+    const context = useContext(LayoutContext);
+    if (!context) throw new Error('useLayout must be used within LayoutProvider');
+    return context;
+};
+
+export const LayoutProvider = ({ children }) => {
+    const [layout, setLayout] = useState('sidebar-left');
+    const [isOpen, setIsOpen] = useState(false);
+
+    const onToggle = useCallback(() => {
+        setIsOpen(prev => !prev);
+    }, []);
+
+    return (
+        <LayoutContext.Provider value={{ layout, isOpen, setLayout, onToggle }}>
+            {children}
+        </LayoutContext.Provider>
+    );
+};
+
+
