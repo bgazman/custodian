@@ -1,8 +1,6 @@
 [data-layout="sidebar-left"] .main {
-    grid-area: main;
     background-color: var(--background-color);
-    min-height: 0;  /* Allows content to scroll properly within grid */
-    overflow-y: auto;
-    padding: var(--content-padding);
+    /*min-height: 0;  !* Allows content to scroll properly within grid *!*/
+    /*overflow-y: auto;*/
 }
 

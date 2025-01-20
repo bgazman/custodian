@@ -14,10 +14,8 @@ const queryClient = new QueryClient()
 
 // Add theme management
 const getInitialTheme = () => {
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark'
-    }
-    return 'light'
+
+    return 'minimal'
 }
 
 document.documentElement.dataset.theme = getInitialTheme()

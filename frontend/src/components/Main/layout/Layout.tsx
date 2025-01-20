@@ -1,6 +1,6 @@
 import {ReactNode} from 'react';
 import {useLayout} from "../context/LayoutContext";
-import {LayoutProps} from './layout';
+import {LayoutProps} from './layout.types';
 
 const Layout = ({children, className = '', data}: LayoutProps) => {
     const {layout} = useLayout();

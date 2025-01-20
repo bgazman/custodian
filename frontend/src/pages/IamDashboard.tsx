@@ -92,22 +92,5 @@ const IamDashboard = () => {
 </div>
 );
 };
-// const IamDashboard = () => {
-//     return (
-//         <div className="p-6">
-//             <h1 className="text-2xl font-bold mb-4">IAM Dashboard</h1>
-//             <div className="grid grid-cols-2 gap-4">
-//                 <div className="bg-white p-4 rounded shadow">
-//                     <h2 className="text-lg font-semibold mb-2">Active Users</h2>
-//                     <p>Total active users: 1,234</p>
-//                 </div>
-//                 <div className="bg-white p-4 rounded shadow">
-//                     <h2 className="text-lg font-semibold mb-2">Permissions</h2>
-//                     <p>Active roles: 15</p>
-//                     <p>Custom policies: 25</p>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
+
 export default IamDashboard;

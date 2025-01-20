@@ -1,4 +1,4 @@
-import {IconComponent, LayoutType} from "../layout/layout";
+import {IconComponent} from "../layout/layout.types";
 
 export interface NavigationProps {
     // Core props

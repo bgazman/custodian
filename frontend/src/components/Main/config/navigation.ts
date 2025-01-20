@@ -4,7 +4,7 @@ import {
     Users,
     UserCog
 } from 'lucide-react';
-import {NavigationItem} from "../navigation/navigation";
+import {NavigationItem} from "../navigation/navigation.types";
 
 export const navigationItems: NavigationItem[] = [
     {
@@ -12,20 +12,11 @@ export const navigationItems: NavigationItem[] = [
         label: 'Dashboard',
         path: '/dashboard'
     },
-    {
-        icon: ShieldCheck,
-        label: 'IAM Dashboard',
-        path: '/iam-dashboard'
-    },
+
     {
         icon: UserCog,
         label: 'Admin',
         path: '/admin'
-    },
-    {
-        icon: Users,
-        label: 'User Details',
-        path: '/users/:id'
     }
 ];
 

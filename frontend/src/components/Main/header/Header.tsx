@@ -1,22 +1,26 @@
 import React, {useState} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {HeaderProps} from './header';
-import SearchBar from "./components/Searchbar";
-import {LogOut, Menu, User, X} from "lucide-react";
-import {useLayout} from "../context/LayoutContext";
+import {LogOut} from "lucide-react";
+import UserMenu from "./components/UserMenu";
+import LayoutSwitcher from "../layout/components/layout-switcher/LayoutSwitcher";
+import ThemeSwitcher from "../theme/components/theme-switcher/ThemeSwitcher";
 
+
+interface HeaderProps {
+    logoText
+}
+
+interface HeaderProps {
+    logoText?: string
+}
 
 const Header: React.FC<HeaderProps> = ({
-                                           className = '',
-                                           logoText = 'Logo',
-                                           showSearch = false,
-                                           rightContent,
-                                           onSearchChange
+                                           logoText,
                                        }) => {
 
     return (
-        <header className={`header ${className}`}>
+        <header className={`header`}>
             <div className="px-4 h-full flex items-center justify-between">
                 {/* Left Side */}
                 <div className="flex items-center">
@@ -26,13 +30,12 @@ const Header: React.FC<HeaderProps> = ({
                     </Link>
                 </div>
 
-                {/* Right Side */}
                 <div className="flex items-center space-x-4">
-                    {showSearch && <SearchBar onChange={onSearchChange}/>}
-                    {rightContent}
+                    <UserMenu username="John Doe" email="john.doe@example.com"/>
+                    <LayoutSwitcher/>
+                    <ThemeSwitcher/>
                     <button
                         onClick={() => {
-                            console.log('Logout clicked');
                         }}
                         className="text-text hover:bg-secondary p-2 rounded-md"
                     >

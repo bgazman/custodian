@@ -1,30 +1,23 @@
-
 :root {
-    /* Layout measurements */
-    --header-height: 64px;
-    --navigation-width: 250px;
-    --content-max-width: 1200px;
-    --content-padding: 2rem;
+    /* Colors */
+    --primary-color: #007bff; /* Example: Blue */
+    --secondary-color: #6c757d; /* Example: Gray */
+    --light-color: #f8f9fa; /* Example: Light Gray */
 
-    /* Spacing scale */
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-
-    /* Z-index stack */
-    --z-navigation: 50;
-    --z-modal: 100;
-    --z-popup: 150;
-    --z-tooltip: 200;
-
-    /* Base typography */
+    /* Typography */
+    --font-family: sans-serif;
     --font-size-base: 16px;
     --line-height-base: 1.5;
 
-    --transition-duration: 200ms;  /* Standard duration for most transitions */
-    --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);  /* Smooth easing */
+    /* Spacing */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 2rem;
+    --space-lg: 4rem;
+
+    /* Z-index */
+    --z-index-base: 0;
+    --z-index-overlay: 100;
 }
 
 /* Theme: Modern Minimal */
@@ -67,6 +60,14 @@
     --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --mono-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+[data-theme='default'] {
+    --primary-color: red;
+    --secondary-color: yellow;
+    --accent-color: #93C5FD;
+    --background-color: #111827;
+    --text-color: purple;
+    --navigation-bg-color: orange;
+}
 
 [data-theme='minimal-dark'] {
     --primary-color: #60A5FA;
@@ -81,4 +82,51 @@
     --hover-color: #334155;    /* For hover states */
     --border-color: #475569;   /* More visible borders */
     --muted-text: #94A3B8;     /* For secondary text */
+}
+
+/* Theme: Amazon-like */
+[data-theme='amazon'] {
+    /* Colors */
+    --primary-color: #232F3E; /* Darker gray for a more subdued look */
+    --secondary-color: #131921; /* Even darker gray for accents */
+    --accent-color: #FFC300; /* Amazon's signature yellow */
+    --accent-light: #FFD700;
+    --accent-dark: #E69A00;
+
+    /* Backgrounds */
+    --background-color: #FFFFFF; /* White background for a clean look */
+    --background-alt: #F0F2F5; /* Slightly off-white for subtle variations */
+    --background-hover: #E9ECEF;
+
+    /* Surface colors */
+    --surface-color: #FFFFFF; /* White for most elements */
+    --surface-hover: #F0F2F5; /* Subtle hover effect */
+
+    /* Text colors */
+    --text-color: #131921; /* Dark gray for main text */
+    --text-muted: #637381; /* Lighter gray for secondary text */
+    --text-light: #9099A2;
+    --text-dark: #000000;
+    --text-inverse: #FFFFFF;
+
+    /* Other */
+    --border-color: #D0D5DB; /* Light gray border for separation */
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+[data-theme='amazon-dark'] {
+    --primary-color: #131921;
+    --secondary-color: #0C1014;
+    --accent-color: #FFC300; /* Maintain yellow accent */
+    --background-color: #131921;
+    --text-color: #FFFFFF;
+    --surface-color: #1E293B;
+    --surface-hover: #232F3E;
+    --border-color: #303945;
+    --text-muted: #808991;
 }

@@ -1,1 +1,1 @@
-export type Theme = 'minimal' | 'minimal-dark';
+export type Theme = 'default'|'minimal' | 'minimal-dark'|'amazon'|'amazon-dark';

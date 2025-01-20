@@ -1,7 +1,4 @@
 [data-layout="sidebar-left"] .header {
-    grid-area: header;
-    /*background-color: var(--primary-color);*/
     background-color: var(--background-color);;
-    height: var(--header-height);
 }
 

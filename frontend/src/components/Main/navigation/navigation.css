@@ -1,7 +1,5 @@
 /*/* Debug styles for navigation */
 [data-layout="sidebar-left"] .navigation {
-    grid-area: navigation;
     display: flex;
     flex-direction: column;
-    background-color: yellow;
 }
