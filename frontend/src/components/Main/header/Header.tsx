@@ -35,9 +35,7 @@ const Header: React.FC<HeaderProps> = ({
                     <LayoutSwitcher/>
                     <ThemeSwitcher/>
                     <button
-                        onClick={() => {
-                        }}
-                        className="text-text hover:bg-secondary p-2 rounded-md"
+
                     >
                         <LogOut className="h-6 w-6"/>
                     </button>
