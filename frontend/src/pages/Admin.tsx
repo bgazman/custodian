@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader } from 'lucide-react';
+import {Loader, Loader2, PlusIcon} from 'lucide-react';
+import {Button} from "../components/ui/button/Button";
+import InputShowcase from "../components/ui/input/InputShowcase";
+import ButtonShowcase from "../components/ui/button/ButtonShowcase";
+import CardShowcase from "../components/ui/card/CardShowcase";
 
 const AdminPage = () => {
     // const isAdmin = localStorage.getItem('role') === 'ADMIN';
@@ -9,9 +13,10 @@ const AdminPage = () => {
 
 
     return (
-        <div className="p-6">
-            <h1>Content</h1>
-
+        <div className="space-y-4">
+            <ButtonShowcase/>
+            <InputShowcase/>
+            <CardShowcase/>
         </div>
     );
 };
