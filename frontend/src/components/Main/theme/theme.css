@@ -3,6 +3,23 @@
     --primary-color: #007bff; /* Example: Blue */
     --secondary-color: #6c757d; /* Example: Gray */
     --light-color: #f8f9fa; /* Example: Light Gray */
+    --header-height: 60px;
+    --header-bg: #007bff;
+    --header-text-color: white;
+    --logo-color: white;
+    --logo-hover-color: #d4d4d4;
+    --nav-link-color: white;
+    --nav-link-hover-bg: rgba(255, 255, 255, 0.15);
+    --nav-link-hover-color: #f0f0f0;
+    --dropdown-bg: white;
+    --dropdown-text: #333;
+    --dropdown-link: #333;
+    --dropdown-link-hover: #007bff;
+    --dropdown-hover-bg: #f4f4f4;
+    --space-lg: 24px;
+    --space-md: 16px;
+    --space-sm: 8px;
+    --header-border-color: #e0e0e0;
 
     /* Typography */
     --font-family: sans-serif;
@@ -11,9 +28,6 @@
 
     /* Spacing */
     --space-xs: 0.5rem;
-    --space-sm: 1rem;
-    --space-md: 2rem;
-    --space-lg: 4rem;
 
     /* Z-index */
     --z-index-base: 0;
@@ -81,9 +95,17 @@
     --z-index-dropdown: 1000;
     --z-index-modal: 1050;
     --z-index-tooltip: 1100;
+    --border-radius: 8px;
+    --hover-background-color: #e6f4ff;
+    --hover-text-color: #0078d4;
+    --icon-color: #999;
+    --font-weight-medium: 500;
+    --active-background-color: #0078d4;
+    --active-icon-color: #ffffff;
+    --active-text-color: #ffffff;
+    --disabled-text-color:orange;
+    --aside-background-color:orange;
 
-    /*--z-index-base: 0;*/
-    /*--z-index-overlay: 100;*/
 }
 html, body {
     margin: 0;
@@ -130,7 +152,6 @@ html, body {
     --content-padding: 24px;
     --space-xs: 4px;
     --space-sm: 8px;
-    --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
 
@@ -165,7 +186,7 @@ html, body {
     --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-[data-theme='default'] .header {
+[data-theme='default'] aside {
     height: var(--header-height);
     padding: 0 var(--space-lg);
     background-color: var(--primary-color);

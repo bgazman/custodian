@@ -9,28 +9,28 @@ export default {
         extend: {
             // Layout Dimensions
             height: {
-                topbar: 'var(--topbar-height)',  // Updated for topbar alignment
+                topBar: 'var(--topBar-height)',  // Updated for topBar alignment
                 screen: '100vh',
             },
             width: {
-                sidebar: 'var(--sidebar-width)',  // Updated for sidebar alignment
+                sidebar: 'var(--aside-width)',  // Updated for aside alignment
                 screen: '100vw',
             },
             maxWidth: {
-                content: 'var(--content-max-width)', // Already aligned with content
-                sidebar: 'var(--sidebar-width)',    // Updated for sidebar
+                content: 'var(--main-max-width)', // Already aligned with main
+                sidebar: 'var(--aside-width)',    // Updated for aside
             },
             minHeight: {
-                topbar: 'var(--topbar-height)',                       // Updated for topbar
-                content: 'calc(100vh - var(--topbar-height))',        // Updated for content height
+                topBar: 'var(--topBar-height)',                       // Updated for topBar
+                content: 'calc(100vh - var(--topBar-height))',        // Updated for main height
             },
 
             // Spacing and Layout
             padding: {
-                content: 'var(--content-padding)',
+                content: 'var(--main-padding)',
             },
             margin: {
-                content: 'var(--content-padding)',
+                content: 'var(--main-padding)',
             },
             gap: {
                 xs: 'var(--space-xs)',

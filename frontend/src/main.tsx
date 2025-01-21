@@ -16,8 +16,9 @@ const queryClient = new QueryClient()
 // Add theme management
 const getInitialTheme = () => {
 
-    return 'minimal'
+    return 'default'
 }
+
 
 document.documentElement.dataset.theme = getInitialTheme()
 ReactDOM.createRoot(document.getElementById('root')!).render(

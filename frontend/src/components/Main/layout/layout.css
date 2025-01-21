@@ -4,33 +4,33 @@
     width: 100%;
     height: 100vh;
 }
-.layout, .content {
+.layout, main {
     position: static !important; /* Prevent position context interference */
-    overflow: visible !important; /* Ensure no content is clipped */
+    overflow: visible !important; /* Ensure no main is clipped */
 }
-/* Sidebar on the left */
-.layout[data-layout="sidebar-left"] {
+/* Aside on the left */
+.layout[data-layout="aside-left"] {
     grid-template-areas:
-         "sidebar topbar"
-         "sidebar content";
+         "aside aside"
+         "aside main";
     grid-template-columns: minmax(250px, auto) 1fr;
     grid-template-rows: 60px 1fr;
 }
 
-/* Sidebar on the right */
-.layout[data-layout="sidebar-right"] {
+/* Aside on the right */
+.layout[data-layout="aside-right"] {
     grid-template-areas:
-         "topbar sidebar"
-         "content sidebar";
+         "aside aside"
+         "main aside";
     grid-template-columns: 1fr minmax(250px, auto);
     grid-template-rows: 60px 1fr;
 }
 
-/* Topbar only */
-.layout[data-layout="topbar-only"] {
+/* TopBar only */
+.layout[data-layout="aside-only"] {
     grid-template-areas:
-         "topbar"
-         "content";
+         "aside"
+         "main";
     grid-template-columns: 1fr;
     grid-template-rows: 60px 1fr;
 }
@@ -38,13 +38,13 @@
 .layout[data-layout="top"] {
     display: grid;
     grid-template-areas:
-        "topbar"
-        "content"; /* Only the topbar and content need to show */
+        "aside"
+        "main"; /* Only the aside and main need to show */
     grid-template-rows: minmax(40px, auto) 1fr; /* Adjust height sizes */
     height: 100vh; /* Full viewport height */
 }
 
-.layout[data-layout="top"] .topbar {
+.layout[data-layout="top"] aside {
     height: var(--header-height, 60px);
     background-color: var(--primary-color, #007bff);
     display: flex;
@@ -52,23 +52,23 @@
     justify-content: space-between;
     padding: 0 var(--space-lg, 24px);
     color: var(--text-inverse, white);
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Adjust navigation items to fit topbar styling */
-.layout[data-layout="top"] .topbar .navigation {
+/* Adjust navigation items to fit aside styling */
+.layout[data-layout="top"] aside nav {
     display: flex;
     align-items: center;
     gap: var(--space-md, 16px);
 }
 
-.layout[data-layout="top"] .topbar .navigation .logo {
+.layout[data-layout="top"] aside nav .logo {
     font-weight: bold;
     font-size: 1.5rem;
     margin-right: auto; /* Pushes other items to the right */
 }
 
-.layout[data-layout="top"] .topbar .navigation ul {
+.layout[data-layout="top"] aside nav ul {
     list-style: none;
     display: flex;
     gap: var(--space-md, 16px);
@@ -76,13 +76,13 @@
     margin: 0;
 }
 
-.layout[data-layout="top"] .topbar .navigation li {
+.layout[data-layout="top"] aside nav li {
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
-.layout[data-layout="top"] .topbar .navigation li:hover {
+.layout[data-layout="top"] aside nav li:hover {
     /*color: var(--hover-color, lightgray);*/
 }

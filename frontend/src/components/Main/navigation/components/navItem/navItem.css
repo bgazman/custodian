@@ -1,0 +1,23 @@
+.navItem {
+    text-decoration: none;
+    color: var(--text-color, #555); /* Default text color */
+    font-size: var(--font-size-md, 1rem); /* Medium font size */
+    font-weight: var(--font-weight-medium, 500); /* Medium font weight */
+    padding: var(--spacing-small, 8px) var(--spacing-medium, 12px); /* Padding for clickable area */
+    border-radius: var(--border-radius, 4px); /* Rounded corners for hover effect */
+    transition: background-color 0.2s ease, color 0.2s ease; /* Smooth hover transition */
+}
+
+.navItem:hover {
+    background-color: transparent !important;
+}
+
+.navItem.active {
+    background-color: transparent !important;
+}
+
+.navItem.disabled {
+    color: var(--disabled-text-color, #999); /* Disabled text color */
+    pointer-events: none; /* Prevent interaction with disabled nav items */
+    opacity: 0.6; /* Visual cue for disabled state */
+}

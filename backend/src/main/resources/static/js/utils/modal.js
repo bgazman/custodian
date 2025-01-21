@@ -5,7 +5,7 @@ export const modal = {
         overlay: null,
         message: null,
         closeButton: null,
-        content: null, // Added to handle dynamic modal content
+        content: null, // Added to handle dynamic modal main
 
     },
 
@@ -18,7 +18,7 @@ show(message = 'An unknown error occurred') {
             return;
         }
 
-        // Set message content
+        // Set message main
         this.elements.message.textContent = message;
 
         // Make modal and overlay visible

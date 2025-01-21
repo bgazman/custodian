@@ -1,25 +1,26 @@
-/* Navigation Styling */
-.topbar-navigation {
+nav {
     display: flex;
-    align-items: center; /* Align items vertically */
-    gap: var(--spacing-large); /* Use theme variable for spacing between items */
-    list-style: none; /* Remove default list styling */
-    margin: 0; /* Reset margin */
-    padding: 0; /* Reset padding */
+    gap: var(--spacing-large, 16px); /* Spacing between navigation items */
+    align-items: center;
 }
 
-.topbar-navigation a {
-    text-decoration: none; /* Remove link underline */
-    color: var(--text-color); /* Link color from theme */
-    font-size: var(--font-size-md); /* Font size from theme */
-    font-weight: var(--font-weight-regular, 400); /* Font weight (fallback to regular) */
-    padding: var(--spacing-small); /* Use a theme variable for padding */
-    transition: color 0.2s ease, background-color 0.3s ease; /* Smooth hover transitions */
+nav a {
+    text-decoration: none;
+    color: var(--text-color, #555); /* Default text color */
+    font-size: var(--font-size-md, 1rem); /* Medium font size */
+    font-weight: var(--font-weight-medium, 500); /* Medium font weight */
+    padding: var(--spacing-small, 8px) var(--spacing-medium, 12px); /* Add some padding around links */
+    border-radius: var(--border-radius, 4px); /* Rounded corners for hover effect */
+    transition: background-color 0.2s ease, color 0.2s ease; /* Smooth transition for hover effects */
 }
 
-/* Hover State for Navigation Links */
-.topbar-navigation a:hover {
-    color: var(--primary-hover-color); /* Theme variable for hover link color */
-    background-color: var(--primary-lighter-color, rgba(255, 255, 255, 0.1)); /* Optional hover background */
-    border-radius: var(--border-radius-small, 4px); /* Rounded corners (from theme or fallback) */
+nav a:hover {
+    background-color: var(--hover-background-color, #e6f4ff); /* Light background on hover */
+    color: var(--hover-text-color, #0078d4); /* Text color change on hover */
+}
+
+nav a.active {
+    background-color: var(--active-background-color, #0078d4); /* Active link background */
+    color: var(--active-text-color, #ffffff); /* Active link text color */
+    font-weight: var(--font-weight-bold, 700); /* Make active link bold */
 }

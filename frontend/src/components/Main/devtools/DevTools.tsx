@@ -39,7 +39,6 @@ export const DevTools = ({
                     height: panelHeight
                 }}
             >
-                {/* Add any content here */}
                 <h2 className="text-center">DevTools Panel</h2>
 
                 <ThemeSwitcher/>

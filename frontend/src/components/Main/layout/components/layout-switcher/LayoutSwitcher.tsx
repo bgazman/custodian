@@ -3,9 +3,10 @@ import { useLayout } from '../../../context/LayoutContext'; // Adjust the import
 import { Layout as LayoutIcon } from 'lucide-react'; // Import an icon for the layout switcher
 
 const layouts = [
-    { id: 'sidebar-left', label: 'Sidebar Left', icon: <LayoutIcon /> },
-    { id: 'sidebar-right', label: 'Sidebar Right', icon: <LayoutIcon /> },
     { id: 'top', label: 'Top Navigation', icon: <LayoutIcon /> },
+    { id: 'aside-left', label: 'Aside Left', icon: <LayoutIcon /> },
+    { id: 'aside-right', label: 'Aside Right', icon: <LayoutIcon /> },
+
 ];
 
 const LayoutSwitcher = () => {

@@ -1,0 +1,101 @@
+/*!* General header styling *!*/
+/*header {*/
+/*    display: flex; !* Flexbox for horizontal alignment of content *!*/
+/*    align-items: center; !* Vertically center items *!*/
+/*    justify-content: space-between; !* Space between header content (e.g., logo vs nav links) *!*/
+/*    height: var(--header-height, 60px); !* Easily customizable height *!*/
+/*    padding: 0 var(--space-lg, 24px); !* Left and right padding *!*/
+/*    background-color: var(--header-bg, #007bff); !* Customizable background color *!*/
+/*    color: var(--header-text-color, white); !* Customizable text color *!*/
+/*    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); !* Slight shadow for visual depth *!*/
+/*    border-bottom: 1px solid var(--header-border-color, #e0e0e0); !* Subtle bottom border *!*/
+/*    z-index: 1000; !* Ensure header stays on top when scrolling *!*/
+/*}*/
+
+/*!* Logo inside header *!*/
+/*header .logo {*/
+/*    font-size: 1.5rem; !* Larger font size for branding/logo *!*/
+/*    font-weight: bold; !* Ensure text/logo stands out *!*/
+/*    color: var(--logo-color, white); !* Allow custom logo color *!*/
+/*    text-decoration: none; !* Remove link underline for clean design *!*/
+/*}*/
+
+/*header .logo:hover {*/
+/*    color: var(--logo-hover-color, #d4d4d4); !* Optional hover effect for logo *!*/
+/*}*/
+
+/*!* Navigation bar inside the header *!*/
+/*header nav {*/
+/*    display: flex; !* Flexbox for horizontal layout *!*/
+/*    gap: var(--space-md, 16px); !* Space between navigation items *!*/
+/*}*/
+
+/*!* Navigation items (links, buttons, etc.) *!*/
+/*header nav a {*/
+/*    color: var(--nav-link-color, white); !* Default link text color *!*/
+/*    text-decoration: none; !* Remove underline from links *!*/
+/*    font-size: 1rem; !* Base font size for links *!*/
+/*    font-weight: 500; !* Slightly bold for emphasis *!*/
+/*    padding: 0.5rem 0.75rem; !* Aesthetic spacing inside clickable area *!*/
+/*    border-radius: 4px; !* Rounded corners for better appearance *!*/
+/*    transition: all 0.3s ease; !* Smooth transition for hover effects *!*/
+/*}*/
+
+/*header nav a:hover {*/
+/*    background-color: var(--nav-link-hover-bg, rgba(255, 255, 255, 0.15)); !* Subtle hover background *!*/
+/*    color: var(--nav-link-hover-color, #f0f0f0); !* Change text color on hover *!*/
+/*}*/
+
+/*!* Dropdown menu inside the header *!*/
+/*header nav .dropdown {*/
+/*    position: relative; !* Ensure the dropdown is positioned relative to the link *!*/
+/*}*/
+
+/*header nav .dropdown-content {*/
+/*    display: none; !* Hide the dropdown menu by default *!*/
+/*    position: absolute; !* Dropdown should appear relative to parent *!*/
+/*    top: 100%; !* Position it below the parent link *!*/
+/*    left: 0;*/
+/*    background: var(--dropdown-bg, white); !* Dropdown background color *!*/
+/*    color: var(--dropdown-text, #333); !* Dropdown text color *!*/
+/*    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); !* Shadow for separation *!*/
+/*    padding: 0.75rem 1rem; !* Space inside dropdown *!*/
+/*    border-radius: 4px; !* Rounded corners *!*/
+/*    z-index: 1000; !* Ensure dropdown is above other elements *!*/
+/*}*/
+
+/*!* Dropdown links *!*/
+/*header nav .dropdown-content a {*/
+/*    display: block; !* Ensure vertical layout for dropdown items *!*/
+/*    padding: 0.5rem 0;*/
+/*    color: var(--dropdown-link, #333); !* Dropdown link color *!*/
+/*    text-decoration: none;*/
+/*}*/
+
+/*header nav .dropdown-content a:hover {*/
+/*    color: var(--dropdown-link-hover, #007bff); !* Hover effect for links *!*/
+/*    background-color: var(--dropdown-hover-bg, #f4f4f4); !* Optional background on hover *!*/
+/*}*/
+
+/*!* Show the dropdown menu on hover *!*/
+/*header nav .dropdown:hover .dropdown-content {*/
+/*    display: block;*/
+/*}*/
+
+/*!* Responsive Header Styles *!*/
+/*@media (max-width: 768px) {*/
+/*    header {*/
+/*        flex-direction: column; !* Stack header items vertically *!*/
+/*        align-items: flex-start; !* Left-align start of header when stacked *!*/
+/*        padding: var(--space-md, 16px); !* Smaller padding for mobile devices *!*/
+/*    }*/
+
+/*    header nav {*/
+/*        flex-wrap: wrap; !* Allow nav links to wrap on smaller screens *!*/
+/*        gap: var(--space-sm, 8px); !* Adjust spacing for mobile devices *!*/
+/*    }*/
+
+/*    header .logo {*/
+/*        margin-bottom: var(--space-sm, 8px); !* Add spacing below the logo *!*/
+/*    }*/
+/*}*/
