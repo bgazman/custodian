@@ -4,9 +4,9 @@ import {
     Users,
     UserCog
 } from 'lucide-react';
-import {NavigationItem} from "../navigation/navigation.types";
+import {NavItem} from "../navigation/components/navItem/NavItem.tsx";
 
-export const navigationItems: NavigationItem[] = [
+export const navigationItems: NavItem[] = [
     {
         icon: LayoutDashboard,
         label: 'Dashboard',

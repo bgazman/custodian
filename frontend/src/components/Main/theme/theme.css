@@ -19,16 +19,72 @@
     --z-index-base: 0;
     --z-index-overlay: 100;
 
-    /* Default Theme Colors */
-    --background-color: white; /* Set a default background color */
-    --text-color: black; /* Set a default text color */
+
+    --background-color: white;
+    --text-color: black;
     --primary-hover-color: #9d1a1a;
     --spacing-large: 100px;
     --spacing-medium: 50px;
     --spacing-small: 25px;
     --font-weight-bold:500;
-}
 
+}
+:root {
+    --font-weight-regular: 400;
+    --font-weight-bold: 700;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --line-height-normal: 1.5;
+
+    --primary-color: #1d4ed8;
+    --primary-hover-color: #93c5fd;
+    --primary-lighter-color: rgba(255, 255, 255, 0.1);
+
+    --secondary-color: #6b7280;
+    --secondary-hover-color: #9ca3af;
+
+    --text-color: #ffffff;
+    --text-color-muted: #9ca3af;
+    --background-color: #f3f4f6;
+    --border-color: #d1d5db;
+    --border-color-muted: #e5e7eb;
+
+    --spacing-xxs: 4px;
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-medium: 16px;
+    --spacing-large: 24px;
+    --spacing-xl: 32px;
+
+    --header-height: 60px;
+    --button-height: 40px;
+    --button-padding: 10px 16px;
+
+    --border-width: 1px;
+    --border-radius-small: 4px;
+    --border-radius-medium: 8px;
+    --border-radius-large: 12px;
+
+    --box-shadow-none: none;
+    --box-shadow-low: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --box-shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.15);
+    --box-shadow-high: 0 8px 12px rgba(0, 0, 0, 0.2);
+
+    --transition-duration-fast: 150ms;
+    --transition-duration-medium: 300ms;
+    --transition-timing-function: ease-in-out;
+
+    --z-index-fixed: 999;
+    --z-index-dropdown: 1000;
+    --z-index-modal: 1050;
+    --z-index-tooltip: 1100;
+
+    /*--z-index-base: 0;*/
+    /*--z-index-overlay: 100;*/
+}
 html, body {
     margin: 0;
     padding: 0;

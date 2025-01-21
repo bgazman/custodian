@@ -1,3 +1,5 @@
+import './devtools.css';
+
 import React, { useState } from 'react';
 import {FloatingButton} from "../ui/floating-button/FloatingButton.tsx";
 import LayoutSwitcher from "../layout/components/layout-switcher/LayoutSwitcher.tsx";
@@ -5,12 +7,11 @@ import ThemeSwitcher from "../theme/components/theme-switcher/ThemeSwitcher.tsx"
 import {Settings} from "lucide-react";
 
 
-import './devtools.css'; // Import the CSS file for styles
 
 export interface DevToolsProps {
     initialIsOpen?: boolean;
-    panelHeight?: number; // Drawer height
-    panelWidth?: number; // Drawer width
+    panelHeight?: number;
+    panelWidth?: number;
 }
 
 export const DevTools = ({
@@ -23,15 +24,14 @@ export const DevTools = ({
     return (
         <div className="devtools">
             {/* Floating Button */}
-            <button
+            <FloatingButton
                 className="floating-button"
                 onClick={() => setIsVisible(!isVisible)}
             >
                 <span className="sr-only">Toggle DevTools</span>
                 <Settings />
-            </button>
+            </FloatingButton>
 
-            {/* Centered Drawer */}
             <div
                 className={`devtools-panel ${isVisible ? 'visible' : 'hidden'}`}
                 style={{

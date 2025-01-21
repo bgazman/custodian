@@ -5,7 +5,6 @@ import { AuthenticationProvider } from "./components/Main/context/Authentication
 import React from 'react';
 
 import AppLayout from "./AppLayout";
-import PrivateRoute from "./components/PrivateRoutes";
 
 
 

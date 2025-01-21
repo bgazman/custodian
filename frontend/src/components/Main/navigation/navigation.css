@@ -1,5 +1,25 @@
-/*/* Debug styles for navigation */
-/*[data-layout="sidebar-left"] .navigation {*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*}*/
+/* Navigation Styling */
+.topbar-navigation {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    gap: var(--spacing-large); /* Use theme variable for spacing between items */
+    list-style: none; /* Remove default list styling */
+    margin: 0; /* Reset margin */
+    padding: 0; /* Reset padding */
+}
+
+.topbar-navigation a {
+    text-decoration: none; /* Remove link underline */
+    color: var(--text-color); /* Link color from theme */
+    font-size: var(--font-size-md); /* Font size from theme */
+    font-weight: var(--font-weight-regular, 400); /* Font weight (fallback to regular) */
+    padding: var(--spacing-small); /* Use a theme variable for padding */
+    transition: color 0.2s ease, background-color 0.3s ease; /* Smooth hover transitions */
+}
+
+/* Hover State for Navigation Links */
+.topbar-navigation a:hover {
+    color: var(--primary-hover-color); /* Theme variable for hover link color */
+    background-color: var(--primary-lighter-color, rgba(255, 255, 255, 0.1)); /* Optional hover background */
+    border-radius: var(--border-radius-small, 4px); /* Rounded corners (from theme or fallback) */
+}

@@ -1,6 +1,6 @@
 import React, { ButtonHTMLAttributes } from 'react';
 import { Button } from '../button/Button.tsx';
-
+import './floating-button.css';
 
 interface FloatingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'outline'
@@ -9,32 +9,28 @@ interface FloatingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const FloatingButton = ({
-                                   variant = 'primary',
-                                   size = 'md',
                                    position = 'bottom-right',
                                    className,
                                    children,
                                    ...props
-                               }: FloatingButtonProps) => {
+                               }: React.HTMLAttributes<HTMLButtonElement> & {
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+}) => {
     const positionClasses = {
-        'top-left': 'top-[var(--space-lg)] left-[var(--space-lg)]',
-        'top-right': 'top-[var(--space-lg)] right-[var(--space-lg)]',
-        'bottom-left': 'bottom-[var(--space-lg)] left-[var(--space-lg)]',
-        'bottom-right': 'bottom-[var(--space-lg)] right-[var(--space-lg)]'
+        'top-left': 'top-4 left-4',
+        'top-right': 'top-4 right-4',
+        'bottom-left': 'bottom-4 left-4',
+        'bottom-right': 'bottom-4 right-4',
     };
 
     return (
         <Button
-            variant={variant}
-            size={size}
             {...props}
             className={`
-        fixed ${positionClasses[position]} z-[var(--z-popup)]
-        rounded-full shadow-lg
-        transition-all duration-[var(--transition-duration)]
-        flex items-center justify-center
-        ${className || ''}
-      `}
+                   fixed ${positionClasses[position]} z-50
+                   rounded-full shadow-lg transition-all
+                   ${className || ''}
+               `}
         >
             {children}
         </Button>
