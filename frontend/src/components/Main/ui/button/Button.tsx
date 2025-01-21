@@ -1,4 +1,4 @@
-// components/ui/button.tsx
+import './button.css'
 import { ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

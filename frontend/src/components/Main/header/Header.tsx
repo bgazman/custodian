@@ -3,9 +3,7 @@ import {Link, useLocation} from 'react-router-dom';
 
 import {LogOut} from "lucide-react";
 import UserMenu from "./components/UserMenu";
-import LayoutSwitcher from "../layout/components/layout-switcher/LayoutSwitcher";
-import ThemeSwitcher from "../theme/components/theme-switcher/ThemeSwitcher";
-
+import './header.css';
 
 interface HeaderProps {
     logoText
@@ -32,8 +30,6 @@ const Header: React.FC<HeaderProps> = ({
 
                 <div className="flex items-center space-x-4">
                     <UserMenu username="John Doe" email="john.doe@example.com"/>
-                    <LayoutSwitcher/>
-                    <ThemeSwitcher/>
                     <button
 
                     >

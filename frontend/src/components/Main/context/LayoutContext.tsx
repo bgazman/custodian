@@ -1,7 +1,4 @@
-// src/contexts/LayoutContext.tsx
-import React, {createContext, useContext, useState, useEffect, useCallback} from 'react';
-
-
+import {createContext, useCallback, useContext, useState} from "react";
 
 const LayoutContext = createContext(undefined);
 
@@ -12,7 +9,7 @@ export const useLayout = () => {
 };
 
 export const LayoutProvider = ({ children }) => {
-    const [layout, setLayout] = useState('sidebar-left');
+    const [layout, setLayout] = useState<'sidebar-left' | 'sidebar-right' | 'top'>('sidebar-left'); // Restrict layout types
     const [isOpen, setIsOpen] = useState(false);
 
     const onToggle = useCallback(() => {
@@ -20,10 +17,15 @@ export const LayoutProvider = ({ children }) => {
     }, []);
 
     return (
-        <LayoutContext.Provider value={{ layout, isOpen, setLayout, onToggle }}>
+        <LayoutContext.Provider
+            value={{
+                layout,
+                isOpen,
+                setLayout,
+                onToggle,
+            }}
+        >
             {children}
         </LayoutContext.Provider>
     );
 };
-
-

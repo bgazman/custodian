@@ -5,10 +5,9 @@ import { Layout as LayoutIcon } from 'lucide-react'; // Import an icon for the l
 const layouts = [
     { id: 'sidebar-left', label: 'Sidebar Left', icon: <LayoutIcon /> },
     { id: 'sidebar-right', label: 'Sidebar Right', icon: <LayoutIcon /> },
-    { id: 'top-nav', label: 'Top Navigation', icon: <LayoutIcon /> },
-    { id: 'centered', label: 'Centered', icon: <LayoutIcon /> },
-    { id: 'split', label: 'Split View', icon: <LayoutIcon /> }
+    { id: 'top', label: 'Top Navigation', icon: <LayoutIcon /> },
 ];
+
 const LayoutSwitcher = () => {
     const [isOpen, setIsOpen] = useState(false);
     const { currentLayout, setLayout } = useLayout(); // Renamed for clarity

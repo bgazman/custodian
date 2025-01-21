@@ -1,6 +1,6 @@
 import React from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card'
-import { Button } from '../button/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card.tsx'
+import { Button } from '../button/Button.tsx';
 import { MessageSquare, ThumbsUp, Share2 } from 'lucide-react'
 
 const CardShowcase = () => {

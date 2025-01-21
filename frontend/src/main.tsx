@@ -10,6 +10,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import { ThemeProvider } from './components/Main/context/ThemeContext'
 import {LayoutProvider} from "./components/Main/context/LayoutContext";
+import DevTools from "./components/Main/devtools/DevTools.tsx";
 const queryClient = new QueryClient()
 
 // Add theme management
@@ -23,9 +24,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <ThemeProvider>
             <LayoutProvider>
+                <DevTools initialIsOpen={false} />
+
                 <QueryClientProvider client={queryClient}>
                     <App />
-                    <ReactQueryDevtools initialIsOpen={false} />
+                    {/*<ReactQueryDevtools initialIsOpen={false} />*/}
                 </QueryClientProvider>
             </LayoutProvider>
         </ThemeProvider>

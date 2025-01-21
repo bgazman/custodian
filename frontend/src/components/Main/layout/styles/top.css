@@ -1,0 +1,106 @@
+@media (max-width: 768px) {
+    .layout[data-layout="top"] .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: var(--space-sm);
+    }
+
+    .layout[data-layout="top"] .topbar .navigation ul {
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .layout[data-layout="top"] .content {
+        padding: var(--space-md);
+    }
+}
+
+/* Root Layout Styles */
+.layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Topbar Styles */
+.layout[data-layout="top"] .topbar {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: var(--z-navigation);
+}
+
+/* Logo Styles */
+.layout[data-layout="top"] .topbar .logo-container {
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Navigation Styles */
+.layout[data-layout="top"] .topbar .navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.layout[data-layout="top"] .topbar .navigation ul {
+    list-style: none;
+    display: flex;
+    gap: var(--space-lg);
+    margin: 0;
+    padding: 0;
+}
+
+.layout[data-layout="top"] .topbar .navigation li {
+    display: inline-block;
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    padding: 0 var(--space-md);
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.layout[data-layout="top"] .topbar .navigation li:hover {
+    color: var(--hover-color);
+    opacity: 0.8;
+}
+
+/* Content Styles */
+.layout[data-layout="top"] .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--content-padding);
+    background-color: var(--background-alt);
+}
+
+.layout[data-layout="top"] .content .content-container {
+    width: 100%;
+    max-width: var(--content-max-width);
+    text-align: center;
+}
+
+.layout[data-layout="top"] .content h1 {
+    font-size: var(--font-size-xl);
+    font-weight: bold;
+    margin-bottom: var(--space-md);
+    line-height: var(--line-height-relaxed);
+}
+
+.layout[data-layout="top"] .content p {
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-base);
+    color: var(--text-muted);
+    margin: 0 auto;
+    max-width: 50ch; /* Limits line length for better readability */
+}

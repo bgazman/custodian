@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Input } from './Input'
+import { Input } from './Input.tsx'
 import { Search, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 const InputShowcase = () => {

@@ -26,7 +26,7 @@ WORKDIR /app
 COPY backend/pom.xml ./
 COPY backend/src ./src
 # Create static folder and copy React build into it
-RUN mkdir -p src/main/resources/static
+RUN mkdir -p src/content/resources/static
 COPY --from=frontend-build /app/dist src/main/resources/static
 RUN mvn clean package -DskipTests
 

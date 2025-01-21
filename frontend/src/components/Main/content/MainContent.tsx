@@ -5,11 +5,9 @@ import React from 'react';
 
 const MainContent = ({ children, className = '' }) => {
     return (
-        <main className={`main ${className}`}>
-            <div className="p-4 h-full">
+            <div>
                 {children}
             </div>
-        </main>
     );
 };
 

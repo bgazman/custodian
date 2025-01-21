@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from './Button'
+import { Button } from './Button.tsx'
 import { Loader2, Plus, ArrowRight, Download, Trash } from 'lucide-react'
 
 const ButtonShowcase = () => {

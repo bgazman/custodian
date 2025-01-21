@@ -22,6 +22,11 @@
     /* Default Theme Colors */
     --background-color: white; /* Set a default background color */
     --text-color: black; /* Set a default text color */
+    --primary-hover-color: #9d1a1a;
+    --spacing-large: 100px;
+    --spacing-medium: 50px;
+    --spacing-small: 25px;
+    --font-weight-bold:500;
 }
 
 html, body {
@@ -79,7 +84,7 @@ html, body {
     --info-color: #3B82F6;
     --warning-color: #F59E0B;
     --border-color: #E5E7EB;
-
+    --hover-color: #D1D5DB;
     /* Typography */
     --font-family: monospace;
     --heading-font: var(--font-family);

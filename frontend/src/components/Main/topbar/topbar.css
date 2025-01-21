@@ -1,0 +1,42 @@
+/* TopBar Styling */
+
+.topbar {
+    display: flex;
+    justify-content: space-between; /* Space between left and right sections */
+    align-items: center; /* Center vertically */
+    background-color: var(--primary-color); /* Use theme variable for background */
+    color: var(--text-color); /* Use theme variable for text color */
+    padding: 0 var(--spacing-medium); /* Horizontal padding, use theme spacing */
+    height: var(--header-height, 60px); /* Use a theme variable for height or fallback to 60px */
+    box-shadow: var(--box-shadow-low, 0 2px 4px rgba(0, 0, 0, 0.1)); /* Shadow from theme */
+    position: fixed; /* Make it stick to the top */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Ensure it stays above other content */
+}
+
+.topbar-title {
+    font-size: var(--font-size-lg); /* Theme variable for title size */
+    font-weight: var(--font-weight-bold); /* Theme variable for font weight */
+    margin: 0;
+}
+
+.topbar-menu {
+    display: flex;
+    gap: var(--spacing-large); /* Use theme spacing for menu item gap */
+    list-style: none; /* Remove bullets */
+    margin: 0;
+    padding: 0;
+}
+
+.topbar-menu a {
+    text-decoration: none; /* Remove link underline */
+    color: var(--text-color); /* Use theme variable for text color */
+    font-size: var(--font-size-md); /* Theme variable for link size */
+    transition: color 0.3s ease-in-out; /* Smooth hover color transition */
+}
+
+.topbar-menu a:hover {
+    color: var(--primary-hover-color); /* Theme variable for hover color */
+}

@@ -7,22 +7,22 @@ export default {
     darkMode: ['class', '[data-theme$="-dark"]'],
     theme: {
         extend: {
-            // Layout dimensions
+            // Layout Dimensions
             height: {
-                header: 'var(--header-height)',
+                topbar: 'var(--topbar-height)',  // Updated for topbar alignment
                 screen: '100vh',
             },
             width: {
-                navigation: 'var(--navigation-width)',
+                sidebar: 'var(--sidebar-width)',  // Updated for sidebar alignment
                 screen: '100vw',
             },
             maxWidth: {
-                content: 'var(--content-max-width)',
-                navigation: 'var(--navigation-width)',
+                content: 'var(--content-max-width)', // Already aligned with content
+                sidebar: 'var(--sidebar-width)',    // Updated for sidebar
             },
             minHeight: {
-                header: 'var(--header-height)',
-                content: 'calc(100vh - var(--header-height))',
+                topbar: 'var(--topbar-height)',                       // Updated for topbar
+                content: 'calc(100vh - var(--topbar-height))',        // Updated for content height
             },
 
             // Spacing and Layout
@@ -77,6 +77,9 @@ export default {
                 surface: {
                     DEFAULT: 'var(--surface-color)',
                     hover: 'var(--surface-hover)',
+                },
+                hover: {
+                    DEFAULT: 'var(--hover-color)', // New hover color variable
                 },
             },
 
