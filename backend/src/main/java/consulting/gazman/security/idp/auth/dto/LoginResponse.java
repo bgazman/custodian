@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.oauth.dto;
+package consulting.gazman.security.idp.auth.dto;
 
 import lombok.Builder;
 import lombok.Data;

@@ -67,7 +67,7 @@ public class OAuthController implements consulting.gazman.security.idp.oauth.con
         // Generate authorization code
         String code = generateAuthorizationCode(response_type, client_id, redirect_uri, scope, state);
 
-        // Redirect to client with code and state
+
         String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
                 .queryParam("code", code)
                 .queryParam("state", state)
@@ -76,66 +76,6 @@ public class OAuthController implements consulting.gazman.security.idp.oauth.con
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
     }
 
-    @Override
-    public ResponseEntity<?> login(@RequestBody AuthorizeRequest request) {
-        try {
-            // Step 1: Build the initial login request
-            LoginRequest loginRequest = LoginRequest.builder()
-                    .redirectUri(request.getRedirectUri())
-                    .clientId(request.getClientId())
-                    .state(request.getState())
-                    .email(request.getEmail())
-                    .password(request.getPassword())
-                    .build();
-
-            // Step 2: Attempt primary login (email and password validation)
-            LoginResponse loginResponse = oAuthService.login(loginRequest);
-
-            if (loginResponse.getError() != null && !loginResponse.getError().isBlank()) {
-                String redirectUrl = "/login?error=invalid_credentials&message=" +
-                        URLEncoder.encode(loginResponse.getError(), StandardCharsets.UTF_8);
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create(redirectUrl))
-                        .build();
-            }
-
-            if (loginResponse.isMfaEnabled()) {
-                if (loginResponse.getMfaMethod() == null) {
-                     throw AppException.missingConfiguration("MFA is enabled but no method is configured");
-                }
-                String redirectUrl = "/mfa?email=" + URLEncoder.encode(request.getEmail(), StandardCharsets.UTF_8) +
-                        "&client_id=" + URLEncoder.encode(request.getClientId(), StandardCharsets.UTF_8) +
-                        "&redirect_uri=" + URLEncoder.encode(request.getRedirectUri(), StandardCharsets.UTF_8) +
-                        "&state=" + URLEncoder.encode(request.getState(), StandardCharsets.UTF_8) +
-                        "&response_type=" + URLEncoder.encode(request.getResponseType(), StandardCharsets.UTF_8) +
-                        "&mfa_method=" + URLEncoder.encode(loginResponse.getMfaMethod(), StandardCharsets.UTF_8);
-
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create(redirectUrl))
-                        .build();
-            }
-
-            // Step 4: Generate authorization code
-            AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                    .email(request.getEmail())
-                    .responseType(request.getResponseType())
-                    .clientId(request.getClientId())
-                    .redirectUri(request.getRedirectUri())
-                    .scope(request.getScope())
-                    .state(request.getState())
-                    .build());
-
-            String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() + "&state=" +
-                    URLEncoder.encode(response.getState(), StandardCharsets.UTF_8);
-            return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
-
-        } catch (Exception e) {
-            // Log the error and return a generic error response
-            log.error("Error during login process", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred during the login process. Please try again later.");
-        }
-    }
 
 
 

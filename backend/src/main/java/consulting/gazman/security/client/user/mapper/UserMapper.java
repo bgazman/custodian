@@ -41,7 +41,7 @@ public interface UserMapper {
     @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
     @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
     @Mapping(target = "authorities", ignore = true)
-    @Mapping(target = "mfaBackupCodes", ignore = true)
+    @Mapping(target = "mfaRecoveryCodes", ignore = true)
     @Mapping(target = "lockedUntil", ignore = true)
     @Mapping(target = "lastLoginTime", ignore = true)
     @Mapping(target = "lastPasswordChange", expression = "java(java.time.LocalDateTime.now())")
@@ -51,7 +51,7 @@ public interface UserMapper {
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "mfaBackupCodes", ignore = true)
+    @Mapping(target = "mfaRecoveryCodes", ignore = true)
     @Mapping(target = "accountNonExpired", ignore = true)
     @Mapping(target = "accountNonLocked", ignore = true)
     @Mapping(target = "credentialsNonExpired", ignore = true)
@@ -120,7 +120,7 @@ public interface UserMapper {
         return UserSecurityDTO.builder()
                 .failedLoginAttempts(user.getFailedLoginAttempts())
                 .lockedUntil(user.getLockedUntil())
-                .mfaBackupCodes(user.getMfaBackupCodes())
+                .mfaRecoveryCodes(user.getMfaRecoveryCodes())
                 .lastPasswordChange(user.getLastPasswordChange())
                 .build();
     }

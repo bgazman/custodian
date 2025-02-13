@@ -3,6 +3,8 @@ package consulting.gazman.security.idp.auth.service.impl;
 
 import consulting.gazman.security.client.user.service.UserRoleService;
 import consulting.gazman.security.client.user.service.impl.*;
+import consulting.gazman.security.idp.auth.dto.LoginRequest;
+import consulting.gazman.security.idp.auth.dto.LoginResponse;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationRequest;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationResponse;
 
@@ -10,8 +12,8 @@ import consulting.gazman.security.idp.auth.service.AuthService;
 
 import consulting.gazman.security.idp.auth.service.EmailVerificationService;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
+import consulting.gazman.security.idp.oauth.service.AuthCodeService;
 import consulting.gazman.security.idp.oauth.service.TokenService;
-import consulting.gazman.security.idp.oauth.service.impl.AuthCodeServiceImpl;
 import consulting.gazman.security.idp.oauth.service.impl.JwtServiceImpl;
 import consulting.gazman.security.idp.oauth.service.impl.OAuthClientServiceImpl;
 import consulting.gazman.security.idp.oauth.utils.JwtUtils;
@@ -27,9 +29,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import consulting.gazman.security.common.exception.AppException;
@@ -61,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
     @Autowired
-    AuthCodeServiceImpl authCodeServiceImpl;
+    AuthCodeService authCodeService;
     @Autowired
     TokenService tokenService;
 
@@ -98,6 +102,72 @@ public class AuthServiceImpl implements AuthService {
                     return null;
                 });    }
 
+    @Transactional
+    @Override
+    public LoginResponse login(LoginRequest loginRequest) {
+        LoginResponse response = null;
+        try {
+            response = loginWrapped(loginRequest);
+        } catch (Exception e) {
+            return LoginResponse.builder().error(e.getMessage()).build();
+        }
+        return response;
+    }
+
+    public LoginResponse loginWrapped(LoginRequest loginRequest) {
+        Optional<User> optionalUser = userService.findByEmailOptional(loginRequest.getEmail());
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+
+            if (isAccountLocked(user)) {
+                Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
+                String message = "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.";
+                throw AppException.accountLocked(message);
+            }
+
+            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                handleFailedLoginAttempt(user);
+                int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
+                throw remainingAttempts > 0
+                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
+                        : AppException.accountLocked("Account locked due to attempts");
+            }
+
+            resetLoginAttempts(user);
+            String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
+
+            return LoginResponse.builder()
+                    .code(authorizationCode)
+                    .state(loginRequest.getState())
+                    .redirectUri(loginRequest.getRedirectUri())
+                    .mfaMethod(user.getMfaMethod())
+                    .mfaEnabled(user.isMfaEnabled())
+                    .build();
+        } else {
+            throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
+        }
+    }
+    private boolean isAccountLocked(User user) {
+        return user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil());
+    }
+
+    private void handleFailedLoginAttempt(User user) {
+        int newFailedAttempts = user.getFailedLoginAttempts() + 1;
+        user.setFailedLoginAttempts(newFailedAttempts);
+
+        if (newFailedAttempts >= MAX_ATTEMPTS) {
+            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+        }
+
+        userService.save(user);
+    }
+
+    private void resetLoginAttempts(User user) {
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        user.setLastLoginTime(LocalDateTime.now());
+        userService.save(user);
+    }
     @Override
     public UserRegistrationResponse createUser(UserRegistrationRequest userRegistrationRequest) {
         log.info("Attempting registration for email: {}", userRegistrationRequest.getEmail());

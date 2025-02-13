@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.client.user.entity.User;
-import consulting.gazman.security.client.user.entity.UserClientRegistration;
-import consulting.gazman.security.client.user.service.UserClientRegistrationService;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.common.service.NotificationService;
 import consulting.gazman.security.idp.auth.service.MfaService;
@@ -29,11 +27,8 @@ public class MfaServiceImpl implements MfaService {
     private static final long TOKEN_EXPIRY = 300; // 5 minutes
     private final ObjectMapper objectMapper;
 
-
     @Autowired
     UserService userService;
-    @Autowired
-    UserClientRegistrationService userClientRegistrationService;
     @Autowired
     private NotificationService notificationService; // For sending SMS or Email
 
@@ -44,11 +39,7 @@ public class MfaServiceImpl implements MfaService {
     @Override
     public void initiateMfaChallenge(String email, String clientId) {
         User user = userService.findByEmail(email);
-
-        UserClientRegistration registration = userClientRegistrationService
-                .findByUserIdAndClientId(user.getId(), clientId)
-                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
-        String method = registration.getMfaMethod();
+        String method = user.getMfaMethod();
         String token = generateRandomCode(); // 6-digit OTP
         if ("SMS".equalsIgnoreCase(method)) {
             String phoneNumber = userService.getPhoneNumber(email);
@@ -60,27 +51,19 @@ public class MfaServiceImpl implements MfaService {
         redisTemplate.opsForValue().set("mfa:token:" + email, token, 5, TimeUnit.MINUTES);
     }
 
-
-
     @Override
     public String generateMfaSecret(String email) {
         return "";
     }
 
-
-
     @Override
-    public boolean validateMfaToken(String email, String token, String clientId) {  // Added clientId, removed method param
+    public boolean validateMfaToken(String email, String token, String clientId) {
         if (email == null || token == null || clientId == null) {
             log.error("Null parameters provided: email={}, token={}, clientId={}", email, token, clientId);
             return false;
         }
-        // Get client-specific MFA settings for TOTP check
         User user = userService.findByEmail(email);
-        UserClientRegistration registration = userClientRegistrationService
-                .findByUserIdAndClientId(user.getId(), clientId)
-                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
-        String method = registration.getMfaMethod();
+        String method = user.getMfaMethod();
 
         if ("TOTP".equalsIgnoreCase(method)) {
             return true; // TOTP validation logic
@@ -116,24 +99,17 @@ public class MfaServiceImpl implements MfaService {
 
     @Override
     public boolean resendMfaCode(String email, String clientId) {
-        // Get client-specific MFA settings for TOTP check
         User user = userService.findByEmail(email);
-        UserClientRegistration registration = userClientRegistrationService
-                .findByUserIdAndClientId(user.getId(), clientId)
-                .orElseThrow(() -> AppException.userNotFound("User not registered with this client"));
-        String method = registration.getMfaMethod();
-        // Check resend attempts using Redis
+        String method = user.getMfaMethod();
         String resendKey = "mfa:resend:" + email;
         String attemptsStr = redisTemplate.opsForValue().get(resendKey);
         int attempts = attemptsStr != null ? Integer.parseInt(attemptsStr) : 0;
 
-        // Check if max resend attempts reached (e.g., 3 attempts within 5 minutes)
         if (attempts >= 3) {
             throw new AppException("MAX_RESEND_ATTEMPTS", "Maximum resend attempts reached. Please try again later.");
         }
 
         try {
-            // Generate and send new code based on user's MFA method
             String newToken = generateRandomCode();
 
             if ("SMS".equalsIgnoreCase(method)) {
@@ -148,13 +124,10 @@ public class MfaServiceImpl implements MfaService {
                 throw new AppException("INVALID_MFA_METHOD", "Unsupported MFA method: " + method);
             }
 
-            // Store new token in Redis with expiration
             String tokenKey = "mfa:token:" + email;
             redisTemplate.opsForValue().set(tokenKey, newToken, TOKEN_EXPIRY, TimeUnit.SECONDS);
 
-            // Increment resend attempts counter
             redisTemplate.opsForValue().increment(resendKey);
-            // Set expiry for resend attempts counter if it's first attempt
             if (attempts == 0) {
                 redisTemplate.expire(resendKey, TOKEN_EXPIRY, TimeUnit.SECONDS);
             }
@@ -169,11 +142,8 @@ public class MfaServiceImpl implements MfaService {
 
     @Override
     public boolean validateBackupCode(String email, String token) {
-        // Check if user exists
         User user = userService.findByEmail(email);
 
-
-        // Check if account is locked
         String lockKey = "mfa:locked:" + email;
         Boolean isLocked = redisTemplate.hasKey(lockKey);
         if (Boolean.TRUE.equals(isLocked)) {
@@ -181,39 +151,31 @@ public class MfaServiceImpl implements MfaService {
         }
 
         try {
-            // Get backup codes from user (assuming it's stored as a JSON array in the database)
-            String backupCodesJson = user.getMfaBackupCodes();
+            String backupCodesJson = user.getMfaRecoveryCodes();
             if (backupCodesJson == null || backupCodesJson.equals("[]")) {
                 throw new AppException("NO_BACKUP_CODES", "No backup codes available");
             }
 
             List<String> backupCodes = objectMapper.readValue(backupCodesJson, new TypeReference<List<String>>() {});
 
-            // Check if the provided token matches any backup code
             if (backupCodes.contains(token)) {
-                // Remove the used backup code
                 backupCodes.remove(token);
 
-                // Update the user's backup codes in the database
-                user.setMfaBackupCodes(objectMapper.writeValueAsString(backupCodes));
+                user.setMfaRecoveryCodes(objectMapper.writeValueAsString(backupCodes));
                 userService.updateUser(user);
 
-                // Clear any failed attempts
                 String attemptsKey = "mfa:attempts:" + email;
                 redisTemplate.delete(attemptsKey);
 
                 return true;
             } else {
-                // Increment failed attempts
                 String attemptsKey = "mfa:attempts:" + email;
                 Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
 
-                // Set expiry for attempts counter if it's first attempt
                 if (attempts != null && attempts == 1) {
                     redisTemplate.expire(attemptsKey, 1, TimeUnit.HOURS);
                 }
 
-                // Lock account after 5 failed attempts
                 if (attempts != null && attempts >= 5) {
                     redisTemplate.opsForValue().set(lockKey, "true", 1, TimeUnit.HOURS);
                     throw new AppException("ACCOUNT_LOCKED", "Account has been locked due to too many failed attempts");
@@ -231,8 +193,6 @@ public class MfaServiceImpl implements MfaService {
     }
 
     private boolean validateTotp(String secret, String token) {
-        // Simulated TOTP validation (replace with library validation)
         return "123456".equals(token); // Replace with real validation logic
     }
 }
-

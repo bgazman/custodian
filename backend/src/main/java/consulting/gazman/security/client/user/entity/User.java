@@ -1,27 +1,21 @@
 package consulting.gazman.security.client.user.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-
 import lombok.*;
-
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-
-
 
 @Entity
 @Table(name = "users")
@@ -32,24 +26,36 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name="name")
+
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
+
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "phone_number", unique = true,length=15)
-    private String phoneNumber;
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
     @Column(name = "enabled", nullable = false)
     private boolean enabled = false;
 
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    private String avatarUrl;
 
-    @Column(name = "mfa_backup_codes", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    private String mfaBackupCodes;
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
 
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    @Column(name = "phone_number", unique = true, length = 15)
+    private String phoneNumber;
+
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+
+    @Column(name = "last_password_change", nullable = false)
+    private LocalDateTime lastPasswordChange = LocalDateTime.now();
 
     @Column(name = "account_non_expired", nullable = false)
     private boolean accountNonExpired = true;
@@ -60,27 +66,21 @@ public class User implements UserDetails {
     @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired = true;
 
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
 
-    @JsonManagedReference("user-roles")    // or @JsonIgnore if you don't need it in JSON
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)  // Remove orphanRemoval
-    private Set<UserRole> userRoles = new HashSet<>();
+    @Column(name = "mfa_method", length = 50)
+    private String mfaMethod;
 
+    @Column(name = "mfa_secret", length = 255)
+    private String mfaSecret;
 
-    @JsonManagedReference("user-group-memberships") // Add JSON management for group memberships
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER) // Lazy loading preferred
-    private Set<GroupMembership> groupMemberships = new HashSet<>();
+    @Column(name = "mfa_recovery_codes", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String mfaRecoveryCodes;
 
-    @Column(name = "failed_login_attempts", nullable = false)
-    private int failedLoginAttempts = 0;
-
-    @Column(name = "locked_until")
-    private LocalDateTime lockedUntil;
-
-    @Column(name = "last_login_time")
-    private LocalDateTime lastLoginTime;
-
-    @Column(name = "last_password_change", nullable = false)
-    private LocalDateTime lastPasswordChange = LocalDateTime.now();
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
@@ -90,50 +90,41 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @JsonManagedReference("user-roles")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private Set<UserRole> userRoles = new HashSet<>();
 
+    @JsonManagedReference("user-group-memberships")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private Set<GroupMembership> groupMemberships = new HashSet<>();
+
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userRoles.stream()
-                .map(userRole -> new SimpleGrantedAuthority( userRole.getRole().getName()))
+                .map(userRole -> new SimpleGrantedAuthority(userRole.getRole().getName()))
                 .collect(Collectors.toSet());
     }
 
-
-    /**
-     * Returns the username for authentication (email in this case).
-     */
     @Override
     public String getUsername() {
         return email;
     }
 
-    /**
-     * Indicates whether the user's account is expired.
-     */
     @Override
     public boolean isAccountNonExpired() {
         return accountNonExpired;
     }
 
-    /**
-     * Indicates whether the user's account is locked.
-     * Considers the `lockedUntil` field for additional logic.
-     */
     @Override
     public boolean isAccountNonLocked() {
         return accountNonLocked && (lockedUntil == null || lockedUntil.isBefore(LocalDateTime.now()));
     }
 
-    /**
-     * Indicates whether the user's credentials are expired.
-     */
     @Override
     public boolean isCredentialsNonExpired() {
         return credentialsNonExpired;
     }
 
-    /**
-     * Indicates whether the user is enabled.
-     */
     @Override
     public boolean isEnabled() {
         return enabled;

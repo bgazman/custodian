@@ -1,9 +1,10 @@
 package consulting.gazman.security.idp.oauth.service;
 
+import consulting.gazman.security.idp.auth.dto.LoginRequest;
+import consulting.gazman.security.idp.auth.dto.LoginResponse;
 import consulting.gazman.security.idp.oauth.dto.*;
 
 public interface OAuthService {
-    LoginResponse login(LoginRequest loginRequest);  // Add this
     AuthorizeResponse generateAuthCode(AuthorizeRequest request);
     TokenResponse exchangeToken(TokenRequest request);
     TokenResponse refreshToken(TokenRequest request);

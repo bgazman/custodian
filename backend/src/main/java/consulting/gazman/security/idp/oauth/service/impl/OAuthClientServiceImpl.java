@@ -65,10 +65,10 @@ public class OAuthClientServiceImpl implements OAuthClientService {
 
         existingClient.setRedirectUris(updatedClient.getRedirectUris());
         existingClient.setGrantTypes(updatedClient.getGrantTypes());
-        existingClient.setScopes(updatedClient.getScopes());
+        existingClient.setAllowedScopes(updatedClient.getAllowedScopes());
+        existingClient.setDefaultScopes(updatedClient.getDefaultScopes());
         existingClient.setTokenEndpointAuthMethod(updatedClient.getTokenEndpointAuthMethod());
         existingClient.setAlgorithm(updatedClient.getAlgorithm());
-        existingClient.setClientSecret(updatedClient.getClientSecret());
 
         if (updatedClient.getClientSecret() != null) {
             existingClient.setClientSecret(passwordEncoder.encode(updatedClient.getClientSecret()));
@@ -116,7 +116,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
     @Override
     public boolean validateScope(String clientId, String scope) {
         return getClientByClientId(clientId)
-                .map(client -> client.getScopes() != null && client.getScopes().contains(scope))
+                .map(client -> client.getAllowedScopes() != null && client.getAllowedScopes().contains(scope))
                 .orElse(false);
     }
 
@@ -133,25 +133,29 @@ public class OAuthClientServiceImpl implements OAuthClientService {
             throw new IllegalArgumentException("Grant types cannot be empty");
         }
 
-        // Scopes can be null but if present should not be empty
-        if (client.getScopes() != null && client.getScopes().isEmpty()) {
-            throw new IllegalArgumentException("Scopes list cannot be empty if provided");
+        // Allowed scopes can be null but if present should not be empty
+        if (client.getAllowedScopes() != null && client.getAllowedScopes().isEmpty()) {
+            throw new IllegalArgumentException("Allowed scopes list cannot be empty if provided");
+        }
+
+        // Default scopes can be null but if present should not be empty
+        if (client.getDefaultScopes() != null && client.getDefaultScopes().isEmpty()) {
+            throw new IllegalArgumentException("Default scopes list cannot be empty if provided");
         }
     }
+
     @Override
     public Map<String, Object> getJwks() {
         // Fetch all token configurations and map to JWKS keys
         List<Map<String, Object>> jwksKeys = oAuthClientRepository.findByDeletedAtIsNull()
                 .stream()
-                .map(oAuthClient -> {
+                .map(client -> {
                     try {
-                        return convertToJwk(oAuthClient);
+                        return convertToJwk(client);
                     } catch (Exception e) {
-                        // Log the error and skip invalid keys
-                        return null; // Skip invalid keys
+                        throw new RuntimeException("Failed to convert client to JWK", e);
                     }
                 })
-                .filter(Objects::nonNull) // Remove null entries
                 .collect(Collectors.toList());
 
         return Map.of("keys", jwksKeys);
@@ -160,7 +164,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
     @Override
     public void delete(Long id) {
         OAuthClient oAuthClient = oAuthClientRepository.findById(id)
-                .orElseThrow(() -> AppException.resourceNotFound("Token configuration not found with ID: " + id));
+                .orElseThrow(() -> AppException.resourceNotFound("OAuth Client not found with id: " + id));
         oAuthClientRepository.delete(oAuthClient);
     }
 
@@ -170,10 +174,9 @@ public class OAuthClientServiceImpl implements OAuthClientService {
     }
 
     @Override
-    public Optional<OAuthClient> findByName(String s) {
-        return oAuthClientRepository.findByName(s);
+    public Optional<OAuthClient> findByName(String name) {
+        return oAuthClientRepository.findByName(name);
     }
-
 
     @Override
     public Optional<OAuthClient> findById(Long id) {
@@ -185,7 +188,6 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         return oAuthClientRepository.findByClientId(clientId);
     }
 
-
     // Private utility methods
 
     private Map<String, Object> convertToJwk(OAuthClient oAuthClient) throws Exception {
@@ -194,23 +196,24 @@ public class OAuthClientServiceImpl implements OAuthClientService {
 
         // Construct the JWK
         return Map.of(
-                "kty", "RSA", // Key type
-                "kid", String.valueOf(oAuthClient.getSigningKey().getId()), // Key ID
-                "use", "sig", // Key usage: signing
-                "alg", oAuthClient.getAlgorithm(), // Algorithm (e.g., RS256)
-                "n", base64UrlEncode(publicKey.getModulus().toByteArray()), // Modulus (Base64URL-encoded)
-                "e", base64UrlEncode(publicKey.getPublicExponent().toByteArray()) // Exponent (Base64URL-encoded)
+                "kty", "RSA",
+                "kid", oAuthClient.getId().toString(),
+                "use", "sig",
+                "alg", oAuthClient.getAlgorithm(),
+                "n", base64UrlEncode(publicKey.getModulus().toByteArray()),
+                "e", base64UrlEncode(publicKey.getPublicExponent().toByteArray())
         );
     }
+
     public String getPublicKeyByClientId(String clientId) throws Exception {
         OAuthClient oAuthClient = oAuthClientRepository.findByClientId(clientId)
-                .orElseThrow(() -> new IllegalArgumentException("Client not found with ID: " + clientId));
+                .orElseThrow(() -> AppException.resourceNotFound("OAuth Client not found with clientId: " + clientId));
 
         Secret secret = oAuthClient.getSigningKey();
         return secret.getPublicKey();
     }
-    private RSAPublicKey getPublicKeyFromPem(String publicKeyPem) throws Exception {
 
+    private RSAPublicKey getPublicKeyFromPem(String publicKeyPem) throws Exception {
         // Remove PEM headers and all whitespace
         String cleanBase64 = publicKeyPem
                 .replace("-----BEGIN PUBLIC KEY-----", "")

@@ -7,17 +7,24 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT,
     failed_login_attempts INTEGER DEFAULT 0,
     locked_until TIMESTAMP,
-    phone_number VARCHAR(15) DEFAULT NULL,
-    mfa_backup_codes JSONB DEFAULT '[]'::jsonb,
+    phone_number VARCHAR(15),
     last_login_time TIMESTAMP,
     last_password_change TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     account_non_expired BOOLEAN DEFAULT TRUE,
     account_non_locked BOOLEAN DEFAULT TRUE,
     credentials_non_expired BOOLEAN DEFAULT TRUE,
-    deleted_at TIMESTAMP DEFAULT NULL,
+    mfa_enabled BOOLEAN DEFAULT FALSE,
+    mfa_method VARCHAR(50),
+    mfa_secret VARCHAR(255),
+    mfa_recovery_codes JSONB DEFAULT '[]'::jsonb,
+    deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_phone ON users(phone_number);
+CREATE INDEX idx_users_deleted ON users(deleted_at) WHERE deleted_at IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS user_attributes (
     id BIGSERIAL PRIMARY KEY,
@@ -25,16 +32,22 @@ CREATE TABLE IF NOT EXISTS user_attributes (
     key VARCHAR(255) NOT NULL,
     value VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, key) -- Ensure unique attributes per user
+    UNIQUE(user_id, key)
 );
+
+CREATE INDEX idx_user_attributes_key ON user_attributes(key);
+
 CREATE TABLE IF NOT EXISTS roles (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    parent_role_id BIGINT DEFAULT NULL REFERENCES roles(id) ON DELETE CASCADE
+    parent_role_id BIGINT REFERENCES roles(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_roles_parent ON roles(parent_role_id);
+
 CREATE TABLE IF NOT EXISTS policies (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -45,6 +58,7 @@ CREATE TABLE IF NOT EXISTS policies (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_policies_effect ON policies(effect);
 
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id BIGINT NOT NULL,
@@ -62,8 +76,10 @@ CREATE TABLE IF NOT EXISTS groups (
     description VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    parent_group_id BIGINT DEFAULT NULL REFERENCES groups(id) ON DELETE CASCADE
+    parent_group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_groups_parent ON groups(parent_group_id);
 
 CREATE TABLE IF NOT EXISTS group_memberships (
     user_id BIGINT NOT NULL,
@@ -74,16 +90,18 @@ CREATE TABLE IF NOT EXISTS group_memberships (
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE policy_assignments (
     id BIGSERIAL PRIMARY KEY,
     policy_id BIGINT NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
-    user_id BIGINT DEFAULT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id BIGINT DEFAULT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    group_id BIGINT DEFAULT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    role_id BIGINT REFERENCES roles(id) ON DELETE CASCADE,
+    group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_policy_assignments_user ON policy_assignments(user_id);
+CREATE INDEX idx_policy_assignments_role ON policy_assignments(role_id);
+CREATE INDEX idx_policy_assignments_group ON policy_assignments(group_id);
 
 CREATE TABLE IF NOT EXISTS permissions (
     id BIGSERIAL PRIMARY KEY,
@@ -96,11 +114,13 @@ CREATE TABLE IF NOT EXISTS permissions (
 CREATE TABLE IF NOT EXISTS group_permissions (
     group_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
-    expires_at TIMESTAMP DEFAULT NULL,
+    expires_at TIMESTAMP,
     PRIMARY KEY (group_id, permission_id),
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_group_permissions_expiry ON group_permissions(expires_at);
 
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id BIGINT NOT NULL,
@@ -118,13 +138,24 @@ CREATE TABLE IF NOT EXISTS secrets (
     type VARCHAR(50) NOT NULL,
     last_rotated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN DEFAULT TRUE,
-    expires_at TIMESTAMP DEFAULT NULL,
+    expires_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_secrets_active ON secrets(active);
+CREATE INDEX idx_secrets_expiry ON secrets(expires_at);
 
+CREATE TABLE IF NOT EXISTS scope_definitions (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    claims JSONB NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE INDEX idx_scope_definitions_default ON scope_definitions(is_default);
 
 CREATE TABLE IF NOT EXISTS oauth_clients (
     id BIGSERIAL PRIMARY KEY,
@@ -133,12 +164,13 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     response_types JSONB NOT NULL DEFAULT '["code"]'::jsonb,
     client_id VARCHAR(100) NOT NULL UNIQUE,
     status VARCHAR(50) DEFAULT 'active',
-    revoked_at TIMESTAMP DEFAULT NULL,
+    revoked_at TIMESTAMP,
     client_secret VARCHAR(255) NOT NULL,
     client_secret_last_rotated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     redirect_uris JSONB NOT NULL,
     grant_types JSONB NOT NULL,
-    scopes JSONB DEFAULT '["openid","profile","email"]'::jsonb,
+    allowed_scopes JSONB DEFAULT '["openid"]'::jsonb,
+    default_scopes JSONB DEFAULT '["openid"]'::jsonb,
     token_endpoint_auth_method VARCHAR(50) DEFAULT 'client_secret_basic',
     algorithm VARCHAR(10) NOT NULL DEFAULT 'RS256',
     key_id BIGINT REFERENCES secrets(id) ON DELETE CASCADE,
@@ -146,22 +178,23 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     refresh_token_expiry_seconds INTEGER NOT NULL DEFAULT 86400,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP DEFAULT NULL
+    deleted_at TIMESTAMP
 );
-CREATE TABLE IF NOT EXISTS user_client_registrations (
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    client_id BIGINT NOT NULL REFERENCES oauth_clients(id),  --
-    email_verified BOOLEAN DEFAULT FALSE,
-    mfa_enabled BOOLEAN DEFAULT FALSE,
-    mfa_method VARCHAR(50),
-    consent_granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    -- Add unique constraint to prevent duplicate registrations
-    PRIMARY KEY (user_id, client_id)
+CREATE INDEX idx_oauth_clients_status ON oauth_clients(status);
+CREATE INDEX idx_oauth_clients_deleted ON oauth_clients(deleted_at) WHERE deleted_at IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS user_consents (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id BIGINT NOT NULL REFERENCES oauth_clients(id) ON DELETE CASCADE,
+    scopes JSONB NOT NULL,
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    UNIQUE(user_id, client_id)
 );
+
+CREATE INDEX idx_user_consents_expiry ON user_consents(expires_at);
 
 CREATE TABLE IF NOT EXISTS tokens (
     id BIGSERIAL PRIMARY KEY,
@@ -171,10 +204,14 @@ CREATE TABLE IF NOT EXISTS tokens (
     token TEXT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    revoked_at TIMESTAMP DEFAULT NULL,
-    rotated_to BIGINT NULL,
+    revoked_at TIMESTAMP,
+    rotated_to BIGINT,
     FOREIGN KEY (client_id) REFERENCES oauth_clients(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_tokens_user ON tokens(user_id);
+CREATE INDEX idx_tokens_expiry ON tokens(expires_at);
+CREATE INDEX idx_tokens_revoked ON tokens(revoked_at);
 
 CREATE TABLE IF NOT EXISTS resources (
     id BIGSERIAL PRIMARY KEY,
@@ -186,6 +223,8 @@ CREATE TABLE IF NOT EXISTS resources (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_resources_type ON resources(type);
+
 CREATE TABLE IF NOT EXISTS resource_permissions (
     resource_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
@@ -195,89 +234,3 @@ CREATE TABLE IF NOT EXISTS resource_permissions (
     FOREIGN KEY (resource_id) REFERENCES resources(id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
-
--- Users Table Indexes
-CREATE INDEX idx_users_email ON users (email);
-CREATE INDEX idx_users_enabled ON users (enabled);
-CREATE INDEX idx_users_last_login_time ON users (last_login_time);
-CREATE INDEX idx_users_created_at ON users (created_at);
-CREATE INDEX idx_users_updated_at ON users (updated_at);
-
--- User Attributes Table Indexes
-CREATE INDEX idx_user_attributes_user_id ON user_attributes (user_id);
-CREATE INDEX idx_user_attributes_key ON user_attributes (key);
-
--- Roles Table Indexes
-CREATE INDEX idx_roles_name ON roles (name);
-CREATE INDEX idx_roles_created_at ON roles (created_at);
-CREATE INDEX idx_roles_updated_at ON roles (updated_at);
-
--- Policies Table Indexes
-CREATE INDEX idx_policies_name ON policies (name);
-CREATE INDEX idx_policies_created_at ON policies (created_at);
-CREATE INDEX idx_policies_updated_at ON policies (updated_at);
-
--- User Roles Table Indexes
-CREATE INDEX idx_user_roles_user_id ON user_roles (user_id);
-CREATE INDEX idx_user_roles_role_id ON user_roles (role_id);
-
--- Groups Table Indexes
-CREATE INDEX idx_groups_name ON groups (name);
-CREATE INDEX idx_groups_created_at ON groups (created_at);
-CREATE INDEX idx_groups_updated_at ON groups (updated_at);
-
--- Group Memberships Table Indexes
-CREATE INDEX idx_group_memberships_user_id ON group_memberships (user_id);
-CREATE INDEX idx_group_memberships_group_id ON group_memberships (group_id);
-
--- Policy Assignments Table Indexes
-CREATE INDEX idx_policy_assignments_policy_id ON policy_assignments (policy_id);
-CREATE INDEX idx_policy_assignments_user_id ON policy_assignments (user_id);
-CREATE INDEX idx_policy_assignments_role_id ON policy_assignments (role_id);
-CREATE INDEX idx_policy_assignments_group_id ON policy_assignments (group_id);
-
--- Permissions Table Indexes
-CREATE INDEX idx_permissions_name ON permissions (name);
-CREATE INDEX idx_permissions_created_at ON permissions (created_at);
-CREATE INDEX idx_permissions_updated_at ON permissions (updated_at);
-
--- Group Permissions Table Indexes
-CREATE INDEX idx_group_permissions_group_id ON group_permissions (group_id);
-CREATE INDEX idx_group_permissions_permission_id ON group_permissions (permission_id);
-
--- Role Permissions Table Indexes
-CREATE INDEX idx_role_permissions_role_id ON role_permissions (role_id);
-CREATE INDEX idx_role_permissions_permission_id ON role_permissions (permission_id);
-
--- Secrets Table Indexes
-CREATE INDEX idx_secrets_name ON secrets (name);
-CREATE INDEX idx_secrets_created_at ON secrets (created_at);
-CREATE INDEX idx_secrets_updated_at ON secrets (updated_at);
-
-
-
--- OAuth Clients Table Indexes
-CREATE INDEX idx_oauth_clients_name ON oauth_clients (name);
-CREATE INDEX idx_oauth_clients_client_id ON oauth_clients (client_id);
-CREATE INDEX idx_oauth_clients_status ON oauth_clients (status);
-CREATE INDEX idx_oauth_clients_created_at ON oauth_clients (created_at);
-CREATE INDEX idx_oauth_clients_updated_at ON oauth_clients (updated_at);
-
--- User Clients Registrations Table Indexes
-CREATE INDEX idx_user_client_reg_user_id ON user_client_registrations(user_id);
-CREATE INDEX idx_user_client_reg_client_id ON user_client_registrations(client_id);
-CREATE INDEX idx_user_client_reg_lookup ON user_client_registrations(user_id, client_id, email_verified);
--- Tokens Table Indexes
-CREATE INDEX idx_tokens_client_id ON tokens (client_id);
-CREATE INDEX idx_tokens_user_id ON tokens (user_id);
-CREATE INDEX idx_tokens_expires_at ON tokens (expires_at);
-
--- Resources Table Indexes
-CREATE INDEX idx_resources_name ON resources (name);
-CREATE INDEX idx_resources_type ON resources (type);
-CREATE INDEX idx_resources_created_at ON resources (created_at);
-CREATE INDEX idx_resources_updated_at ON resources (updated_at);
-
--- Resource Permissions Table Indexes
-CREATE INDEX idx_resource_permissions_resource_id ON resource_permissions (resource_id);
-CREATE INDEX idx_resource_permissions_permission_id ON resource_permissions (permission_id);

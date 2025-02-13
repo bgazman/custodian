@@ -20,7 +20,7 @@ public class UserSecurityDTO {
     private boolean credentialsNonExpired;
     private int failedLoginAttempts;
     private LocalDateTime lockedUntil;
-    private String mfaBackupCodes;
+    private String mfaRecoveryCodes;
     private LocalDateTime lastPasswordChange;
 
 }

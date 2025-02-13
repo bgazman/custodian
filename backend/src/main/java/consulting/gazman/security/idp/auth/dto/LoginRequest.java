@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.oauth.dto;
+package consulting.gazman.security.idp.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,5 +15,6 @@ public class LoginRequest {
     private String clientId;
     private String redirectUri;
     private String state;
+    private String responseType;  // Add this field
+    private String scope;         // Add this field
 }
-

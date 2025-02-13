@@ -18,8 +18,6 @@ public interface IOAuthController {
             HttpServletRequest request
     );
 
-    @PostMapping("/login")
-    ResponseEntity<?> login(@RequestBody AuthorizeRequest request);
 
     @PostMapping("/token")
     ResponseEntity<?> token(@RequestBody TokenRequest request);

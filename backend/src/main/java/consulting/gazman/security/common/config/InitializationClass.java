@@ -40,8 +40,7 @@ public class InitializationClass implements CommandLineRunner {
     private final GroupService groupService;
     private final GroupMembershipService groupMembershipService;
     private final GroupPermissionService groupPermissionService;
-    private final UserClientRegistrationService userClientRegistrationService;
-    // Constructor Injection for all required dependencies
+
     public InitializationClass(
             Environment environment,
             OAuthClientService oAuthClientService,
@@ -55,15 +54,15 @@ public class InitializationClass implements CommandLineRunner {
             PolicyService policyService,
             PolicyAssignmentService policyAssignmentService,
             ResourceService resourceService,
-            ResourcePermissionService resourcePermissionService, RoleRepository roleRepository, PermissionRepository permissionRepository, RolePermissionRepository rolePermissionRepository, UserRoleRepository userRoleRepository, PolicyRepository policyRepository, PolicyAssignmentRepository policyAssignmentRepository, ResourceRepository resourceRepository, ResourcePermissionRepository resourcePermissionRepository, ResourcePermissionService resourcePermissionService1,
+            ResourcePermissionService resourcePermissionService,
             GroupService groupService,
-            GroupMembershipService groupMembershipService, GroupPermissionService groupPermissionService, UserClientRegistrationService userClientRegistrationService) {
+            GroupMembershipService groupMembershipService,
+            GroupPermissionService groupPermissionService) {
         this.environment = environment;
         this.oAuthClientService = oAuthClientService;
         this.userService = userService;
         this.roleService = roleService;
         this.permissionService = permissionService;
-
         this.clientRegistrationService = clientRegistrationService;
         this.passwordEncoder = passwordEncoder;
         this.rolePermissionService = rolePermissionService;
@@ -71,48 +70,36 @@ public class InitializationClass implements CommandLineRunner {
         this.policyService = policyService;
         this.policyAssignmentService = policyAssignmentService;
         this.resourceService = resourceService;
-        this.resourcePermissionService = resourcePermissionService1;
-
+        this.resourcePermissionService = resourcePermissionService;
         this.groupService = groupService;
         this.groupMembershipService = groupMembershipService;
         this.groupPermissionService = groupPermissionService;
-        this.userClientRegistrationService = userClientRegistrationService;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
         try {
-            log.info("Starting system initialization...");
             initializeSystem();
-            log.info("System initialization complete");
         } catch (Exception e) {
-            log.error("System initialization failed", e);
-            throw new RuntimeException("Initialization failed", e);
+            log.error("Error during system initialization: ", e);
         }
     }
 
     private void initializeSystem() {
         try {
-            log.info("Starting system initialization...");
-            // Create base roles and permissions
             Role superAdminRole = createRoles();
-            List<Permission> permissions = createPermissions();
-            assignPermissionsToRoles(superAdminRole, permissions);
-            createPolicies();
             Map<String, Group> groups = createGroups();
-            assignPermissionsToGroups(groups, permissions);
+            List<Permission> permissions = createPermissions();
+            List<Policy> policies = createPolicies();
 
-            log.info("Creating root user...");
             User rootUser = createRootUser(superAdminRole);
-            assignRoleToUser(rootUser, superAdminRole);
             assignUserToGroup(rootUser, groups.get("ROOT"));
-
-            log.info("Setting up OAuth client...");
+            assignRoleToUser(rootUser, superAdminRole);
+            assignPermissionsToRoles(superAdminRole, permissions);
+            assignPermissionsToGroups(groups, permissions);
+            createResourcesAndPermissions();
             createDefaultOAuthClient();
-
-            log.info("Linking root user with client...");
-            linkRootUserWithClient(rootUser);
 
             log.info("System initialization completed successfully");
         } catch (Exception e) {
@@ -120,7 +107,6 @@ public class InitializationClass implements CommandLineRunner {
             throw e;
         }
     }
-
 
     private Role createRoles() {
         Map<String, String> systemRoles = Map.of(
@@ -163,12 +149,6 @@ public class InitializationClass implements CommandLineRunner {
         return groupMap;
     }
 
-
-
-
-
-
-
     private List<Permission> createPermissions() {
         Map<String, String> systemPermissions = Map.of(
                 "USER_READ", "Read user information",
@@ -190,6 +170,7 @@ public class InitializationClass implements CommandLineRunner {
         return permissions;
     }
 
+    // InitializationClass.java
     private List<Policy> createPolicies() {
         Map<String, String> systemPolicies = Map.of(
                 "USER_MANAGEMENT", "Policy for managing users",
@@ -204,84 +185,108 @@ public class InitializationClass implements CommandLineRunner {
                         Policy newPolicy = new Policy();
                         newPolicy.setName(name);
                         newPolicy.setDescription(description);
-                        newPolicy.setDefinition(createDefaultPolicyDefinition(name)); // Example method for default JSON definition
-                        newPolicy.setEffect("allow"); // Default effect
+                        newPolicy.setDefinition(createDefaultPolicyDefinition(name));
+                        newPolicy.setEffect("Allow"); // Set the effect property
                         return policyService.save(newPolicy);
                     });
             policies.add(policy);
         });
         return policies;
     }
+
     private String createDefaultPolicyDefinition(String policyName) {
-        // Generate default JSON definitions based on the policy name
         switch (policyName) {
             case "USER_MANAGEMENT":
                 return """
-                {
-                    "actions": ["create_user", "delete_user", "update_user"],
-                    "resources": ["users/*"]
-                }
-            """;
+                        {
+                            "Version": "2023-10-01",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "user:Create",
+                                        "user:Read",
+                                        "user:Update",
+                                        "user:Delete"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                        """;
             case "AUDIT_LOG_ACCESS":
                 return """
-                {
-                    "actions": ["view_logs"],
-                    "resources": ["audit_logs/*"]
-                }
-            """;
+                        {
+                            "Version": "2023-10-01",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "audit:Read"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                        """;
             case "DATA_EXPORT":
                 return """
-                {
-                    "actions": ["export_data"],
-                    "resources": ["data/*"]
-                }
-            """;
+                        {
+                            "Version": "2023-10-01",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "data:Export"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                        """;
             default:
                 return """
-                {
-                    "actions": [],
-                    "resources": []
-                }
-            """;
+                        {
+                            "Version": "2023-10-01",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                        """;
         }
     }
-
 
     private void assignUserToGroup(User user, Group group) {
         if (group == null || group.getId() == null) {
             throw new RuntimeException("Group is null or has not been persisted: " + group);
         }
 
-        // Check if the membership already exists
         boolean membershipExists = groupMembershipService.existsByUserIdAndGroupId(user.getId(), group.getId());
         if (membershipExists) {
             System.out.println("User is already assigned to the group: " + group.getName());
-            return; // Exit early if the user is already assigned to the group
+            return;
         }
 
-        // Create and save the membership
         GroupMembership membership = new GroupMembership();
         membership.setUser(user);
         membership.setGroup(group);
-        membership.setGroupRole(GroupRole.ADMIN); // Set the role
+        membership.setGroupRole(GroupRole.ADMIN);
         groupMembershipService.save(membership);
     }
-
-
-
-
 
     private void assignRoleToUser(User user, Role role) {
         UserRoleId userRoleId = new UserRoleId(user.getId(), role.getId());
 
-        // Check if the user-role relationship already exists
         boolean roleExists = userRoleService.existsById(userRoleId);
         if (roleExists) {
             System.out.println("User already has the role: " + role.getName());
-            return; // Exit early if the user already has the role
+            return;
         }
 
-        // Create and save the user-role relationship
         UserRole userRole = new UserRole();
         userRole.setId(userRoleId);
         userRole.setUser(user);
@@ -339,24 +344,24 @@ public class InitializationClass implements CommandLineRunner {
         });
     }
 
-private User createRootUser(Role superAdminRole) {
-    // Fetch properties from the environment with defaults
-    String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
-    String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
-    String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
+    private User createRootUser(Role superAdminRole) {
+        String rootUserName = environment.getProperty("app.root-user.name", "Root Admin");
+        String rootUserEmail = environment.getProperty("app.root-user.email", "root@system.local");
+        String rootUserPassword = environment.getProperty("app.root-user.password", "rootpass123!");
 
-    User rootUser = userService.findByEmailOptional("root@system.local")
-            .orElseGet(() -> {
-                User user = new User();
-                user.setName(rootUserName);
-                user.setEmail(rootUserEmail);
-                user.setPassword(passwordEncoder.encode(rootUserPassword));
-                user.setEnabled(true);
-                return userService.save(user);
-            });
+        User rootUser = userService.findByEmailOptional("root@system.local")
+                .orElseGet(() -> {
+                    User user = new User();
+                    user.setName(rootUserName);
+                    user.setEmail(rootUserEmail);
+                    user.setPassword(passwordEncoder.encode(rootUserPassword));
+                    user.setEnabled(true);
+                    return userService.save(user);
+                });
 
-    return rootUser;
-}
+        return rootUser;
+    }
+
     private void createDefaultOAuthClient() {
         if (!oAuthClientService.existsByName("root-dashboard")) {
             String clientId = environment.getProperty("app.client-id", "");
@@ -366,7 +371,8 @@ private User createRootUser(Role superAdminRole) {
             ClientRegistrationRequest clientRequest = ClientRegistrationRequest.builder()
                     .name("root-dashboard")
                     .applicationType("web")
-                    .scopes(List.of("openid", "profile", "email", "admin"))
+                    .allowedScopes(List.of("openid", "profile", "email", "admin"))
+                    .defaultScopes(List.of("openid", "profile", "email"))
                     .responseTypes(List.of("authorization_code", "refresh_token"))
                     .redirectUris(List.of(redirectUris))
                     .grantTypes(List.of("authorization_code", "refresh_token"))
@@ -375,29 +381,8 @@ private User createRootUser(Role superAdminRole) {
             clientRegistrationService.registerClient(clientRequest);
         }
     }
+
     private void linkRootUserWithClient(User rootUser) {
-        String clientId = environment.getProperty("app.client-id", "");
-        OAuthClient client = oAuthClientService.findByClientId(clientId)
-                .orElseThrow(() -> AppException.clientNotFound("Root client not found"));
 
-        UserClientRegistration registration = new UserClientRegistration();
-
-        // Create and set the composite key
-        UserClientRegistrationId id = new UserClientRegistrationId();
-        id.setUserId(rootUser.getId());
-        id.setClientId(client.getId());  // This should be the database ID, not the clientId string
-        registration.setId(id);
-
-        // Set the entity references
-        registration.setUser(rootUser);
-        registration.setClient(client);
-
-        registration.setEmailVerified(true);
-        registration.setMfaEnabled(false);
-        registration.setConsentGrantedAt(LocalDateTime.now());
-        registration.setLastUsedAt(LocalDateTime.now());
-
-        userClientRegistrationService.save(registration);
-        log.info("Created user-client registration for root user and client");
     }
 }

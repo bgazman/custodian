@@ -24,23 +24,12 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
     private final SecretService secretService;
     private final OAuthClientService oAuthClientService;
     private final ObjectMapper objectMapper;
-    public ClientRegistrationServiceImpl(SecretServiceImpl secretService, OAuthClientService oAuthClientService, ObjectMapper objectMapper) {
+
+    public ClientRegistrationServiceImpl(SecretService secretService, OAuthClientService oAuthClientService, ObjectMapper objectMapper) {
         this.secretService = secretService;
         this.oAuthClientService = oAuthClientService;
         this.objectMapper = objectMapper;
     }
-//    private Secret getOrCreateDefaultSecret() {
-//        return secretRepository.findByName("default-signing-key")
-//                .orElseGet(() -> {
-//                    Secret secret = new Secret();
-//                    secret.setName("default-signing-key");
-//                    secret.setPublicKey("-----BEGIN PUBLIC KEY-----...");
-//                    secret.setPrivateKey("-----BEGIN PRIVATE KEY-----...");
-//                    secret.setType("RSA");
-//                    secret.setActive(true);
-//                    return secretRepository.save(secret);
-//                });
-//    }
 
     @Transactional
     @Override
@@ -48,10 +37,9 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
         // Validate the request
         validateRegistrationRequest(request);
         if (oAuthClientService.existsByName(request.getName())) {
-            throw  AppException.userAlreadyExists("CLIENT_ALREADY_EXISTS");
+            throw AppException.userAlreadyExists("CLIENT_ALREADY_EXISTS");
         }
 
-        // Fetch the tenant
         // Generate client_id and client_secret first
         String clientId = StringUtils.hasText(request.getClientId()) ? request.getClientId() : generateClientId();
         String clientSecret = generateClientSecret();
@@ -68,7 +56,8 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
                 .status("active")
                 .redirectUris(request.getRedirectUris())
                 .grantTypes(request.getGrantTypes())
-                .scopes(request.getScopes())
+                .allowedScopes(request.getAllowedScopes())
+                .defaultScopes(request.getDefaultScopes())
                 .responseTypes(request.getResponseTypes())
                 .applicationType(request.getApplicationType() != null ? request.getApplicationType() : "web")
                 .accessTokenExpirySeconds(3600)
@@ -88,11 +77,11 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
                 .name(savedClient.getName())
                 .redirectUris(savedClient.getRedirectUris())
                 .grantTypes(savedClient.getGrantTypes())
-                .scopes(savedClient.getScopes())
+                .allowedScopes(savedClient.getAllowedScopes())
+                .defaultScopes(savedClient.getDefaultScopes())
                 .keyId(clientSigningKey.getId()) // Include the signing key ID
                 .build();
     }
-
 
     @Override
     public Optional<ClientRegistrationResponse> getClientById(String clientId) {
@@ -103,49 +92,68 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
     @Override
     public ClientRegistrationResponse updateClient(String clientId, ClientRegistrationRequest request) {
         OAuthClient existingClient = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> new AppException("CLIENT_NOT_FOUND", "Client not found"));
+                .orElseThrow(() -> AppException.resourceNotFound("OAuth Client not found with clientId: " + clientId));
 
-        // Update fields
-        existingClient.setName(request.getName());
-        existingClient.setRedirectUris(request.getRedirectUris());  // Direct List assignment
-        existingClient.setGrantTypes(request.getGrantTypes());      // Direct List assignment
-        existingClient.setScopes(request.getScopes());              // Direct List assignment
-        existingClient.setApplicationType(request.getApplicationType());
-        existingClient.setResponseTypes(request.getResponseTypes()); // Direct List assignment
+        validateRegistrationRequest(request);
+
+        existingClient.setRedirectUris(request.getRedirectUris());
+        existingClient.setGrantTypes(request.getGrantTypes());
+        existingClient.setAllowedScopes(request.getAllowedScopes());
+        existingClient.setDefaultScopes(request.getDefaultScopes());
+//        existingClient.setTokenEndpointAuthMethod(request.getTokenEndpointAuthMethod());
+//        existingClient.setAlgorithm(request.getAlgorithm());
+//
+//        if (request.getClientSecret() != null) {
+//            existingClient.setClientSecret(request.getClientSecret());
+//            existingClient.setClientSecretLastRotated(LocalDateTime.now());
+//        }
 
         OAuthClient updatedClient = oAuthClientService.updateClient(existingClient.getId(), existingClient);
+
         return convertToResponse(updatedClient);
     }
 
     @Override
     public void deleteClient(String clientId) {
         OAuthClient client = oAuthClientService.getClientByClientId(clientId)
-                .orElseThrow(() -> new AppException("CLIENT_NOT_FOUND", "Client not found"));
-        oAuthClientService.softDeleteClient(client.getId());
+                .orElseThrow(() -> AppException.resourceNotFound("OAuth Client not found with clientId: " + clientId));
+        oAuthClientService.deleteClient(client.getId());
     }
 
     private ClientRegistrationResponse convertToResponse(OAuthClient client) {
         return ClientRegistrationResponse.builder()
                 .clientId(client.getClientId())
-                .clientSecret(client.getClientSecret())
                 .name(client.getName())
-                .redirectUris(client.getRedirectUris())          // Direct List usage
-                .grantTypes(client.getGrantTypes())             // Direct List usage
-                .scopes(client.getScopes())                     // Direct List usage
-                .clientSecretExpiresAt(0L)                      // Example static value
+                .redirectUris(client.getRedirectUris())
+                .grantTypes(client.getGrantTypes())
+                .allowedScopes(client.getAllowedScopes())
+                .defaultScopes(client.getDefaultScopes())
+                .keyId(client.getSigningKey().getId())
                 .build();
     }
 
     private void validateRegistrationRequest(ClientRegistrationRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw  AppException.invalidRequest("Client name is required");
+            throw new IllegalArgumentException("Client name cannot be empty");
         }
+
         if (request.getRedirectUris() == null || request.getRedirectUris().isEmpty()) {
-            throw  AppException.invalidRequest("At least one redirect URI is required");
-
+            throw new IllegalArgumentException("Redirect URIs cannot be empty");
         }
 
-        // Add more validations as needed
+        if (request.getGrantTypes() == null || request.getGrantTypes().isEmpty()) {
+            throw new IllegalArgumentException("Grant types cannot be empty");
+        }
+
+        // Allowed scopes can be null but if present should not be empty
+        if (request.getAllowedScopes() != null && request.getAllowedScopes().isEmpty()) {
+            throw new IllegalArgumentException("Allowed scopes list cannot be empty if provided");
+        }
+
+        // Default scopes can be null but if present should not be empty
+        if (request.getDefaultScopes() != null && request.getDefaultScopes().isEmpty()) {
+            throw new IllegalArgumentException("Default scopes list cannot be empty if provided");
+        }
     }
 
     private String generateClientId() {
@@ -158,17 +166,17 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
 
     private String convertToJson(List<String> list) {
         try {
-            return new ObjectMapper().writeValueAsString(list);
+            return objectMapper.writeValueAsString(list);
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert list to JSON", e);
         }
     }
+
     private List<String> parseJson(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {}); // Deserialize JSON string to List
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse JSON to List", e);
+            throw new RuntimeException("Failed to parse JSON to list", e);
         }
     }
-
 }

@@ -35,29 +35,21 @@ public class IdpSecurityConfig {
     @Bean
     public SecurityFilterChain idpSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/oauth/**", "/login", "/.well-known/**", "/client/register", "/mfa/**", "/forgot-password/**")
+                .securityMatcher("/oauth/**", "/auth/**", "/.well-known/**")  // Remove /login
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login",
-                                "/oauth/token",
-                                "/oauth/introspect",
-                                "/oauth/revoke",
-                                "/oauth/authorize",
-                                "/oauth/login",
-                                "/.well-known/**",
-                                "/client/register",
-                                "/mfa/**",
-                                "/forgot-password/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/assets/**",
+                                "/index.html",
+                                "/oauth/**",
+                                "/auth/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
+                        .loginProcessingUrl("/auth/login")  // Remove loginPage()
                         .defaultSuccessUrl("/oauth/authorize", false)
-                )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth/**", "/mfa/**", "/forgot-password/**")
-                )
-                .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class);
+                );
 
         return http.build();
     }

@@ -1,3 +1,4 @@
+// ClientRegistrationRequest.java
 package consulting.gazman.security.idp.oauth.dto;
 
 import lombok.AllArgsConstructor;
@@ -12,12 +13,12 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ClientRegistrationRequest {
-    private String name;                   // changed from clientName to match entity
+    private String name;
     private String applicationType;
     private List<String> redirectUris;
     private List<String> grantTypes;
-    private List<String> scopes;          // changed from String scope to List<String> scopes
+    private List<String> allowedScopes;  // Changed from scopes to allowedScopes
+    private List<String> defaultScopes;  // Added defaultScopes
     private List<String> responseTypes;
     private String clientId;
-
 }

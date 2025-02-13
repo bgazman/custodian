@@ -1,17 +1,16 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
-
-import consulting.gazman.security.client.user.entity.UserClientRegistration;
+import consulting.gazman.security.client.user.entity.User;
 import consulting.gazman.security.client.user.entity.UserRole;
 import consulting.gazman.security.client.user.service.*;
-import consulting.gazman.security.client.user.service.UserClientRegistrationService;
+import consulting.gazman.security.idp.auth.dto.LoginRequest;
+import consulting.gazman.security.idp.auth.dto.LoginResponse;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
 import consulting.gazman.security.idp.oauth.dto.*;
 import consulting.gazman.security.client.user.entity.GroupMembership;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Token;
-import consulting.gazman.security.client.user.entity.User;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.service.*;
 import io.jsonwebtoken.Claims;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import consulting.gazman.security.idp.oauth.utils.TokenUtils;
+
 @Service
 @Transactional
 public class OAuthServiceImpl implements OAuthService {
@@ -41,7 +41,6 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired private GroupPermissionService groupPermissionService;
     @Autowired private UserRoleService userRoleService;
     @Autowired private RolePermissionService rolePermissionService;
-    @Autowired private UserClientRegistrationService userClientRegistrationService;
     @Autowired UserService userService;
     @Autowired EmailVerificationServiceImpl emailVerificationServiceImpl;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -53,68 +52,10 @@ public class OAuthServiceImpl implements OAuthService {
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
-    @Transactional
-    @Override
-    public LoginResponse login(LoginRequest loginRequest) {
-        LoginResponse response = null;
-        try {
-            response = loginWrapped(loginRequest);
-
-        } catch (Exception e) {
-            return LoginResponse.builder().error(e.getMessage()).build();
-
-        }
-        return response;
-    }
-    public LoginResponse loginWrapped(LoginRequest loginRequest) {
-
-        Optional<User> optionalUser = userService.findByEmailOptional(loginRequest.getEmail());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-
-            if (isAccountLocked(user)) {
-                Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
-                String message = "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.";
-                throw AppException.accountLocked(message);
-            }
-
-            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                handleFailedLoginAttempt(user);
-                int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
-                throw remainingAttempts > 0
-                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
-                        : AppException.accountLocked("Account locked due to attempts");
-            }
-            // Get client-specific registration details
-            Optional<UserClientRegistration> clientRegistration =
-                    userClientRegistrationService.findByUserIdAndClientId(user.getId(), loginRequest.getClientId());
-
-            if (!clientRegistration.isPresent()) {
-                throw AppException.unauthorized("User not registered with this client application");
-            }
-            resetLoginAttempts(user);
-            String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
-
-            return LoginResponse.builder()
-                    .code(authorizationCode)
-                    .state(loginRequest.getState())
-                    .redirectUri(loginRequest.getRedirectUri())
-                    .mfaMethod(clientRegistration.get().getMfaMethod())
-                    .mfaEnabled(clientRegistration.get().getMfaEnabled())
-                    .build();        }
-        else {
-            // Return response indicating that the user was not found
-            throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
-        }
-
-    }
-
 
     @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {
-
-        String code = authCodeService.generateCode(request.getEmail(),request.getClientId());
-        // Store code with user/client mapping
+        String code = authCodeService.generateCode(request.getEmail(), request.getClientId());
         return AuthorizeResponse.builder()
                 .code(code)
                 .state(request.getState())
@@ -124,19 +65,14 @@ public class OAuthServiceImpl implements OAuthService {
     @Transactional
     @Override
     public TokenResponse exchangeToken(TokenRequest request) {
-        // Validate the authorization code
         String value = authCodeService.validateCode(request.getCode());
-
-        // Extract email and clientId from the value
         String[] parts = value.split(":");
         String email = parts[0];
         String clientId = parts[1];
 
-        // Fetch OAuthClient using clientId
         OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
                 .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
-        // Fetch the user by email
         User user = userService.findByEmail(email);
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
         List<UserRole> userRoles = userRoleService.getRolesForUser(user.getId());
@@ -156,28 +92,24 @@ public class OAuthServiceImpl implements OAuthService {
                         gm -> groupPermissionService.getGroupPermissions(gm.getGroup().getId())
                 ));
 
-// Combine both permissions maps
         Map<Long, List<String>> permissions = new HashMap<>();
         permissions.putAll(rolePermissions);
         permissions.putAll(groupPermissions);
-        // Generate a new refresh token
+
         String rawRefreshToken = TokenUtils.generateOpaqueToken();
         LocalDateTime refreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
         tokenService.createToken("refresh_token", rawRefreshToken, refreshTokenExpiresAt, user, oAuthClient);
 
-        // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions,userRoles))
-                .refreshToken(rawRefreshToken) // Return raw token to client
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions, userRoles))
+                .refreshToken(rawRefreshToken)
                 .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
     }
 
-
     @Transactional
     @Override
     public TokenResponse refreshToken(TokenRequest request) {
-        // Validate the refresh token and find the associated token record
         Token existingToken = tokenService.findToken(request.getRefreshToken())
                 .orElseThrow(() -> AppException.invalidRefreshToken("The refresh token is invalid or expired"));
 
@@ -185,10 +117,7 @@ public class OAuthServiceImpl implements OAuthService {
             throw AppException.invalidRefreshToken("The refresh token has expired");
         }
 
-        // Fetch the associated OAuthClient
         OAuthClient oAuthClient = existingToken.getClient();
-
-        // Fetch the associated user
         User user = existingToken.getUser();
 
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
@@ -209,33 +138,28 @@ public class OAuthServiceImpl implements OAuthService {
                         gm -> groupPermissionService.getGroupPermissions(gm.getGroup().getId())
                 ));
 
-// Combine both permissions maps
         Map<Long, List<String>> permissions = new HashMap<>();
         permissions.putAll(rolePermissions);
         permissions.putAll(groupPermissions);
 
-        // Rotate the refresh token
         String rawNewRefreshToken = TokenUtils.generateOpaqueToken();
         LocalDateTime newRefreshTokenExpiresAt = LocalDateTime.now().plusSeconds(oAuthClient.getRefreshTokenExpirySeconds());
         tokenService.rotateRefreshToken(existingToken, rawNewRefreshToken, newRefreshTokenExpiresAt);
 
-        // Build the token response
         return TokenResponse.builder()
-                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions,userRoles))
-                .refreshToken(rawNewRefreshToken) // Provide new refresh token
+                .accessToken(jwtService.generateAccessToken(user, oAuthClient, groupMemberships, permissions, userRoles))
+                .refreshToken(rawNewRefreshToken)
                 .idToken(jwtService.generateIdToken(user, oAuthClient))
                 .build();
     }
+
     @Transactional
     @Override
     public IntrospectResponse introspectToken(String token) {
-        // Step 1: Validate the token
         Claims tokenClaims = jwtService.validateToken(token);
 
-
-
         String clientId = tokenClaims.get("client_id", String.class);
-        String userId = tokenClaims.getSubject(); // Standard "sub" claim
+        String userId = tokenClaims.getSubject();
         String scope = tokenClaims.get("scope", String.class);
         String tokenType = tokenClaims.get("typ", String.class);
         LocalDateTime issuedAt = LocalDateTime.ofInstant(
@@ -244,16 +168,14 @@ public class OAuthServiceImpl implements OAuthService {
                 tokenClaims.getExpiration().toInstant(), ZoneId.systemDefault());
         LocalDateTime notBefore = LocalDateTime.ofInstant(
                 tokenClaims.getNotBefore().toInstant(), ZoneId.systemDefault());
-        String issuer = tokenClaims.getIssuer(); // Standard "iss" claim
-        String tokenId = tokenClaims.getId(); // Standard "jti" claim
+        String issuer = tokenClaims.getIssuer();
+        String tokenId = tokenClaims.getId();
 
-        // Step 3: Fetch OAuthClient and User information
         OAuthClient oAuthClient = oAuthClientService.getClientByClientId(clientId)
                 .orElseThrow(() -> AppException.invalidClientId("Invalid clientId: " + clientId));
 
         User user = userService.findByEmail(userId);
 
-        // Step 4: Retrieve groups and permissions
         List<GroupMembership> groupMemberships = groupMembershipService.getGroupsForUser(user.getId());
         Map<Long, List<String>> permissions = groupMemberships.stream()
                 .collect(Collectors.toMap(
@@ -261,7 +183,6 @@ public class OAuthServiceImpl implements OAuthService {
                         groupMembership -> groupPermissionService.getGroupPermissions(groupMembership.getGroup().getId())
                 ));
 
-        // Step 5: Build and return the IntrospectResponse
         return IntrospectResponse.builder()
                 .active(true)
                 .scope(scope)
@@ -282,7 +203,6 @@ public class OAuthServiceImpl implements OAuthService {
         return null;
     }
 
-
     @Transactional
     @Override
     public void revokeToken(String token) {
@@ -290,36 +210,7 @@ public class OAuthServiceImpl implements OAuthService {
                 .orElseThrow(() -> AppException.invalidRefreshToken("The refresh token is invalid or expired"));
 
         tokenService.revokeToken(existingToken.getId());
-
-
-
     }
 
 
-
-    // Helper: Check if account is locked
-    private boolean isAccountLocked(User user) {
-        return user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil());
-    }
-
-    // Helper: Handle failed login attempts
-    private void handleFailedLoginAttempt(User user) {
-        int newFailedAttempts = user.getFailedLoginAttempts() + 1;
-        user.setFailedLoginAttempts(newFailedAttempts);
-
-        if (newFailedAttempts >= MAX_ATTEMPTS) {
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
-//            log.warn("User account locked due to too many failed attempts: {}", user.getEmail());
-        }
-
-        userService.save(user);
-    }
-
-    // Helper: Reset login attempts
-    private void resetLoginAttempts(User user) {
-        user.setFailedLoginAttempts(0);
-        user.setLockedUntil(null);
-        user.setLastLoginTime(LocalDateTime.now());
-        userService.save(user);
-    }
 }
