@@ -20,6 +20,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
+          <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );

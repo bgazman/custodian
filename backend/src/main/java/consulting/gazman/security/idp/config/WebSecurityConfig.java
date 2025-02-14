@@ -25,7 +25,7 @@ private final CorsConfigurationSource corsConfigurationSource; // ✅ Inject COR
     @Bean
     SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.disable()) // ✅ Use shared CORS bean
+                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // ✅ Use shared CORS bean
                 .securityMatcher("/index.html")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable());

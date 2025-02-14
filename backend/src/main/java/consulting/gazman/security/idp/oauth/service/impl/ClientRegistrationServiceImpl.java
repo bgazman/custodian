@@ -43,6 +43,8 @@ public class ClientRegistrationServiceImpl implements ClientRegistrationService 
         // Generate client_id and client_secret first
         String clientId = StringUtils.hasText(request.getClientId()) ? request.getClientId() : generateClientId();
         String clientSecret = generateClientSecret();
+        System.out.println("Client ID==============" + clientId);
+        System.out.println("Client Secret==========" + clientSecret);
 
         // Generate a client-specific signing key
         Secret clientSigningKey = secretService.createClientSigningKey(request.getName());

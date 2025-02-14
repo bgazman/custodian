@@ -20,14 +20,13 @@ function OAuthCallback() {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/oauth/token`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa(`${import.meta.env.VITE_CLIENT_ID}:${import.meta.env.VITE_CLIENT_SECRET}`)
                     },
                     body: JSON.stringify({
                         grantType: 'authorization_code',
                         code,
                         state,
-                        clientId: import.meta.env.VITE_CLIENT_ID,
-                        clientSecret: import.meta.env.VITE_CLIENT_SECRET,
                         redirectUri: import.meta.env.VITE_REDIRECT_URI
                     })
                 });

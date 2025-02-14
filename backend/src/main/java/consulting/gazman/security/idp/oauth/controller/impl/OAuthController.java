@@ -60,20 +60,21 @@ public class OAuthController implements IOAuthController {
                     .codeChallengeMethod(code_challenge_method)
                     .build();
             oAuthSessionService.saveSession(sessionId, oauthSession);
-
             request.getSession().setAttribute("oauth_session", oauthSession);
 
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create("/login"))
                     .build();
         }
+
         OAuthSession oauthSession = (OAuthSession) request.getSession().getAttribute("oauth_session");
         if (!state.equals(oauthSession.getState())) {
+            cleanupSession(request, sessionId);
             throw new AppException("STATE_MISMATCH", "Invalid state parameter");
         }
 
         String code = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                        .email(session.getEmail())
+                .email(session.getEmail())  // Using email from Redis session
                 .responseType(response_type)
                 .clientId(client_id)
                 .redirectUri(redirect_uri)
@@ -82,9 +83,6 @@ public class OAuthController implements IOAuthController {
                 .codeChallengeMethod(code_challenge_method)
                 .build()).getCode();
 
-        request.getSession().removeAttribute("oauth_session");
-
-// Instead of returning a 302 redirect:
         Map<String, String> responseBody = new HashMap<>();
         String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
                 .queryParam("code", code)
@@ -93,17 +91,18 @@ public class OAuthController implements IOAuthController {
                 .toUriString();
         responseBody.put("redirectUrl", redirectUrl);
         return ResponseEntity.ok(responseBody);
-
     }
 
     @Override
-    public ResponseEntity<?> token(@RequestBody TokenRequest request) {
+    public ResponseEntity<?> token(@RequestBody TokenRequest request, HttpServletRequest httpRequest) {
         try {
+            String sessionId = httpRequest.getSession().getId();
             TokenResponse response;
 
             switch (request.getGrantType()) {
                 case "authorization_code":
                     response = oAuthService.exchangeToken(request);
+                    cleanupSession(httpRequest, sessionId);
                     break;
                 case "refresh_token":
                     if (request.getRefreshToken() == null || request.getRefreshToken().isEmpty()) {
@@ -118,16 +117,18 @@ public class OAuthController implements IOAuthController {
 
             return ResponseEntity.ok(response);
         } catch (AppException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
         } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
         }
     }
 
+    private void cleanupSession(HttpServletRequest request, String sessionId) {
+        request.getSession().removeAttribute("oauth_session");
+        oAuthSessionService.removeSession(sessionId);
+    }
     @Override
     public ResponseEntity<?> introspect(@RequestBody String bearerToken) {
         try {

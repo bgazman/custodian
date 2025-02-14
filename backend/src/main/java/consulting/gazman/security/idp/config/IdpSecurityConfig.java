@@ -1,6 +1,7 @@
 package consulting.gazman.security.idp.config;
 
 import consulting.gazman.security.common.config.CorsConfig;
+import consulting.gazman.security.common.filter.BasicAuthFilter;
 import consulting.gazman.security.common.filter.LoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import static org.springframework.security.config.Customizer.withDefaults;
 import java.util.List;
 
 @Configuration
@@ -26,26 +27,33 @@ public class IdpSecurityConfig {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final LoggingFilter loggingFilter;
-    private final CorsConfigurationSource corsConfigurationSource; // ✅ Inject CORS Bean
+    private final CorsConfigurationSource corsConfigurationSource;
+    private BasicAuthFilter basicAuthFilter;
+    // ✅ Inject CORS Bean
     public IdpSecurityConfig(UserDetailsService userDetailsService,
                              PasswordEncoder passwordEncoder,
-                             LoggingFilter loggingFilter, CorsConfigurationSource corsConfigurationSource) {
+                             LoggingFilter loggingFilter,
+                             CorsConfigurationSource corsConfigurationSource,
+                             BasicAuthFilter basicAuthFilter) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.loggingFilter = loggingFilter;
         this.corsConfigurationSource = corsConfigurationSource;
+        this.basicAuthFilter = basicAuthFilter;
     }
 
     @Bean
     public SecurityFilterChain idpSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**") // ✅ Apply to API routes only
-                .cors(cors -> cors.disable()) // ✅ Use shared CORS config
+                .securityMatcher("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**"))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/oauth/token").hasAuthority("ROLE_CLIENT") // Add this
                         .requestMatchers("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**").permitAll()
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(basicAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

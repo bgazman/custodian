@@ -22,8 +22,9 @@ public interface IOAuthController {
             HttpServletRequest request
     );
 
+//    ResponseEntity<?> token(@RequestBody TokenRequest request);
     @PostMapping("/token")
-    ResponseEntity<?> token(@RequestBody TokenRequest request);
+    ResponseEntity<?> token(@RequestBody TokenRequest request, HttpServletRequest httpRequest);
 
     @GetMapping("/introspect")
     ResponseEntity<?> introspect(@RequestBody String bearerToken);
