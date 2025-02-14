@@ -7,7 +7,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Map;
 
-@RequestMapping("/forgot-password")
+@RequestMapping("/auth/forgot-password")
 public interface IForgotPasswordController {
     @GetMapping
     ModelAndView showResetPasswordPage(

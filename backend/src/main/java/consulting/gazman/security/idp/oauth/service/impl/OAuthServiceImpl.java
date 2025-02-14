@@ -49,9 +49,6 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired OAuthClientService oAuthClientService;
     @Autowired TokenService tokenService;
 
-    private static final int MAX_ATTEMPTS = 5;
-    private static final int LOCK_DURATION_MINUTES = 15;
-
 
     @Override
     public AuthorizeResponse generateAuthCode(AuthorizeRequest request) {

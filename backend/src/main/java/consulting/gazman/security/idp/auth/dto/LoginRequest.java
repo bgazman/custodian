@@ -12,9 +12,4 @@ import lombok.RequiredArgsConstructor;
 public class LoginRequest {
     private String email;
     private String password;
-    private String clientId;
-    private String redirectUri;
-    private String state;
-    private String responseType;  // Add this field
-    private String scope;         // Add this field
 }

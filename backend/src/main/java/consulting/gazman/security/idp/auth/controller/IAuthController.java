@@ -5,6 +5,8 @@ import consulting.gazman.security.idp.auth.dto.LogoutRequest;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationRequest;
 
 import consulting.gazman.security.idp.oauth.dto.AuthorizeRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,7 +23,7 @@ public interface IAuthController {
     ResponseEntity<?> verifyEmail(@RequestParam("token") String token);
 
     @PostMapping("/login")
-    ResponseEntity<?> login(@RequestBody LoginRequest request);
+    ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response);
 
 
     @PostMapping("/logout")

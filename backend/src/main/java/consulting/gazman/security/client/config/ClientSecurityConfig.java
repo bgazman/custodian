@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @EnableMethodSecurity(prePostEnabled = true)
-@Configuration
+//@Configuration
 @Order(2)
 public class ClientSecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;

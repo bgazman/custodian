@@ -4,6 +4,9 @@ import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
+import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.service.OAuthSessionService;
+import consulting.gazman.security.idp.oauth.controller.IOAuthController;
 import consulting.gazman.security.idp.oauth.dto.*;
 import consulting.gazman.security.idp.oauth.service.OAuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,22 +19,21 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RestController
 
-public class OAuthController implements consulting.gazman.security.idp.oauth.controller.IOAuthController {
+public class OAuthController implements IOAuthController {
 
     @Autowired
     private AuthService authService;
 
     @Autowired
     private OAuthService oAuthService;
-
     @Autowired
     MfaService mfaService;
+    @Autowired
+    OAuthSessionService oAuthSessionService;
     @Override
     public ResponseEntity<?> authorize(
             @RequestParam String response_type,
@@ -39,48 +41,55 @@ public class OAuthController implements consulting.gazman.security.idp.oauth.con
             @RequestParam String redirect_uri,
             @RequestParam String scope,
             @RequestParam String state,
+            @RequestParam(required = false) String code_challenge,
+            @RequestParam(required = false) String code_challenge_method,
             HttpServletRequest request
     ) {
-        // Check if the user is authenticated
-        boolean isAuthenticated = request.getSession().getAttribute("user") != null;
+        String sessionId = request.getSession().getId();
+        OAuthSession session = oAuthSessionService.getSession(sessionId);
 
-        if (!isAuthenticated) {
-            // Save state in session
-            request.getSession().setAttribute("state", state);
+        if (session == null) {
+            OAuthSession oauthSession = OAuthSession.builder()
+                    .state(state)
+                    .clientId(client_id)
+                    .redirectUri(redirect_uri)
+                    .responseType(response_type)
+                    .scope(scope)
+                    .codeChallenge(code_challenge)
+                    .codeChallengeMethod(code_challenge_method)
+                    .build();
+            oAuthSessionService.saveSession(sessionId, oauthSession);
 
-            // Redirect to login
-            String loginUrl = "/login?response_type=" + URLEncoder.encode(response_type, StandardCharsets.UTF_8) +
-                    "&client_id=" + URLEncoder.encode(client_id, StandardCharsets.UTF_8) +
-                    "&redirect_uri=" + URLEncoder.encode(redirect_uri, StandardCharsets.UTF_8) +
-                    "&scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8) +
-                    "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+            request.getSession().setAttribute("oauth_session", oauthSession);
 
-            return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(loginUrl)).build();
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create("/login"))
+                    .build();
         }
-
-        // Validate state
-        String sessionState = (String) request.getSession().getAttribute("state");
-        if (!state.equals(sessionState)) {
+        OAuthSession oauthSession = (OAuthSession) request.getSession().getAttribute("oauth_session");
+        if (!state.equals(oauthSession.getState())) {
             throw new AppException("STATE_MISMATCH", "Invalid state parameter");
         }
 
-        // Generate authorization code
-        String code = generateAuthorizationCode(response_type, client_id, redirect_uri, scope, state);
+        String code = oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                .responseType(response_type)
+                .clientId(client_id)
+                .redirectUri(redirect_uri)
+                .scope(scope)
+                .codeChallenge(code_challenge)
+                .codeChallengeMethod(code_challenge_method)
+                .build()).getCode();
 
+        request.getSession().removeAttribute("oauth_session");
 
-        String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
-                .queryParam("code", code)
-                .queryParam("state", state)
-                .build()
-                .toUriString();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(UriComponentsBuilder.fromUriString(redirect_uri)
+                        .queryParam("code", code)
+                        .queryParam("state", state)
+                        .build()
+                        .toUriString()))
+                .build();
     }
-
-
-
-
-
-
 
     @Override
     public ResponseEntity<?> token(@RequestBody TokenRequest request) {

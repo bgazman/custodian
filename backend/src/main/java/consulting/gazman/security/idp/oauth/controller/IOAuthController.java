@@ -3,11 +3,13 @@ package consulting.gazman.security.idp.oauth.controller;
 import consulting.gazman.security.idp.oauth.dto.AuthorizeRequest;
 import consulting.gazman.security.idp.oauth.dto.TokenRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/oauth")
 public interface IOAuthController {
+
     @GetMapping("/authorize")
     ResponseEntity<?> authorize(
             @RequestParam String response_type,
@@ -15,9 +17,10 @@ public interface IOAuthController {
             @RequestParam String redirect_uri,
             @RequestParam String scope,
             @RequestParam String state,
+            @RequestParam(required = false) String code_challenge,
+            @RequestParam(required = false) String code_challenge_method,
             HttpServletRequest request
     );
-
 
     @PostMapping("/token")
     ResponseEntity<?> token(@RequestBody TokenRequest request);

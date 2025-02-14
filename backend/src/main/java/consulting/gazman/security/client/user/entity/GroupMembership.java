@@ -4,13 +4,18 @@ import consulting.gazman.security.client.constants.GroupRole;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Entity
 @Table(name = "group_memberships")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GroupMembership {
+public class GroupMembership implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @EmbeddedId
     private GroupMembershipId id = new GroupMembershipId();

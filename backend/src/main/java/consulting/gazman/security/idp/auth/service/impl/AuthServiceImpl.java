@@ -102,51 +102,67 @@ public class AuthServiceImpl implements AuthService {
                     return null;
                 });    }
 
-    @Transactional
-    @Override
-    public LoginResponse login(LoginRequest loginRequest) {
-        LoginResponse response = null;
-        try {
-            response = loginWrapped(loginRequest);
-        } catch (Exception e) {
-            return LoginResponse.builder().error(e.getMessage()).build();
-        }
-        return response;
-    }
 
-    public LoginResponse loginWrapped(LoginRequest loginRequest) {
-        Optional<User> optionalUser = userService.findByEmailOptional(loginRequest.getEmail());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+@Transactional(dontRollbackOn  = AppException.class)
+@Override
+public LoginResponse login(LoginRequest loginRequest) {
+
+            User user = userService.findByEmailOptional(loginRequest.getEmail())
+                    .orElseThrow(() -> AppException.userNotFound("User not found"));
 
             if (isAccountLocked(user)) {
                 Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
-                String message = "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.";
-                throw AppException.accountLocked(message);
+                throw AppException.accountLocked("Account locked. Try again in " + remainingLockTime.toMinutes() + " minutes");
             }
 
             if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
                 handleFailedLoginAttempt(user);
                 int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
                 throw remainingAttempts > 0
-                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
+                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining")
                         : AppException.accountLocked("Account locked due to attempts");
             }
 
             resetLoginAttempts(user);
-            String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
 
             return LoginResponse.builder()
-                    .code(authorizationCode)
-                    .state(loginRequest.getState())
-                    .redirectUri(loginRequest.getRedirectUri())
                     .mfaMethod(user.getMfaMethod())
                     .mfaEnabled(user.isMfaEnabled())
                     .build();
-        } else {
-            throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
-        }
     }
+//    public LoginResponse loginWrapped(LoginRequest loginRequest) {
+//        Optional<User> optionalUser = userService.findByEmailOptional(loginRequest.getEmail());
+//        if (optionalUser.isPresent()) {
+//            User user = optionalUser.get();
+//
+//            if (isAccountLocked(user)) {
+//                Duration remainingLockTime = Duration.between(LocalDateTime.now(), user.getLockedUntil());
+//                String message = "Account is locked. Try again in " + remainingLockTime.toMinutes() + " minutes.";
+//                throw AppException.accountLocked(message);
+//            }
+//
+//            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+//                handleFailedLoginAttempt(user);
+//                int remainingAttempts = MAX_ATTEMPTS - user.getFailedLoginAttempts();
+//                throw remainingAttempts > 0
+//                        ? AppException.invalidCredentials("Invalid credentials. " + remainingAttempts + " attempts remaining.")
+//                        : AppException.accountLocked("Account locked due to attempts");
+//            }
+//
+//            resetLoginAttempts(user);
+//            String authorizationCode = authCodeService.generateCode(loginRequest.getEmail(), loginRequest.getClientId());
+//
+//            return LoginResponse.builder()
+//                    .code(authorizationCode)
+//                    .state(loginRequest.getState())
+//                    .redirectUri(loginRequest.getRedirectUri())
+//                    .mfaMethod(user.getMfaMethod())
+//                    .mfaEnabled(user.isMfaEnabled())
+//                    .build();
+//        } else {
+//            throw AppException.userNotFound("User not found for subject: " + loginRequest.getEmail());
+//        }
+//    }
     private boolean isAccountLocked(User user) {
         return user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil());
     }

@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
-@RequestMapping("/mfa")
+@RequestMapping("/auth/mfa")
 public interface IMfaController {
     @GetMapping
     ModelAndView showMfaPage(

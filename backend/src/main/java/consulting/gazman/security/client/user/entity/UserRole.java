@@ -9,6 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,7 +18,9 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class UserRole {
+public class UserRole implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @EmbeddedId
     private UserRoleId id = new UserRoleId();
