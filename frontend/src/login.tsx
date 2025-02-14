@@ -4,25 +4,25 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const loginData = {
-      email: email,
-      password: password
-    };
+    const loginData = { email, password };
 
     try {
       const response = await fetch('http://localhost:8080/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(loginData)
+        body: JSON.stringify(loginData),
+        credentials: 'include'
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Login successful:', data);
+        // Trigger a full page navigation to the redirect URL provided by the server
+        window.location.href = data.redirectUrl;
       } else {
         console.error('Login failed:', response.statusText);
       }
@@ -30,6 +30,7 @@ const Login: React.FC = () => {
       console.error('Error:', error);
     }
   };
+
 
   return (
     <form onSubmit={handleSubmit}>

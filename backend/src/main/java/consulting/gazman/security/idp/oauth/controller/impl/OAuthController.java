@@ -12,13 +12,14 @@ import consulting.gazman.security.idp.oauth.service.OAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -72,6 +73,7 @@ public class OAuthController implements IOAuthController {
         }
 
         String code = oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                        .email(session.getEmail())
                 .responseType(response_type)
                 .clientId(client_id)
                 .redirectUri(redirect_uri)
@@ -82,13 +84,16 @@ public class OAuthController implements IOAuthController {
 
         request.getSession().removeAttribute("oauth_session");
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(UriComponentsBuilder.fromUriString(redirect_uri)
-                        .queryParam("code", code)
-                        .queryParam("state", state)
-                        .build()
-                        .toUriString()))
-                .build();
+// Instead of returning a 302 redirect:
+        Map<String, String> responseBody = new HashMap<>();
+        String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
+                .queryParam("code", code)
+                .queryParam("state", state)
+                .build()
+                .toUriString();
+        responseBody.put("redirectUrl", redirectUrl);
+        return ResponseEntity.ok(responseBody);
+
     }
 
     @Override
@@ -189,4 +194,5 @@ public class OAuthController implements IOAuthController {
                 .state(state)
                 .build()).getCode();
     }
+
 }

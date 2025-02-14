@@ -87,6 +87,8 @@ public class AuthController extends ApiController implements IAuthController {
 
             String sessionId = request.getSession().getId();
             OAuthSession oauthSession = oAuthSessionService.getSession(sessionId);
+            oauthSession.setEmail(loginRequest.getEmail());  // Add this line
+            oAuthSessionService.saveSession(sessionId, oauthSession);
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(UriComponentsBuilder.fromPath("/oauth/authorize")
                             .queryParam("response_type", oauthSession.getResponseType())

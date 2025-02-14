@@ -18,6 +18,7 @@ public class OAuthSession implements Serializable {
     private static final long serialVersionUID = 1L;
     private String state;
     private String clientId;
+    private String email;
     private String redirectUri;
     private String responseType;
     private String scope;

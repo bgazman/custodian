@@ -11,8 +11,4 @@ public class WebController {
         return "forward:/index.html";
     }
 
-    @GetMapping("/mfa")
-    public String forgotPassword() {
-        return "forward:/index.html";
-    }
 }
