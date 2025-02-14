@@ -1,6 +1,5 @@
 package consulting.gazman.security.idp.auth.controller.impl;
 
-import consulting.gazman.security.client.user.entity.User;
 import consulting.gazman.security.client.user.service.UserService;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.idp.auth.controller.IAuthController;
@@ -14,12 +13,11 @@ import consulting.gazman.security.idp.auth.dto.LoginRequest;
 import consulting.gazman.security.idp.auth.dto.LoginResponse;
 import consulting.gazman.security.idp.model.OAuthSession;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import consulting.gazman.security.idp.oauth.service.AuthCodeService;
-import consulting.gazman.security.idp.oauth.service.OAuthSessionService;
+import consulting.gazman.security.idp.model.OAuthSessionService;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -66,15 +64,14 @@ public class AuthController extends ApiController implements IAuthController {
         }
     }
 
-    @Override
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest loginRequest,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+
+@Override
+public ResponseEntity<?> login(
+        @RequestBody LoginRequest loginRequest,
+        HttpServletRequest request
+) {
         try {
             LoginResponse loginResponse = authService.login(loginRequest);
-
             if (loginResponse.isMfaEnabled()) {
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create("/mfa?email=" +
@@ -82,21 +79,17 @@ public class AuthController extends ApiController implements IAuthController {
                         .build();
             }
 
-            User user = userService.findByEmail(loginRequest.getEmail());
-            request.getSession().setAttribute("user", user);
-
             String sessionId = request.getSession().getId();
-            OAuthSession oauthSession = oAuthSessionService.getSession(sessionId);
-            oauthSession.setEmail(loginRequest.getEmail());  // Add this line
-            oAuthSessionService.saveSession(sessionId, oauthSession);
+            OAuthSession session = oAuthSessionService.getSession(sessionId);
+            if (session == null) {
+                throw new AppException("INVALID_SESSION", "OAuth session not found");
+            }
+
+            session.setEmail(loginRequest.getEmail());
+            oAuthSessionService.saveSession(sessionId, session);
+
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(UriComponentsBuilder.fromPath("/oauth/authorize")
-                            .queryParam("response_type", oauthSession.getResponseType())
-                            .queryParam("client_id", oauthSession.getClientId())
-                            .queryParam("redirect_uri", oauthSession.getRedirectUri())
-                            .queryParam("scope", oauthSession.getScope())
-                            .queryParam("state", oauthSession.getState())
-                            .build().toUriString()))
+                    .location(URI.create(buildAuthorizeRedirect(session)))
                     .build();
 
         } catch (AppException e) {
@@ -105,11 +98,20 @@ public class AuthController extends ApiController implements IAuthController {
                             URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8)))
                     .build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred during the login process. Please try again later.");
+            return ResponseEntity.internalServerError()
+                    .body("An error occurred during login");
         }
     }
-
+    private String buildAuthorizeRedirect(OAuthSession session) {
+        return UriComponentsBuilder.fromPath("/oauth/authorize")
+                .queryParam("response_type", session.getResponseType())
+                .queryParam("client_id", session.getClientId())
+                .queryParam("redirect_uri", session.getRedirectUri())
+                .queryParam("scope", session.getScope())
+                .queryParam("state", session.getState())
+                .build()
+                .toUriString();
+    }
     @Override
     public ResponseEntity<?> logout(@RequestBody LogoutRequest request) {
         try {

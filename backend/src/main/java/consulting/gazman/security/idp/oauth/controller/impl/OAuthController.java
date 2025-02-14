@@ -5,7 +5,7 @@ import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
 import consulting.gazman.security.idp.model.OAuthSession;
-import consulting.gazman.security.idp.oauth.service.OAuthSessionService;
+import consulting.gazman.security.idp.model.OAuthSessionService;
 import consulting.gazman.security.idp.oauth.controller.IOAuthController;
 import consulting.gazman.security.idp.oauth.dto.*;
 import consulting.gazman.security.idp.oauth.service.OAuthService;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -35,7 +34,8 @@ public class OAuthController implements IOAuthController {
     MfaService mfaService;
     @Autowired
     OAuthSessionService oAuthSessionService;
-    @Override
+
+   @Override
     public ResponseEntity<?> authorize(
             @RequestParam String response_type,
             @RequestParam String client_id,
@@ -50,7 +50,7 @@ public class OAuthController implements IOAuthController {
         OAuthSession session = oAuthSessionService.getSession(sessionId);
 
         if (session == null) {
-            OAuthSession oauthSession = OAuthSession.builder()
+            OAuthSession newSession = OAuthSession.builder()
                     .state(state)
                     .clientId(client_id)
                     .redirectUri(redirect_uri)
@@ -59,76 +59,68 @@ public class OAuthController implements IOAuthController {
                     .codeChallenge(code_challenge)
                     .codeChallengeMethod(code_challenge_method)
                     .build();
-            oAuthSessionService.saveSession(sessionId, oauthSession);
-            request.getSession().setAttribute("oauth_session", oauthSession);
-
+            oAuthSessionService.saveSession(sessionId, newSession);
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create("/login"))
                     .build();
         }
 
-        OAuthSession oauthSession = (OAuthSession) request.getSession().getAttribute("oauth_session");
-        if (!state.equals(oauthSession.getState())) {
-            cleanupSession(request, sessionId);
-            throw new AppException("STATE_MISMATCH", "Invalid state parameter");
-        }
+        oAuthSessionService.validateState(session.getState(), state);
 
-        String code = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                .email(session.getEmail())  // Using email from Redis session
+        AuthorizeResponse authResponse = oAuthService.generateAuthCode(AuthorizeRequest.builder()
+                .email(session.getEmail())
                 .responseType(response_type)
                 .clientId(client_id)
                 .redirectUri(redirect_uri)
                 .scope(scope)
                 .codeChallenge(code_challenge)
                 .codeChallengeMethod(code_challenge_method)
-                .build()).getCode();
+                .build());
 
-        Map<String, String> responseBody = new HashMap<>();
         String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
-                .queryParam("code", code)
+                .queryParam("code", authResponse.getCode())
                 .queryParam("state", state)
                 .build()
                 .toUriString();
-        responseBody.put("redirectUrl", redirectUrl);
-        return ResponseEntity.ok(responseBody);
+
+        cleanupSession(request, sessionId);
+        return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl));
     }
 
-    @Override
-    public ResponseEntity<?> token(@RequestBody TokenRequest request, HttpServletRequest httpRequest) {
-        try {
-            String sessionId = httpRequest.getSession().getId();
-            TokenResponse response;
 
-            switch (request.getGrantType()) {
-                case "authorization_code":
-                    response = oAuthService.exchangeToken(request);
-                    cleanupSession(httpRequest, sessionId);
-                    break;
-                case "refresh_token":
+
+    @Override
+    public ResponseEntity<?> token(@RequestBody TokenRequest request) {
+        try {
+            return ResponseEntity.ok(switch (request.getGrantType()) {
+                case "authorization_code" -> oAuthService.exchangeToken(request);
+                case "refresh_token" -> {
                     if (request.getRefreshToken() == null || request.getRefreshToken().isEmpty()) {
                         throw new AppException("INVALID_REQUEST", "Refresh token is required");
                     }
-                    response = oAuthService.refreshToken(request);
-                    break;
-                default:
-                    throw new AppException("UNSUPPORTED_GRANT_TYPE",
-                            "Grant type '" + request.getGrantType() + "' not supported");
-            }
-
-            return ResponseEntity.ok(response);
+                    yield oAuthService.refreshToken(request);
+                }
+                default -> throw new AppException("UNSUPPORTED_GRANT_TYPE",
+                        "Grant type '" + request.getGrantType() + "' not supported");
+            });
         } catch (AppException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
+            return ResponseEntity.badRequest()
+                    .body(ApiError.builder()
+                            .code(e.getErrorCode())
+                            .message(e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+            return ResponseEntity.internalServerError()
+                    .body(ApiError.builder()
+                            .code("INTERNAL_SERVER_ERROR")
+                            .message(e.getMessage())
+                            .build());
         }
     }
-
     private void cleanupSession(HttpServletRequest request, String sessionId) {
-        request.getSession().removeAttribute("oauth_session");
         oAuthSessionService.removeSession(sessionId);
     }
+
     @Override
     public ResponseEntity<?> introspect(@RequestBody String bearerToken) {
         try {

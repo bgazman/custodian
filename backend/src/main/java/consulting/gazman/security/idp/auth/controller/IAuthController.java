@@ -22,9 +22,15 @@ public interface IAuthController {
     @PostMapping("/verify-email")
     ResponseEntity<?> verifyEmail(@RequestParam("token") String token);
 
-    @PostMapping("/login")
-    ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response);
+//    @PostMapping("/login")
+//    ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response);
 
+
+    @PostMapping("/login")
+    ResponseEntity<?> login(
+            @RequestBody LoginRequest loginRequest,
+            HttpServletRequest request
+    );
 
     @PostMapping("/logout")
     ResponseEntity<?> logout(@RequestBody LogoutRequest request);
