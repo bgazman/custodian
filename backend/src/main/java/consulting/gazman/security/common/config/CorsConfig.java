@@ -8,6 +8,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -17,25 +18,19 @@ public class CorsConfig {
     public CorsConfig(Environment environment) {
         this.environment = environment;
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Load properties from application.properties
-        String[] allowedOrigins = environment.getProperty("cors.allowed.origins", "").split(",");
-        String[] allowedMethods = environment.getProperty("cors.allowed.methods", "").split(",");
-        String[] allowedHeaders = environment.getProperty("cors.allowed.headers", "").split(",");
-        String[] exposedHeaders = environment.getProperty("cors.exposed.headers", "").split(",");
-
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        configuration.setAllowedMethods(Arrays.asList(allowedMethods));
-        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
-        configuration.setExposedHeaders(Arrays.asList(exposedHeaders)); // Add this line
-        configuration.setAllowCredentials(true); // Enable if needed
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("X-Trace-Id", "X-Response-Id", "X-Timestamp"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
+
 }

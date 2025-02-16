@@ -1,6 +1,7 @@
 package consulting.gazman.security.idp.oauth.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.AuthService;
@@ -20,15 +21,19 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
 @RestController
 
-public class OAuthController implements IOAuthController {
+public class OAuthController  extends ApiController implements IOAuthController {
 
     @Autowired
     private AuthService authService;
@@ -62,12 +67,13 @@ public class OAuthController implements IOAuthController {
             String sessionId = UUID.randomUUID().toString();
             session = OAuthSession.builder()
                     .clientId(client_id)
+                    .oauthSessionId(sessionId)
+
                     .build();
             sessionRedisTemplate.opsForValue().set("oauth:session:" + sessionId, session);
 
             // Store OAuth flow data using the state as key
             OAuthFlowData flowData = OAuthFlowData.builder()
-                    .state(state)
                     .clientId(client_id)
                     .redirectUri(redirect_uri)
                     .responseType(response_type)
@@ -78,7 +84,9 @@ public class OAuthController implements IOAuthController {
                     .build();
             flowDataRedisTemplate.opsForValue().set("oauth:flow:" + state, flowData);
 
-            // Redirect to login page
+
+//            OAuthFlowData x = flowDataRedisTemplate.opsForValue().get("oauth:flow:" + state);
+//            OAuthSession y = sessionRedisTemplate.opsForValue().get("oauth:session:" + sessionId);
             String newToken = jwtService.generateSessionToken(session);
             ResponseCookie cookie = ResponseCookie.from("OAUTH_SESSION", newToken)
                     .path("/")
@@ -86,7 +94,10 @@ public class OAuthController implements IOAuthController {
                     .secure(true) // Set to true if using HTTPS
                     .maxAge(Duration.ofHours(1))
                     .build();
-            URI location = UriComponentsBuilder.fromUriString("/login").build().toUri();
+            URI location = UriComponentsBuilder.fromUriString("/login")
+                    .queryParam("state", state)
+                    .build()
+                    .toUri();
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(location)
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -98,8 +109,11 @@ public class OAuthController implements IOAuthController {
         OAuthFlowData flowData = flowDataRedisTemplate.opsForValue().get("oauth:flow:" + state);
 
         // Validate state and other flow parameters
+        if (state == null || flowDataRedisTemplate.opsForValue().get("oauth:flow:" + state) == null) {
+            throw AppException.sessionException("Invalid or expired state");
+        }
+
         if (flowData == null ||
-                !flowData.getState().equals(state) ||
                 !flowData.getRedirectUri().equals(redirect_uri) ||
                 !flowData.getScope().equals(scope) ||
                 !flowData.getResponseType().equals(response_type)) {
@@ -118,9 +132,6 @@ public class OAuthController implements IOAuthController {
                         .build()
         );
 
-        // Clean up Redis data after successful authorization
-        sessionRedisTemplate.delete("oauth:session:" + session.getOauthSessionId());
-        flowDataRedisTemplate.delete("oauth:flow:" + state);
 
         String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
                 .queryParam("code", authResponse.getCode())
@@ -131,37 +142,85 @@ public class OAuthController implements IOAuthController {
         return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl));
     }
 
-    @Override
-    public ResponseEntity<?> token(@RequestBody TokenRequest request,
-                                   @CookieValue(name = "OAUTH_SESSION") String sessionToken
-    ) {
-        try {
-            return ResponseEntity.ok(switch (request.getGrantType()) {
-                case "authorization_code" -> oAuthService.exchangeToken(request);
-                case "refresh_token" -> {
-                    if (request.getRefreshToken() == null || request.getRefreshToken().isEmpty()) {
-                        throw new AppException("INVALID_REQUEST", "Refresh token is required");
-                    }
-                    yield oAuthService.refreshToken(request);
-                }
-                default -> throw new AppException("UNSUPPORTED_GRANT_TYPE",
-                        "Grant type '" + request.getGrantType() + "' not supported");
-            });
-        } catch (AppException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiError.builder()
-                            .code(e.getErrorCode())
-                            .message(e.getMessage())
-                            .build());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(ApiError.builder()
-                            .code("INTERNAL_SERVER_ERROR")
-                            .message(e.getMessage())
-                            .build());
+@Override
+public ResponseEntity<?> token(@RequestBody TokenRequest request,
+                               @CookieValue(name = "OAUTH_SESSION") String sessionToken) {
+    try {
+        TokenResponse tokenResponse = handleGrantType(request);
+
+        // Clean up Redis data after successful token exchange
+        OAuthSession session = jwtService.parseSessionToken(sessionToken);
+        if (session != null) {
+            sessionRedisTemplate.delete("oauth:session:" + session.getOauthSessionId());
         }
+        flowDataRedisTemplate.delete("oauth:flow:" + request.getState());
+
+        return ResponseEntity.ok(tokenResponse);
+    } catch (AppException e) {
+        return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+    } catch (Exception e) {
+        return wrapErrorResponse("INTERNAL_SERVER_ERROR",
+                "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
+    private TokenResponse handleGrantType(TokenRequest request) {
+        return switch (request.getGrantType()) {
+            case "authorization_code" -> handleAuthorizationCode(request);
+            case "refresh_token" -> handleRefreshToken(request);
+            default -> throw new AppException("UNSUPPORTED_GRANT_TYPE",
+                    "Grant type '" + request.getGrantType() + "' not supported");
+        };
     }
 
+    private TokenResponse handleAuthorizationCode(TokenRequest request) {
+        validateAuthCodeRequest(request);
+
+        OAuthFlowData flowData = flowDataRedisTemplate.opsForValue()
+                .get("oauth:flow:" + request.getState());
+
+        if (flowData == null) {
+            throw new AppException("INVALID_STATE", "State not found or expired");
+        }
+
+        verifyCodeChallenge(request.getCodeVerifier(), flowData.getCodeChallenge());
+
+        return oAuthService.exchangeToken(request);
+    }
+
+    private void verifyCodeChallenge(String verifier, String storedChallenge) {
+        String computedChallenge = generateCodeChallenge(verifier);
+        if (!computedChallenge.equals(storedChallenge)) {
+            throw new AppException("INVALID_GRANT", "Code verifier mismatch");
+        }
+    }
+    private String generateCodeChallenge(String verifier) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(verifier.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new AppException("INTERNAL_ERROR", "Failed to generate code challenge");
+        }
+    }
+    private TokenResponse handleRefreshToken(TokenRequest request) {
+        if (request.getRefreshToken() == null || request.getRefreshToken().isEmpty()) {
+            throw new AppException("INVALID_REQUEST", "Refresh token is required");
+        }
+        return oAuthService.refreshToken(request);
+    }
+
+    private void validateAuthCodeRequest(TokenRequest request) {
+        if (request.getState() == null || request.getState().isEmpty()) {
+            throw new AppException("INVALID_REQUEST", "State parameter is required");
+        }
+        if (request.getCode() == null || request.getCode().isEmpty()) {
+            throw new AppException("INVALID_REQUEST", "Authorization code is required");
+        }
+        if (request.getCodeVerifier() == null || request.getCodeVerifier().isEmpty()) {
+            throw new AppException("INVALID_REQUEST", "Code verifier is required");
+        }
+    }
     @Override
     public ResponseEntity<?> introspect(@RequestBody String bearerToken) {
         try {
@@ -171,15 +230,12 @@ public class OAuthController implements IOAuthController {
             // Return the introspection response
             return ResponseEntity.ok(response);
         } catch (AppException e) {
-            // Handle application-specific exceptions
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+
         } catch (Exception e) {
-            // Handle generic exceptions
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR",
+                    "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
 
@@ -192,15 +248,12 @@ public class OAuthController implements IOAuthController {
             // Return a success response
             return ResponseEntity.ok("Token successfully revoked.");
         } catch (AppException e) {
-            // Handle application-specific exceptions
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+
         } catch (Exception e) {
-            // Handle generic exceptions
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR",
+                    "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
 
@@ -210,13 +263,12 @@ public class OAuthController implements IOAuthController {
             UserInfoResponse response = oAuthService.getUserInfo(bearerToken);
             return ResponseEntity.ok(response);
         } catch (AppException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiError.builder().code(e.getErrorCode()).message(e.getMessage()).build());
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
+
         } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiError.builder().code("INTERNAL_SERVER_ERROR").message(e.getMessage()).build());
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR",
+                    "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
     private String generateAuthorizationCode(String responseType, String clientId, String redirectUri, String scope, String state) {

@@ -23,7 +23,8 @@ public interface IOAuthController {
     );
 
     @PostMapping("/token")
-    ResponseEntity<?> token(@RequestBody TokenRequest request,            @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken
+    ResponseEntity<?> token(@RequestBody TokenRequest request,
+                            @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken
     );
 
 

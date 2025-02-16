@@ -1,5 +1,5 @@
-package consulting.gazman.security.idp.auth.dto;
 
+package consulting.gazman.security.idp.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 
 @Data
 @Builder
@@ -21,35 +20,33 @@ import java.util.Optional;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MfaRequest {
     @NotBlank(message = "Token cannot be empty when verifying MFA")
-    private Optional<String> token = Optional.empty();
+    private String token;
 
     @NotBlank(message = "State cannot be empty")
-    private Optional<String> state = Optional.empty();
-    @Pattern(regexp = "^(SMS|EMAIL|TOTP|BACKUP)$", message = "Invalid MFA method")
-    private Optional<String> method = Optional.empty();
+    private String state;
 
-    @JsonProperty("isBackupCode")
-    private Optional<Boolean> backupCode = Optional.empty();
+    @Pattern(regexp = "^(SMS|EMAIL|TOTP|BACKUP)$", message = "Invalid MFA method")
+    private String method;
+
+    @JsonProperty("isRecoveryCode")
+    private Boolean backupCode;
 
     // Additional recommended fields
-    @Builder.Default
-    private Optional<String> deviceId = Optional.empty();
+    private String deviceId;
 
-    @Builder.Default
     @JsonProperty("rememberDevice")
-    private Optional<Boolean> rememberDevice = Optional.empty();
+    private Boolean rememberDevice;
 
-    @Builder.Default
-    private Optional<Map<String, String>> metadata = Optional.empty();
+    private Map<String, String> metadata;
 
     // Validation method
     public void validate() {
-        if (backupCode.orElse(false) && token.isEmpty()) {
+        if (Boolean.TRUE.equals(backupCode) && token == null) {
             throw new IllegalArgumentException("Backup code must be provided");
         }
 
-        if (method.isPresent() && !Arrays.asList("SMS", "EMAIL", "TOTP", "BACKUP")
-                .contains(method.get().toUpperCase())) {
+        if (method != null && !Arrays.asList("SMS", "EMAIL", "TOTP", "BACKUP")
+                .contains(method.toUpperCase())) {
             throw new IllegalArgumentException("Invalid MFA method");
         }
     }

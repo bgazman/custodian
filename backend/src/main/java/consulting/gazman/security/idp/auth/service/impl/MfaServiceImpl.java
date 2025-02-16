@@ -90,7 +90,7 @@ public class MfaServiceImpl implements MfaService {
         try {
             if ("TOTP".equalsIgnoreCase(method)) {
                 TotpSetupResult totpResult = generateTotpSecret(session);
-                List<String> backupCodes = generateBackupCodes();
+                List<String> backupCodes = generateRecoveryCodes();
 
                 Map<String, Object> configuration = new HashMap<>();
                 configuration.put("issuer", "YourApp");
@@ -182,7 +182,7 @@ public class MfaServiceImpl implements MfaService {
                 secret,
                 "YourApp");
 
-        List<String> backupCodes = generateBackupCodes();
+        List<String> backupCodes = generateRecoveryCodes();
         Map<String, Object> configuration = new HashMap<>();
         configuration.put("algorithm", "SHA1");
         configuration.put("digits", 6);
@@ -274,13 +274,13 @@ public class MfaServiceImpl implements MfaService {
     }
 
     @Override
-    public BackupCodeValidationResult validateBackupCode(OAuthSession session, MfaRequest request) {
+    public RecoveryCodeValidationResult validateRecoveryCode(OAuthSession session, MfaRequest request) {
         User user = userService.findByEmail(session.getEmail());
 
         String lockKey = "mfa:locked:" + session.getEmail();
         Boolean isLocked = redisTemplate.hasKey(lockKey);
         if (Boolean.TRUE.equals(isLocked)) {
-            return BackupCodeValidationResult.builder()
+            return RecoveryCodeValidationResult.builder()
                     .valid(false)
                     .errorMessage("Account is temporarily locked")
                     .validatedAt(LocalDateTime.now())
@@ -290,7 +290,7 @@ public class MfaServiceImpl implements MfaService {
         try {
             String backupCodesJson = user.getMfaRecoveryCodes();
             if (backupCodesJson == null || backupCodesJson.equals("[]")) {
-                return BackupCodeValidationResult.builder()
+                return RecoveryCodeValidationResult.builder()
                         .valid(false)
                         .errorMessage("No backup codes available")
                         .validatedAt(LocalDateTime.now())
@@ -308,7 +308,7 @@ public class MfaServiceImpl implements MfaService {
                 String attemptsKey = "mfa:attempts:" + session.getEmail();
                 redisTemplate.delete(attemptsKey);
 
-                return BackupCodeValidationResult.builder()
+                return RecoveryCodeValidationResult.builder()
                         .valid(true)
                         .remainingCodes(backupCodes.size())
                         .validatedAt(LocalDateTime.now())
@@ -323,14 +323,14 @@ public class MfaServiceImpl implements MfaService {
 
                 if (attempts != null && attempts >= 5) {
                     redisTemplate.opsForValue().set(lockKey, "true", 1, TimeUnit.HOURS);
-                    return BackupCodeValidationResult.builder()
+                    return RecoveryCodeValidationResult.builder()
                             .valid(false)
                             .errorMessage("Account has been locked due to too many failed attempts")
                             .validatedAt(LocalDateTime.now())
                             .build();
                 }
 
-                return BackupCodeValidationResult.builder()
+                return RecoveryCodeValidationResult.builder()
                         .valid(false)
                         .errorMessage("Invalid backup code")
                         .validatedAt(LocalDateTime.now())
@@ -338,13 +338,13 @@ public class MfaServiceImpl implements MfaService {
                         .build();
             }
         } catch (JsonProcessingException e) {
-            return BackupCodeValidationResult.builder()
+            return RecoveryCodeValidationResult.builder()
                     .valid(false)
                     .errorMessage("Error processing backup codes")
                     .validatedAt(LocalDateTime.now())
                     .build();
         } catch (Exception e) {
-            return BackupCodeValidationResult.builder()
+            return RecoveryCodeValidationResult.builder()
                     .valid(false)
                     .errorMessage(e.getMessage())
                     .validatedAt(LocalDateTime.now())
@@ -362,7 +362,7 @@ public class MfaServiceImpl implements MfaService {
         return "base32-encoded-secret";
     }
 
-    private List<String> generateBackupCodes() {
+    private List<String> generateRecoveryCodes() {
         // TODO: Implement proper backup codes generation
         return List.of("backup1", "backup2", "backup3");
     }

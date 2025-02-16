@@ -13,4 +13,6 @@ public class TokenRequest {
     String grantType;    // "authorization_code" or "refresh_token"
     String code;         // For auth code grant
     String refreshToken; // For refresh token grant
+    String codeVerifier; // For PKCE
+    String state;        // For CSRF protection
 }

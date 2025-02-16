@@ -6,6 +6,7 @@ import consulting.gazman.security.common.filter.LoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -45,11 +46,14 @@ public class IdpSecurityConfig {
     @Bean
     public SecurityFilterChain idpSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/**")
+                .securityMatcher("/auth/**", "/oauth/token")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/oauth/token"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/oauth/token").hasAuthority("ROLE_CLIENT")
+                        // Permit all OPTIONS requests for CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Secure token endpoint with a specific role
+                        .requestMatchers("/oauth/token").hasAuthority("ROLE_CLIENT")
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -57,7 +61,6 @@ public class IdpSecurityConfig {
 
         return http.build();
     }
-
 
 
     @Bean

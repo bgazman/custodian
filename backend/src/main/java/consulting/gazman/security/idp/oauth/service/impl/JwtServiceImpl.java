@@ -22,6 +22,7 @@ import java.security.PrivateKey;
 
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -134,9 +135,14 @@ public class JwtServiceImpl implements JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "session"); // Mark token as a session token
         claims.put("clientId", session.getClientId());
-        if (session.getEmail() != null) {
-            claims.put("email", session.getEmail());
-        }
+        claims.put("oauthSessionId", session.getOauthSessionId());
+        claims.put("email", session.getEmail());
+        claims.put("mfaInitiated", session.isMfaInitiated());
+        claims.put("mfaAttempts", session.getMfaAttempts());
+        claims.put("mfaInitiatedAt", session.getMfaInitiatedAt() != null ? session.getMfaInitiatedAt().toString() : null);
+        claims.put("mfaMethod", session.getMfaMethod());
+        claims.put("valid", session.isValid());
+        claims.put("mfaExpired", session.isMfaExpired());
 
         // Set an expiration (for example, 10 minutes)
         int expirationSeconds = 600;
@@ -149,10 +155,16 @@ public class JwtServiceImpl implements JwtService {
         Claims claims = validateToken(token);
         OAuthSession session = new OAuthSession();
         session.setClientId(claims.get("clientId", String.class));
+        session.setOauthSessionId(claims.get("oauthSessionId", String.class));
         session.setEmail(claims.get("email", String.class));
+        session.setMfaInitiated(claims.get("mfaInitiated", Boolean.class));
+        session.setMfaAttempts(claims.get("mfaAttempts", Integer.class));
+        session.setMfaInitiatedAt(claims.get("mfaInitiatedAt", String.class) != null ? LocalDateTime.parse(claims.get("mfaInitiatedAt", String.class)) : null);
+        session.setMfaMethod(claims.get("mfaMethod", String.class));
+        session.setValid(claims.get("valid", Boolean.class));
+        session.setMfaExpired(claims.get("mfaExpired", Boolean.class));
         return session;
     }
-
     @Override
     public void validateState(String expectedState, String actualState) {
         if (!Objects.equals(expectedState, actualState)) {

@@ -1,6 +1,5 @@
 package consulting.gazman.security.idp.model;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -22,17 +20,20 @@ public class OAuthSession implements Serializable {
     private String clientId;
     private String email;
 
-
     // Enhanced MFA fields
     private boolean mfaInitiated;
     @Builder.Default
     private int mfaAttempts = 0;          // Track verification attempts
     private LocalDateTime mfaInitiatedAt;  // Track when MFA was initiated
     private String mfaMethod;              // Track which MFA method is being used
+    private boolean valid;                 // Add this field
+    private boolean mfaExpired;            // Add this field
+
     public boolean isValid() {
         // Implement your validation logic here
         return !isMfaExpired() && canAttemptMfa();
     }
+
     // Utility methods for MFA
     public boolean isMfaExpired() {
         return mfaInitiatedAt != null &&

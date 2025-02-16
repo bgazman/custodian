@@ -47,7 +47,7 @@ public interface MfaService {
      * Validates a backup code
      * @return Validation result including remaining backup codes
      */
-    BackupCodeValidationResult validateBackupCode(
+    RecoveryCodeValidationResult validateRecoveryCode(
             OAuthSession session,
             MfaRequest request
     );

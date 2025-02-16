@@ -12,6 +12,6 @@ public class UserSecurityUpdateRequest {
     private String mfaMethod;
     private String password;
     private String newPassword;
-    private String mfaBackupCodes;
+    private String mfaRecoveryCodes;
     private boolean resetFailedAttempts;
 }

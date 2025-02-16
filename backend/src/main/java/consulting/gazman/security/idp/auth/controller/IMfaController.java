@@ -12,16 +12,21 @@ import org.springframework.web.servlet.ModelAndView;
 public interface IMfaController {
 
     @PostMapping("/resend")
-    ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest, String sessionToken);
+    ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest,
+                                 @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken);
 
-    @PostMapping("/verify-backup")
-    ResponseEntity<?> verifyBackupCode(@RequestBody MfaRequest mfaRequest, String sessionToken);
+    @PostMapping("/verify-recovery")
+    ResponseEntity<?> verifyRecoveryCode(@RequestBody MfaRequest mfaRequest,
+                                       @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken);
 
 
 
     @PostMapping("/initiate")
-    ResponseEntity<?> initiateMfa(@RequestBody String sessionToken);
+    ResponseEntity<?> initiateMfa(@CookieValue(name = "OAUTH_SESSION",
+            required = false) String sessionToken);
+
 
     @PostMapping("/verify")
-    ResponseEntity<?> verifyMfa(@RequestBody MfaRequest request, String sessionToken);
-}
+    ResponseEntity<?> verifyMfa(@RequestBody MfaRequest request,
+                                @CookieValue(name = "OAUTH_SESSION",
+                                        required = false) String sessionToken);}

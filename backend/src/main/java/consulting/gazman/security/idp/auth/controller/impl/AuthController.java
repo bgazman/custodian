@@ -10,12 +10,15 @@ import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
 import consulting.gazman.security.idp.auth.service.impl.AuthServiceImpl;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
+import consulting.gazman.security.idp.model.OAuthFlowData;
 import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +28,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 @Slf4j
 @RestController
@@ -36,7 +40,9 @@ public class AuthController extends ApiController implements IAuthController {
     private final MfaService mfaService;
     private final JwtService jwtService;
     private final RedisTemplate<String, OAuthSession> sessionRedisTemplate;
-    public AuthController(AuthCodeService authCodeService, EmailVerificationServiceImpl emailVerificationServiceImpl, AuthServiceImpl authService, UserService userService, MfaService mfaService, JwtService jwtService, RedisSessionConfig redisSessionConfig, RedisTemplate<String, OAuthSession> sessionRedisTemplate) {
+    private final RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate;
+
+    public AuthController(AuthCodeService authCodeService, EmailVerificationServiceImpl emailVerificationServiceImpl, AuthServiceImpl authService, UserService userService, MfaService mfaService, JwtService jwtService, RedisSessionConfig redisSessionConfig, RedisTemplate<String, OAuthSession> sessionRedisTemplate, RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate) {
         this.authCodeService = authCodeService;
         this.emailVerificationServiceImpl = emailVerificationServiceImpl;
         this.authService = authService;
@@ -44,11 +50,12 @@ public class AuthController extends ApiController implements IAuthController {
         this.mfaService = mfaService;
         this.jwtService = jwtService;
         this.sessionRedisTemplate = sessionRedisTemplate;
+        this.flowDataRedisTemplate = flowDataRedisTemplate;
     }
 
-    private static final String ERROR_PATH = "/login";
+    private static final String LOGIN_PATH = "/login";
     private static final String MFA_PATH = "/mfa";
-
+    private static final String AUTHORIZATION_PATH = "/oauth/authorize";
     @Override
     public ResponseEntity<?> register(@RequestBody UserRegistrationRequest request) {
         try {
@@ -82,46 +89,63 @@ public class AuthController extends ApiController implements IAuthController {
             if (oauthSession == null || !oauthSession.isValid()) {
                 throw AppException.sessionException("Invalid or expired session");
             }
+            String state = loginRequest.getState();
+            OAuthFlowData flowData = flowDataRedisTemplate.opsForValue().get("oauth:flow:" + loginRequest.getState());
+            if (flowData == null) {
+                return wrapErrorResponse("INVALID_FLOW", "Invalid OAuth flow", HttpStatus.BAD_REQUEST);
+            }
+
             // Perform login
             LoginResponse loginResponse = authService.login(loginRequest);
 
             // Update session with validated email and clientId
             oauthSession.setEmail(sanitizeEmail(loginRequest.getEmail()));
+            String oauthSessionId = oauthSession.getOauthSessionId();
+            sessionRedisTemplate.opsForValue().set("oauth:session:" + oauthSessionId, oauthSession);
 
             // Handle MFA if enabled
             if (loginResponse.isMfaEnabled()) {
-                return handleMfaFlow(oauthSession, loginResponse);
+                return handleMfaFlow(oauthSession, loginResponse,state);
             }
-
-            // Direct auth flow: regenerate token and redirect appropriately
             String updatedToken = jwtService.generateSessionToken(oauthSession);
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(buildRedirectUri(buildAuthorizeRedirect()))
+            ResponseCookie cookie = ResponseCookie.from("OAUTH_SESSION", updatedToken)
+                    .path("/")
+                    .httpOnly(true)
+                    .secure(true) // Set to true if using HTTPS
+                    .maxAge(Duration.ofHours(1))
                     .build();
+            // Redirect back to authorize endpoint with verified session
+            URI location = UriComponentsBuilder.fromPath(AUTHORIZATION_PATH)
+                    .queryParam("response_type", flowData.getResponseType())
+                    .queryParam("client_id", flowData.getClientId())
+                    .queryParam("redirect_uri", flowData.getRedirectUri())
+                    .queryParam("scope", flowData.getScope())
+                    .queryParam("state", loginRequest.getState())
+                    .queryParam("code_challenge", flowData.getCodeChallenge())
+                    .queryParam("code_challenge_method", flowData.getCodeChallengeMethod())
+                    .build().toUri();
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(location)
+                    .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                    .build();
+        } catch (AppException e) {
+            log.error("Login failed: {}", e.getMessage());
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
 
         } catch (Exception e) {
             log.error("Unexpected error during login", e);
-            return handleUnexpectedError();
+            return wrapErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
 
 
 
 
-
-
-
-    private OAuthSession validateAndGetSession(String sessionToken) {
-        OAuthSession session = jwtService.parseSessionToken(sessionToken);
-        if (session == null || !session.isValid()) {
-            throw AppException.sessionException("Invalid or expired session");
-        }
-        return session;
-    }
-
-    private ResponseEntity<?> handleMfaFlow(OAuthSession session, LoginResponse loginResponse) {
+    private ResponseEntity<?> handleMfaFlow(OAuthSession oauthSession, LoginResponse loginResponse,String state) {
         MfaInitiationResult mfaResult = mfaService.initiateMfaChallenge(
-                session,
+                oauthSession,
                 loginResponse.getMfaMethod()
         );
 
@@ -129,14 +153,25 @@ public class AuthController extends ApiController implements IAuthController {
             throw AppException.mfaException("MFA initialization failed: " + mfaResult.getErrorMessage());
         }
 
-        session.initiateMfa(mfaResult.getMethod());
-        String updatedToken = jwtService.generateSessionToken(session);
+        oauthSession.initiateMfa(mfaResult.getMethod());
+        sessionRedisTemplate.opsForValue().set("oauth:session:" + oauthSession.getOauthSessionId(), oauthSession);
+        String updatedToken = jwtService.generateSessionToken(oauthSession);
 
-        return ResponseEntity.ok(buildMfaResponse(updatedToken, mfaResult));
+        ResponseCookie cookie = ResponseCookie.from("OAUTH_SESSION", updatedToken)
+                        .path("/")
+                        .httpOnly(true)
+                        .secure(true) // Set to true if using HTTPS
+                        .maxAge(Duration.ofHours(1))
+                        .build();
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                        .body(buildMfaResponse(mfaResult, state));
     }
 
-    private Map<String, Object> buildMfaResponse(String sessionToken, MfaInitiationResult mfaResult) {
+    private Map<String, Object> buildMfaResponse( MfaInitiationResult mfaResult,String state) {
         String redirectUrl = UriComponentsBuilder.fromPath(MFA_PATH)
+                .queryParam("state", state)
                 .build().toUriString();
 
         return Map.of(
@@ -146,30 +181,9 @@ public class AuthController extends ApiController implements IAuthController {
         );
     }
 
-    private ResponseEntity<?> handleAuthError(AuthenticationException e, String sessionToken) {
-        String errorRedirect = UriComponentsBuilder.fromPath(ERROR_PATH)
-                .queryParam("error", sanitizeErrorMessage(e.getMessage()))
-                .queryParam("sessionToken", sessionToken)
-                .build().toUriString();
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(buildRedirectUri(errorRedirect))
-                .build();
-    }
 
-    private ResponseEntity<?> handleUnexpectedError() {
-        String errorRedirect = UriComponentsBuilder.fromPath(ERROR_PATH)
-                .queryParam("error", "An unexpected error occurred")
-                .build().toUriString();
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(buildRedirectUri(errorRedirect))
-                .build();
-    }
-
-    private URI buildRedirectUri(String path) {
-        return URI.create(path);
-    }
 
     private String sanitizeEmail(String email) {
         return email != null ? email.toLowerCase().trim() : "";
@@ -187,11 +201,7 @@ public class AuthController extends ApiController implements IAuthController {
         return sessionToken.substring(0, 4) + "..." +
                 sessionToken.substring(sessionToken.length() - 4);
     }
-    // Helper method for building authorize redirect URL
-    private String buildAuthorizeRedirect() {
-        return UriComponentsBuilder.fromPath("/oauth/authorize")
-                .build().toUriString();
-    }
+
 
 
     @Override

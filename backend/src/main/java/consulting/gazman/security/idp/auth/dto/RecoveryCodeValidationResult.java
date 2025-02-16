@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class BackupCodeValidationResult {
+public class RecoveryCodeValidationResult {
     private boolean valid;
     private int remainingCodes;
     private LocalDateTime validatedAt;

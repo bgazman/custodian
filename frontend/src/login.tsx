@@ -3,10 +3,15 @@ import React, { useState, useEffect } from 'react';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [state, setState] = useState('');
 
   useEffect(() => {
-    // Extract sessionToken from URL query parameters (if available)
+    // Extract state from URL query parameters (if available)
     const params = new URLSearchParams(window.location.search);
+    const stateParam = params.get('state');
+    if (stateParam) {
+      setState(stateParam);
+    }
 
     // Log cookies to the console
     console.log('Cookies:', document.cookie);
@@ -14,10 +19,9 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const loginData = { email, password };
+    const loginData = { state, email, password };
 
     try {
-      // Pass the session token as a query parameter in the request URL
       const url = 'http://localhost:8080/auth/login';
       const response = await fetch(url, {
         method: 'POST',
