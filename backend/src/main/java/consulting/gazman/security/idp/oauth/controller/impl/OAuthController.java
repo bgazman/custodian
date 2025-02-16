@@ -1,24 +1,29 @@
 package consulting.gazman.security.idp.oauth.controller.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
+import consulting.gazman.security.idp.model.OAuthFlowData;
 import consulting.gazman.security.idp.model.OAuthSession;
-import consulting.gazman.security.idp.model.OAuthSessionService;
 import consulting.gazman.security.idp.oauth.controller.IOAuthController;
 import consulting.gazman.security.idp.oauth.dto.*;
+import consulting.gazman.security.idp.oauth.service.JwtService;
 import consulting.gazman.security.idp.oauth.service.OAuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -27,15 +32,20 @@ public class OAuthController implements IOAuthController {
 
     @Autowired
     private AuthService authService;
-
     @Autowired
     private OAuthService oAuthService;
     @Autowired
     MfaService mfaService;
-    @Autowired
-    OAuthSessionService oAuthSessionService;
+    @Autowired private JwtService jwtService;
+    private final RedisTemplate<String, OAuthSession> sessionRedisTemplate;
+    private final RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate;
+    private ObjectMapper objectMapper; // Inject ObjectMapper
 
-   @Override
+    public OAuthController(RedisTemplate<String, OAuthSession> sessionRedisTemplate, RedisTemplate<String, OAuthSession> flowDataRedisTemplate, RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate1) {
+        this.sessionRedisTemplate = sessionRedisTemplate;
+        this.flowDataRedisTemplate = flowDataRedisTemplate1;
+    }
+
     public ResponseEntity<?> authorize(
             @RequestParam String response_type,
             @RequestParam String client_id,
@@ -44,13 +54,19 @@ public class OAuthController implements IOAuthController {
             @RequestParam String state,
             @RequestParam(required = false) String code_challenge,
             @RequestParam(required = false) String code_challenge_method,
-            HttpServletRequest request
+            @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken
     ) {
-        String sessionId = request.getSession().getId();
-        OAuthSession session = oAuthSessionService.getSession(sessionId);
+        OAuthSession session;
+        if (sessionToken == null || sessionToken.isEmpty()) {
+            // Create new session with a dedicated oauthSessionId
+            String sessionId = UUID.randomUUID().toString();
+            session = OAuthSession.builder()
+                    .clientId(client_id)
+                    .build();
+            sessionRedisTemplate.opsForValue().set("oauth:session:" + sessionId, session);
 
-        if (session == null) {
-            OAuthSession newSession = OAuthSession.builder()
+            // Store OAuth flow data using the state as key
+            OAuthFlowData flowData = OAuthFlowData.builder()
                     .state(state)
                     .clientId(client_id)
                     .redirectUri(redirect_uri)
@@ -58,24 +74,53 @@ public class OAuthController implements IOAuthController {
                     .scope(scope)
                     .codeChallenge(code_challenge)
                     .codeChallengeMethod(code_challenge_method)
+                    .createdAt(Instant.now())
                     .build();
-            oAuthSessionService.saveSession(sessionId, newSession);
+            flowDataRedisTemplate.opsForValue().set("oauth:flow:" + state, flowData);
+
+            // Redirect to login page
+            String newToken = jwtService.generateSessionToken(session);
+            ResponseCookie cookie = ResponseCookie.from("OAUTH_SESSION", newToken)
+                    .path("/")
+                    .httpOnly(true)
+                    .secure(true) // Set to true if using HTTPS
+                    .maxAge(Duration.ofHours(1))
+                    .build();
+            URI location = UriComponentsBuilder.fromUriString("/login").build().toUri();
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create("/login"))
+                    .location(location)
+                    .header(HttpHeaders.SET_COOKIE, cookie.toString())
                     .build();
         }
 
-        oAuthSessionService.validateState(session.getState(), state);
+        // Parse session and retrieve flow data using the state key
+        session = jwtService.parseSessionToken(sessionToken);
+        OAuthFlowData flowData = flowDataRedisTemplate.opsForValue().get("oauth:flow:" + state);
 
-        AuthorizeResponse authResponse = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                .email(session.getEmail())
-                .responseType(response_type)
-                .clientId(client_id)
-                .redirectUri(redirect_uri)
-                .scope(scope)
-                .codeChallenge(code_challenge)
-                .codeChallengeMethod(code_challenge_method)
-                .build());
+        // Validate state and other flow parameters
+        if (flowData == null ||
+                !flowData.getState().equals(state) ||
+                !flowData.getRedirectUri().equals(redirect_uri) ||
+                !flowData.getScope().equals(scope) ||
+                !flowData.getResponseType().equals(response_type)) {
+            throw AppException.oauthException("Invalid OAuth parameters");
+        }
+
+        AuthorizeResponse authResponse = oAuthService.generateAuthCode(
+                AuthorizeRequest.builder()
+                        .email(session.getEmail())
+                        .responseType(response_type)
+                        .clientId(client_id)
+                        .redirectUri(redirect_uri)
+                        .scope(scope)
+                        .codeChallenge(code_challenge)
+                        .codeChallengeMethod(code_challenge_method)
+                        .build()
+        );
+
+        // Clean up Redis data after successful authorization
+        sessionRedisTemplate.delete("oauth:session:" + session.getOauthSessionId());
+        flowDataRedisTemplate.delete("oauth:flow:" + state);
 
         String redirectUrl = UriComponentsBuilder.fromUriString(redirect_uri)
                 .queryParam("code", authResponse.getCode())
@@ -83,14 +128,13 @@ public class OAuthController implements IOAuthController {
                 .build()
                 .toUriString();
 
-        cleanupSession(request, sessionId);
         return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl));
     }
 
-
-
     @Override
-    public ResponseEntity<?> token(@RequestBody TokenRequest request) {
+    public ResponseEntity<?> token(@RequestBody TokenRequest request,
+                                   @CookieValue(name = "OAUTH_SESSION") String sessionToken
+    ) {
         try {
             return ResponseEntity.ok(switch (request.getGrantType()) {
                 case "authorization_code" -> oAuthService.exchangeToken(request);
@@ -116,9 +160,6 @@ public class OAuthController implements IOAuthController {
                             .message(e.getMessage())
                             .build());
         }
-    }
-    private void cleanupSession(HttpServletRequest request, String sessionId) {
-        oAuthSessionService.removeSession(sessionId);
     }
 
     @Override

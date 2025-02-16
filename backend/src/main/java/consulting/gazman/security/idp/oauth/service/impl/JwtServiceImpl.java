@@ -1,8 +1,8 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
-import consulting.gazman.security.client.user.entity.Role;
 import consulting.gazman.security.client.user.entity.UserRole;
 import consulting.gazman.security.common.exception.AppException;
+import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Secret;
 import consulting.gazman.security.idp.oauth.service.JwtService;
@@ -124,6 +124,41 @@ public class JwtServiceImpl implements JwtService {
                 .compact();
     }
 
+    @Override
+    public String generateSessionToken(OAuthSession session) {
+        // Retrieve the OAuthClient using the clientId from the session
+        OAuthClient client = oAuthClientService.getClientByClientId(session.getClientId())
+                .orElseThrow(() -> new AppException("INVALID_CLIENT", "Client not found"));
+
+        // Prepare claims from the session data
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "session"); // Mark token as a session token
+        claims.put("clientId", session.getClientId());
+        if (session.getEmail() != null) {
+            claims.put("email", session.getEmail());
+        }
+
+        // Set an expiration (for example, 10 minutes)
+        int expirationSeconds = 600;
+        return generateToken(session.getClientId(), client, claims, expirationSeconds);
+    }
+
+    @Override
+    public OAuthSession parseSessionToken(String token) {
+        // Validate and parse the token to get claims
+        Claims claims = validateToken(token);
+        OAuthSession session = new OAuthSession();
+        session.setClientId(claims.get("clientId", String.class));
+        session.setEmail(claims.get("email", String.class));
+        return session;
+    }
+
+    @Override
+    public void validateState(String expectedState, String actualState) {
+        if (!Objects.equals(expectedState, actualState)) {
+            throw new AppException("STATE_MISMATCH", "Invalid state parameter");
+        }
+    }
 
 
 private Key getSigningKey(OAuthClient oAuthClient) {

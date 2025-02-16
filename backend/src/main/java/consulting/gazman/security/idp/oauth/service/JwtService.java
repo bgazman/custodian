@@ -3,6 +3,7 @@ package consulting.gazman.security.idp.oauth.service;
 
 import consulting.gazman.security.client.user.entity.GroupMembership;
 import consulting.gazman.security.client.user.entity.UserRole;
+import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.client.user.entity.User;
 import io.jsonwebtoken.Claims;
@@ -22,6 +23,11 @@ public interface JwtService {
     String generateIdToken(User user, OAuthClient oAuthClient);
 
 
+    String generateSessionToken(OAuthSession session);
+
+    OAuthSession parseSessionToken(String token);
+
+    void validateState(String expectedState, String actualState);
 
     Claims validateToken(String token);
 

@@ -2,19 +2,18 @@ package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.idp.auth.controller.IMfaController;
-import consulting.gazman.security.idp.oauth.dto.AuthorizeRequest;
-import consulting.gazman.security.idp.oauth.dto.AuthorizeResponse;
-import consulting.gazman.security.idp.auth.dto.MfaRequest;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.idp.auth.dto.*;
+import consulting.gazman.security.idp.model.OAuthFlowData;
+import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.MfaService;
-import consulting.gazman.security.idp.oauth.service.OAuthService;
-import consulting.gazman.security.client.user.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import consulting.gazman.security.idp.oauth.service.JwtService;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -23,154 +22,187 @@ import java.util.Map;
 
 @RestController
 public class MfaController extends ApiController implements IMfaController {
+    private final MfaService mfaService;
+    private final JwtService jwtService;
+    private final RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate;
 
-    @Autowired
-    UserService userService;
-    @Autowired
-    private MfaService mfaService;
-    @Autowired
-    OAuthService oAuthService;
-    @GetMapping
-    @Override
-    public ModelAndView showMfaPage(
-            @RequestParam String email,
-            @RequestParam String client_id,
-            @RequestParam String redirect_uri,
-            @RequestParam String state,
-            @RequestParam String response_type,
-            @RequestParam(required = false) String mfa_method,
-            @RequestParam(required = false) String scope) {
-        ModelAndView mav = new ModelAndView("mfa");
-
-        // Add user object to the model
-        User user = userService.findByEmail(email);
-        mav.addObject("user", user);
-
-        // Add other parameters
-        mav.addObject("email", email);
-        mav.addObject("clientId", client_id);
-        mav.addObject("redirectUri", redirect_uri);
-        mav.addObject("state", state);
-        mav.addObject("responseType", response_type);
-        mav.addObject("scope", scope);
-        mav.addObject("mfaMethod", mfa_method);  // Add this to model
-
-        return mav;
+    public MfaController(MfaService mfaService, JwtService jwtService, RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate) {
+        this.mfaService = mfaService;
+        this.jwtService = jwtService;
+        this.flowDataRedisTemplate = flowDataRedisTemplate;
     }
+
     @Override
-    public ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest) {
+    public ResponseEntity<?> resendCode(@RequestBody MfaRequest mfaRequest,
+                                        @CookieValue(name = "OAUTH_SESSION") String sessionToken
+    ) {
         try {
-            boolean sent = mfaService.resendMfaCode(mfaRequest.getClientId(),mfaRequest.getEmail());
-            if (sent) {
+            OAuthSession oauthSession = jwtService.parseSessionToken(sessionToken);
+            if (oauthSession == null) {
+                return wrapErrorResponse("INVALID_SESSION", "Invalid session", HttpStatus.BAD_REQUEST);
+            }
+
+            MfaResendResult result = mfaService.resendMfaCode(oauthSession, mfaRequest);
+
+            if (result.isSuccess()) {
                 return wrapSuccessResponse(
-                        Map.of("message", "Verification code resent successfully"),
+                        Map.of(
+                                "message", "Verification code resent successfully",
+                                "nextAllowedAttempt", result.getNextAllowedAttempt(),
+                                "remainingAttempts", result.getRemainingResendAttempts()
+                        ),
                         "Code resent successfully"
                 );
             } else {
                 return wrapErrorResponse(
                         "RESEND_LIMIT_EXCEEDED",
-                        "Too many resend attempts. Please try again later.",
+                        result.getErrorMessage(),
                         HttpStatus.TOO_MANY_REQUESTS
                 );
             }
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse(
-                    "INTERNAL_SERVER_ERROR",
-                    "An unexpected error occurred while resending code.",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
         }
     }
 
     @Override
-    public ResponseEntity<?> verifyBackupCode(@RequestBody MfaRequest mfaRequest) {
+    public ResponseEntity<?> verifyBackupCode(@RequestBody MfaRequest mfaRequest,
+                                              @CookieValue(name = "OAUTH_SESSION") String sessionToken
+    ) {
         try {
-            boolean isValid = mfaService.validateBackupCode(
-                    mfaRequest.getEmail(),
-                    mfaRequest.getToken()
-            );
+            OAuthSession oauthSession = jwtService.parseSessionToken(sessionToken);
+            if (oauthSession == null) {
+                return wrapErrorResponse("INVALID_SESSION", "Invalid session", HttpStatus.BAD_REQUEST);
+            }
 
-            if (!isValid) {
+            BackupCodeValidationResult result = mfaService.validateBackupCode(oauthSession, mfaRequest);
+
+            if (!result.isValid()) {
                 return wrapErrorResponse(
                         "INVALID_BACKUP_CODE",
-                        "Invalid backup code",
+                        result.getErrorMessage(),
                         HttpStatus.UNAUTHORIZED
                 );
             }
 
             return wrapSuccessResponse(
-                    Map.of("message", "Backup code validated successfully"),
+                    Map.of(
+                            "message", "Backup code validated successfully",
+                            "remainingCodes", result.getRemainingCodes()
+                    ),
                     "Backup code validated successfully"
             );
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse(
-                    "INTERNAL_SERVER_ERROR",
-                    "An unexpected error occurred while verifying backup code.",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
         }
     }
+
     @Override
-    public ResponseEntity<?> initiateMfa(@RequestBody MfaRequest mfaRequest) {
-        logRequest("POST", "/mfa/initiate");
+    public ResponseEntity<?> initiateMfa(@CookieValue(name = "OAUTH_SESSION") String sessionToken
+    ) {
         try {
-            mfaService.initiateMfaChallenge(mfaRequest.getClientId(),mfaRequest.getEmail());
+            OAuthSession oauthSession = jwtService.parseSessionToken(sessionToken);
+            if (oauthSession == null) {
+                return wrapErrorResponse("INVALID_SESSION", "Invalid session", HttpStatus.BAD_REQUEST);
+            }
+
+            MfaInitiationResult result = mfaService.initiateMfaChallenge(oauthSession, oauthSession.getMfaMethod());
+
+            if (!result.isSuccess()) {
+                return wrapErrorResponse(
+                        "MFA_INITIATION_FAILED",
+                        result.getErrorMessage(),
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            // Update session with MFA status
+            oauthSession.setMfaInitiated(true);
+            String updatedToken = jwtService.generateSessionToken(oauthSession);
+
             return wrapSuccessResponse(
-                    Map.of("message", "MFA challenge initiated successfully"),
+                    Map.of(
+                            "sessionToken", updatedToken,
+                            "challengeId", result.getChallengeId(),
+                            "expiresAt", result.getExpiresAt(),
+                            "method", result.getMethod()
+                    ),
                     "MFA challenge initiated successfully"
             );
         } catch (AppException e) {
             return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return wrapErrorResponse(
-                    "INTERNAL_SERVER_ERROR",
-                    "An unexpected error occurred while initiating MFA.",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
         }
     }
 
     @Override
-    public ResponseEntity<?> verifyMfa(@RequestBody MfaRequest request) {
+    public ResponseEntity<?> verifyMfa(
+            @RequestBody MfaRequest request,
+            @CookieValue(name = "OAUTH_SESSION") String sessionToken
+    ) {
         try {
-            boolean isValid = mfaService.validateMfaToken(request.getEmail(), request.getToken(), request.getMethod());
+            OAuthSession oauthSession = jwtService.parseSessionToken(sessionToken);
+            if (oauthSession == null) {
+                return wrapErrorResponse("INVALID_SESSION", "Invalid session", HttpStatus.BAD_REQUEST);
+            }
 
-            if (!isValid) {
-                String redirectUrl = "/mfa?error=invalid_token&message=" +
-                        URLEncoder.encode("Invalid MFA code", StandardCharsets.UTF_8);
+            // Get flow data from Redis
+            OAuthFlowData flowData = flowDataRedisTemplate.opsForValue().get("oauth:flow:" + request.getState());
+            if (flowData == null) {
+                return wrapErrorResponse("INVALID_FLOW", "Invalid OAuth flow", HttpStatus.BAD_REQUEST);
+            }
+
+            MfaValidationResult result = mfaService.validateMfaToken(oauthSession, request);
+
+            if (!result.isValid()) {
+                if (result.getRemainingAttempts() == 0) {
+                    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                            .body(Map.of(
+                                    "error", "Too many attempts",
+                                    "errorCode", result.getErrorCode(),
+                                    "message", result.getErrorMessage()
+                            ));
+                }
+
+                String errorMessage = URLEncoder.encode(
+                        String.format("Invalid MFA code. %d attempts remaining",
+                                result.getRemainingAttempts()),
+                        StandardCharsets.UTF_8
+                );
+
+                String redirectUrl = UriComponentsBuilder.fromPath("/mfa")
+                        .queryParam("error", "invalid_token")
+                        .queryParam("message", errorMessage)
+                        .queryParam("sessionToken", sessionToken)
+                        .build().toUriString();
 
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create(redirectUrl))
                         .build();
             }
 
-            // Step 2: Generate authorization code (same as login endpoint)
-            AuthorizeResponse response = oAuthService.generateAuthCode(AuthorizeRequest.builder()
-                    .email(request.getEmail())
-                    .responseType(request.getResponseType())
-                    .clientId(request.getClientId())
-                    .redirectUri(request.getRedirectUri())
-                    .scope(request.getScope())
-                    .state(request.getState())
-                    .build());
+            // MFA is valid - update session
+            oauthSession.setMfaInitiated(true);
+            oauthSession.resetMfa();
+            String updatedToken = jwtService.generateSessionToken(oauthSession);
 
-            // Step 3: Redirect to client with auth code (same as login endpoint)
-            String redirectUrl = request.getRedirectUri() + "?code=" + response.getCode() +
-                    "&state=" + URLEncoder.encode(response.getState(), StandardCharsets.UTF_8);
+            // Redirect back to authorize endpoint with verified session
+            URI location = UriComponentsBuilder.fromPath("/oauth/authorize")
+                    .queryParam("response_type", flowData.getResponseType())
+                    .queryParam("client_id", flowData.getClientId())
+                    .queryParam("redirect_uri", flowData.getRedirectUri())
+                    .queryParam("scope", flowData.getScope())
+                    .queryParam("state", flowData.getState())
+                    .queryParam("code_challenge", flowData.getCodeChallenge())
+                    .queryParam("code_challenge_method", flowData.getCodeChallengeMethod())
+                    .queryParam("sessionToken", updatedToken)
+                    .build().toUri();
 
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl))
+                    .location(location)
                     .build();
 
-        } catch (Exception e) {
-//            log.error("Error during MFA verification", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred during MFA verification. Please try again later.");
+        } catch (AppException e) {
+            return wrapErrorResponse(e.getErrorCode(), e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
 }

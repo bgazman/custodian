@@ -10,5 +10,9 @@ public class WebController {
     public String login() {
         return "forward:/index.html";
     }
+    @GetMapping("/mfa")
+    public String mfa() {
+        return "forward:/index.html";
+    }
 
 }

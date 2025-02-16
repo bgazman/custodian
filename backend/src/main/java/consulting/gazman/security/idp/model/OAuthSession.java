@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -16,12 +18,46 @@ import java.io.Serializable;
 public class OAuthSession implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private String state;
+    private String oauthSessionId;
     private String clientId;
     private String email;
-    private String redirectUri;
-    private String responseType;
-    private String scope;
-    private String codeChallenge;
-    private String codeChallengeMethod;
+
+
+    // Enhanced MFA fields
+    private boolean mfaInitiated;
+    @Builder.Default
+    private int mfaAttempts = 0;          // Track verification attempts
+    private LocalDateTime mfaInitiatedAt;  // Track when MFA was initiated
+    private String mfaMethod;              // Track which MFA method is being used
+    public boolean isValid() {
+        // Implement your validation logic here
+        return !isMfaExpired() && canAttemptMfa();
+    }
+    // Utility methods for MFA
+    public boolean isMfaExpired() {
+        return mfaInitiatedAt != null &&
+                mfaInitiatedAt.plusMinutes(5).isBefore(LocalDateTime.now());
+    }
+
+    public boolean canAttemptMfa() {
+        return mfaAttempts < 3;  // Limit attempts
+    }
+
+    public void incrementMfaAttempts() {
+        this.mfaAttempts++;
+    }
+
+    public void initiateMfa(String method) {
+        this.mfaInitiated = true;
+        this.mfaInitiatedAt = LocalDateTime.now();
+        this.mfaMethod = method;
+        this.mfaAttempts = 0;
+    }
+
+    public void resetMfa() {
+        this.mfaInitiated = false;
+        this.mfaInitiatedAt = null;
+        this.mfaMethod = null;
+        this.mfaAttempts = 0;
+    }
 }

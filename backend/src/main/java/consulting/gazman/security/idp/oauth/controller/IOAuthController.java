@@ -19,14 +19,13 @@ public interface IOAuthController {
             @RequestParam String state,
             @RequestParam(required = false) String code_challenge,
             @RequestParam(required = false) String code_challenge_method,
-            HttpServletRequest request
+            @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken
     );
 
-//    ResponseEntity<?> token(@RequestBody TokenRequest request);
-//    @PostMapping("/token")
-//    ResponseEntity<?> token(@RequestBody TokenRequest request, HttpServletRequest httpRequest);
+    @PostMapping("/token")
+    ResponseEntity<?> token(@RequestBody TokenRequest request,            @CookieValue(name = "OAUTH_SESSION", required = false) String sessionToken
+    );
 
-    ResponseEntity<?> token(@RequestBody TokenRequest request);
 
     @GetMapping("/introspect")
     ResponseEntity<?> introspect(@RequestBody String bearerToken);

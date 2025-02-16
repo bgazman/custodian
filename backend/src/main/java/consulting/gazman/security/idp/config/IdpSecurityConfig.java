@@ -45,19 +45,18 @@ public class IdpSecurityConfig {
     @Bean
     public SecurityFilterChain idpSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**")
+                .securityMatcher("/auth/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/oauth/token").hasAuthority("ROLE_CLIENT") // Add this
-                        .requestMatchers("/auth/**", "/oauth/**", "/mfa/**", "/forgot-password/**").permitAll()
+                        .requestMatchers("/auth/oauth/token").hasAuthority("ROLE_CLIENT")
+                        .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(basicAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
 
 

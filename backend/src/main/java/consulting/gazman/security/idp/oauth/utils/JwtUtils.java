@@ -27,10 +27,12 @@ public class JwtUtils {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-    public static String extractClientId(String token) {
+    public static String extractAudience(String token) {
         return (String) parseTokenPayload(token).get("aud");
     }
-
+    public static String extractClientId(String token) {
+        return (String) parseTokenPayload(token).get("clientId");
+    }
     public static String extractSubject(String token) {
         return (String) parseTokenPayload(token).get("sub");
     }

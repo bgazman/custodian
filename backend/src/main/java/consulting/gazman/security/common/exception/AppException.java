@@ -18,7 +18,9 @@ public class AppException extends RuntimeException {
         super(message, cause);
         this.errorCode = errorCode;
     }
-
+    public static AppException oauthException(String message) {
+        return new AppException("OAUTH_EXCEPTION", message);
+    }
     public static AppException badRequest(String message) {
         return new AppException("BAD_REQUEST", message);
     }
@@ -27,8 +29,14 @@ public class AppException extends RuntimeException {
         return new AppException("ROLE_NOT_FOUND", message);
 
     }
+    public static AppException sessionException(String message) {
+        return new AppException("INVALID_SESSION", message);
 
+    }
+    public static AppException mfaException(String message) {
+        return new AppException("MFA_EXCEPTION", message);
 
+    }
     public static AppException missingConfiguration(String message) {
         return new AppException("INVALID_REFRESH_TOKEN", message);
     }

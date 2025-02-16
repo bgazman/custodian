@@ -1,21 +1,55 @@
 package consulting.gazman.security.idp.auth.service;
 
+import consulting.gazman.security.idp.auth.dto.*;
+import consulting.gazman.security.idp.model.OAuthSession;
+
 public interface MfaService {
-    void initiateMfaChallenge(String clientId,String email);
+    /**
+     * Initiates an MFA challenge for a user
+     * @return MfaInitiationResult containing challenge details and status
+     */
+    MfaInitiationResult initiateMfaChallenge(OAuthSession session, String preferredMethod);
 
+    /**
+     * Generates a new MFA secret for setup
+     * @return Generated secret and associated configuration
+     */
+    MfaSetupResult generateMfaSecret(OAuthSession session, String method);
 
-    String generateMfaSecret(String email);
+    /**
+     * Validates an MFA token/code
+     * @return Validation result with details about success/failure
+     */
+    MfaValidationResult validateMfaToken(
+            OAuthSession session,
+            MfaRequest mfaRequest
+    );
 
+    /**
+     * Generates TOTP secret for initial setup
+     * @return TOTP configuration including QR code URI
+     */
+    TotpSetupResult generateTotpSecret(OAuthSession session);
 
-    boolean validateMfaToken(String email, String token, String method);
+    /**
+     * Generates a random verification code for SMS/Email
+     * @return Generated code and metadata
+     */
+    MfaCode generateRandomCode(String method);
 
-    String generateTotpSecret(String email);
+    /**
+     * Resends MFA code using the current method
+     * @return Result indicating success/failure and any rate limiting info
+     */
+    MfaResendResult resendMfaCode(OAuthSession session, MfaRequest request);
 
-    String generateRandomCode();
-
-
-
-    boolean resendMfaCode(String email, String clientId);
-
-    boolean validateBackupCode(String email, String token);
+    /**
+     * Validates a backup code
+     * @return Validation result including remaining backup codes
+     */
+    BackupCodeValidationResult validateBackupCode(
+            OAuthSession session,
+            MfaRequest request
+    );
 }
+
