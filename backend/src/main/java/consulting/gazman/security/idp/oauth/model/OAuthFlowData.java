@@ -1,4 +1,4 @@
-package consulting.gazman.security.idp.model;
+package consulting.gazman.security.idp.oauth.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;

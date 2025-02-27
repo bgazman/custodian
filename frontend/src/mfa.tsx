@@ -105,7 +105,6 @@ function mfaTokenValidation(token: string, isBackupMode: boolean): string | null
     }
     return null;
 }
-
 async function handleSubmit(
     url: string,
     data: MfaRequest,
@@ -121,6 +120,13 @@ async function handleSubmit(
             credentials: 'include',
             body: JSON.stringify(data),
         });
+
+        // Handle redirects directly
+        if (response.redirected) {
+            window.location.href = response.url;
+            return { redirectUrl: response.url };
+        }
+
         return await response.json();
     } catch (error) {
         throw new Error('Failed to submit verification request');

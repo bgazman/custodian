@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.idp.auth.controller.IMfaController;
 import consulting.gazman.security.idp.auth.dto.*;
-import consulting.gazman.security.idp.model.OAuthFlowData;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthFlowData;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.MfaService;
 

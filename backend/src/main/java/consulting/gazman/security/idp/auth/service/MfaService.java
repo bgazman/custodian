@@ -1,7 +1,7 @@
 package consulting.gazman.security.idp.auth.service;
 
 import consulting.gazman.security.idp.auth.dto.*;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 
 public interface MfaService {
     /**

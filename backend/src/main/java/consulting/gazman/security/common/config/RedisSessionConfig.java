@@ -1,8 +1,8 @@
 package consulting.gazman.security.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import consulting.gazman.security.idp.model.OAuthFlowData;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthFlowData;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.dto.TokenRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

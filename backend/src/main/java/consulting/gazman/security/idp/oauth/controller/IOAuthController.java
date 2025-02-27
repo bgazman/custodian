@@ -17,7 +17,7 @@ public interface IOAuthController {
             @RequestParam String response_type,
             @RequestParam String client_id,
             @RequestParam String redirect_uri,
-            @RequestParam String scope,
+            @RequestParam(required = false)  String scope,
             @RequestParam String state,
             @RequestParam(required = false) String code_challenge,
             @RequestParam(required = false) String code_challenge_method,

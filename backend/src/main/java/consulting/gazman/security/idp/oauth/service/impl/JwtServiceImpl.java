@@ -2,7 +2,7 @@ package consulting.gazman.security.idp.oauth.service.impl;
 
 import consulting.gazman.security.user.entity.UserRole;
 import consulting.gazman.security.common.exception.AppException;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Secret;
 import consulting.gazman.security.idp.oauth.service.JwtService;

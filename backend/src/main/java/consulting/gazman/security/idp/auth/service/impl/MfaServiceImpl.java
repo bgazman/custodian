@@ -8,7 +8,7 @@ import consulting.gazman.security.common.service.NotificationService;
 import consulting.gazman.security.idp.auth.dto.*;
 import consulting.gazman.security.idp.auth.service.MfaService;
 import consulting.gazman.security.user.service.UserService;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;

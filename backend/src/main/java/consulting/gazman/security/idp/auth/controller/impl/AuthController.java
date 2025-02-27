@@ -1,9 +1,7 @@
 package consulting.gazman.security.idp.auth.controller.impl;
 
 import consulting.gazman.security.idp.oauth.dto.TokenRequest;
-import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.service.OAuthClientService;
-import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.user.service.UserConsentService;
 import consulting.gazman.security.user.service.UserService;
 import consulting.gazman.security.common.config.RedisSessionConfig;
@@ -15,8 +13,8 @@ import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
 import consulting.gazman.security.idp.auth.service.impl.AuthServiceImpl;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
-import consulting.gazman.security.idp.model.OAuthFlowData;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthFlowData;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +29,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 @Slf4j
 @RestController

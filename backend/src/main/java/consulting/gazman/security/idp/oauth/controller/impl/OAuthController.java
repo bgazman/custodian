@@ -2,12 +2,11 @@ package consulting.gazman.security.idp.oauth.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.common.controller.ApiController;
-import consulting.gazman.security.common.dto.ApiError;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.MfaService;
-import consulting.gazman.security.idp.model.OAuthFlowData;
-import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.model.OAuthFlowData;
+import consulting.gazman.security.idp.oauth.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.controller.IOAuthController;
 import consulting.gazman.security.idp.oauth.dto.*;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;

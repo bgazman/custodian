@@ -33,9 +33,12 @@ const Login: React.FC = () => {
         credentials: 'include'
       });
 
-      if (response.ok) {
+      // If the response is a redirect, let the browser handle it
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else if (response.ok) {
         const data = await response.json();
-        // Navigate to the redirect URL provided by the server
+        // For JSON responses, navigate to provided URL
         window.location.href = data.redirectUrl;
       } else {
         console.error('Login failed:', response.statusText);
