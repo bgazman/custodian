@@ -1,9 +1,9 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
 import consulting.gazman.security.idp.oauth.service.AuthCodeService;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.idp.oauth.dto.AuthorizeRequest;
-import consulting.gazman.security.client.user.service.impl.UserServiceImpl;
+import consulting.gazman.security.user.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;

@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RequestMapping("/oauth")
 public interface IOAuthController {
 
@@ -37,4 +39,11 @@ public interface IOAuthController {
     @GetMapping("/userinfo")
     ResponseEntity<?> userinfo(@RequestHeader("Authorization") String bearerToken);
 
+    @GetMapping("/consent")
+    ResponseEntity<?> getConsentData(@RequestParam String state,
+                                     @CookieValue(name = "OAUTH_SESSION") String sessionToken);
+
+    @PostMapping("/consent-approve")
+    ResponseEntity<?> approveConsent(@RequestBody Map<String, Object> request,
+                                     @CookieValue(name = "OAUTH_SESSION") String sessionToken);
 }

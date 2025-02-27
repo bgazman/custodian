@@ -2,7 +2,7 @@ package consulting.gazman.security.idp.oauth.service;
 
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Token;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.Optional;

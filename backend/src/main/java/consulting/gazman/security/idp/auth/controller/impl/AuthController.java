@@ -1,6 +1,11 @@
 package consulting.gazman.security.idp.auth.controller.impl;
 
-import consulting.gazman.security.client.user.service.UserService;
+import consulting.gazman.security.idp.oauth.dto.TokenRequest;
+import consulting.gazman.security.idp.oauth.entity.OAuthClient;
+import consulting.gazman.security.idp.oauth.service.OAuthClientService;
+import consulting.gazman.security.user.entity.User;
+import consulting.gazman.security.user.service.UserConsentService;
+import consulting.gazman.security.user.service.UserService;
 import consulting.gazman.security.common.config.RedisSessionConfig;
 import consulting.gazman.security.common.controller.ApiController;
 import consulting.gazman.security.idp.auth.controller.IAuthController;
@@ -20,40 +25,34 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import consulting.gazman.security.idp.oauth.service.AuthCodeService;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 @Slf4j
 @RestController
 public class AuthController extends ApiController implements IAuthController {
-    private final AuthCodeService authCodeService;
     private final EmailVerificationServiceImpl emailVerificationServiceImpl;
     private final AuthService authService;
-    private final UserService userService;
     private final MfaService mfaService;
     private final JwtService jwtService;
     private final RedisTemplate<String, OAuthSession> sessionRedisTemplate;
     private final RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate;
 
-    public AuthController(AuthCodeService authCodeService, EmailVerificationServiceImpl emailVerificationServiceImpl, AuthServiceImpl authService, UserService userService, MfaService mfaService, JwtService jwtService, RedisSessionConfig redisSessionConfig, RedisTemplate<String, OAuthSession> sessionRedisTemplate, RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate) {
-        this.authCodeService = authCodeService;
+    public AuthController(AuthCodeService authCodeService, EmailVerificationServiceImpl emailVerificationServiceImpl, AuthServiceImpl authService, UserService userService, MfaService mfaService, JwtService jwtService, RedisSessionConfig redisSessionConfig, RedisTemplate<String, OAuthSession> sessionRedisTemplate, RedisTemplate<String, OAuthFlowData> flowDataRedisTemplate, RedisTemplate<String, TokenRequest> tokenRequestRedisTemplate, OAuthClientService oAuthClientService, UserConsentService userConsentService) {
         this.emailVerificationServiceImpl = emailVerificationServiceImpl;
         this.authService = authService;
-        this.userService = userService;
         this.mfaService = mfaService;
         this.jwtService = jwtService;
         this.sessionRedisTemplate = sessionRedisTemplate;
         this.flowDataRedisTemplate = flowDataRedisTemplate;
     }
 
-    private static final String LOGIN_PATH = "/login";
     private static final String MFA_PATH = "/mfa";
     private static final String AUTHORIZATION_PATH = "/oauth/authorize";
     @Override

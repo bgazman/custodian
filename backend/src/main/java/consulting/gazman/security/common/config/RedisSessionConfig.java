@@ -3,6 +3,7 @@ package consulting.gazman.security.common.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import consulting.gazman.security.idp.model.OAuthFlowData;
 import consulting.gazman.security.idp.model.OAuthSession;
+import consulting.gazman.security.idp.oauth.dto.TokenRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -39,6 +40,21 @@ public class RedisSessionConfig {
 
         // Use the constructor directly with the ObjectMapper
         Jackson2JsonRedisSerializer<OAuthFlowData> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, OAuthFlowData.class);
+        template.setValueSerializer(serializer);
+
+        return template;
+    }
+    @Bean(name = "consentRedisTemplate")
+    public RedisTemplate<String, TokenRequest> consentRedisTemplate(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper) {
+
+        RedisTemplate<String, TokenRequest> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+
+        Jackson2JsonRedisSerializer<TokenRequest> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, TokenRequest.class);
         template.setValueSerializer(serializer);
 
         return template;

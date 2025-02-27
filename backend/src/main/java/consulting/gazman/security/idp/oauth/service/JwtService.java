@@ -1,11 +1,11 @@
 package consulting.gazman.security.idp.oauth.service;
 
 
-import consulting.gazman.security.client.user.entity.GroupMembership;
-import consulting.gazman.security.client.user.entity.UserRole;
+import consulting.gazman.security.user.entity.GroupMembership;
+import consulting.gazman.security.user.entity.UserRole;
 import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import io.jsonwebtoken.Claims;
 
 

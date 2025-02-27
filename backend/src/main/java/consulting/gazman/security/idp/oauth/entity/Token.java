@@ -1,6 +1,6 @@
 package consulting.gazman.security.idp.oauth.entity;
 
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import jakarta.persistence.*;
 
 import lombok.*;

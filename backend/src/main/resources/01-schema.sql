@@ -25,7 +25,18 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone_number);
 CREATE INDEX idx_users_deleted ON users(deleted_at) WHERE deleted_at IS NOT NULL;
+CREATE TABLE IF NOT EXISTS user_mfa (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mfa_type VARCHAR(50) NOT NULL,            -- e.g., "TOTP", "FIDO2", "SMS", etc.
+    mfa_secret VARCHAR(255) NOT NULL,         -- the MFA secret or key (encrypted or hashed ideally)
+    mfa_recovery_codes JSONB DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT TRUE,           -- track if this MFA method is active or disabled
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE INDEX idx_user_mfa_user_id ON user_mfa(user_id);
 CREATE TABLE IF NOT EXISTS user_attributes (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -234,3 +245,32 @@ CREATE TABLE IF NOT EXISTS resource_permissions (
     FOREIGN KEY (resource_id) REFERENCES resources(id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS devices (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_fingerprint VARCHAR(255),
+    device_type VARCHAR(50),
+    is_trusted BOOLEAN DEFAULT false,
+    last_seen TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS authentication_events (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_id BIGINT REFERENCES devices(id) ON DELETE CASCADE,
+    client_id BIGINT REFERENCES oauth_clients(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    success BOOLEAN NOT NULL,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_devices_user_id ON devices(user_id);
+CREATE INDEX idx_devices_fingerprint ON devices(device_fingerprint);
+CREATE INDEX idx_auth_events_user ON authentication_events(user_id);
+CREATE INDEX idx_auth_events_device ON authentication_events(device_id);
+CREATE INDEX idx_auth_events_client ON authentication_events(client_id);
+CREATE INDEX idx_auth_events_created ON authentication_events(created_at);

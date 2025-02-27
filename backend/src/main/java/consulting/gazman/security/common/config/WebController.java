@@ -14,5 +14,8 @@ public class WebController {
     public String mfa() {
         return "forward:/index.html";
     }
-
+    @GetMapping("/consent")
+    public String consent() {
+        return "forward:/index.html";
+    }
 }

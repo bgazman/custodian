@@ -1,15 +1,15 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
-import consulting.gazman.security.client.user.entity.UserRole;
+import consulting.gazman.security.user.entity.UserRole;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.model.OAuthSession;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Secret;
 import consulting.gazman.security.idp.oauth.service.JwtService;
-import consulting.gazman.security.client.user.service.impl.UserServiceImpl;
+import consulting.gazman.security.user.service.impl.UserServiceImpl;
 import consulting.gazman.security.idp.oauth.utils.JwtUtils;
-import consulting.gazman.security.client.user.entity.GroupMembership;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.GroupMembership;
+import consulting.gazman.security.user.entity.User;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -151,8 +151,9 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public OAuthSession parseSessionToken(String token) {
-        // Validate and parse the token to get claims
-        Claims claims = validateToken(token);
+        if (token == null || token.isEmpty()) {
+            throw AppException.invalidToken("Session token is null or empty");
+        }        Claims claims = validateToken(token);
         OAuthSession session = new OAuthSession();
         session.setClientId(claims.get("clientId", String.class));
         session.setOauthSessionId(claims.get("oauthSessionId", String.class));

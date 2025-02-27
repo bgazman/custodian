@@ -1,9 +1,9 @@
 package consulting.gazman.security.idp.auth.service.impl;
 
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.common.service.NotificationService;
 import consulting.gazman.security.idp.auth.service.PasswordResetService;
-import consulting.gazman.security.client.user.service.UserService;
+import consulting.gazman.security.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

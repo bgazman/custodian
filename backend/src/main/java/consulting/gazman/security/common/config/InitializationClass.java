@@ -1,14 +1,11 @@
 package consulting.gazman.security.common.config;
 
 import consulting.gazman.security.client.constants.GroupRole;
-import consulting.gazman.security.client.user.entity.*;
-import consulting.gazman.security.client.user.repository.*;
-import consulting.gazman.security.client.user.service.*;
-import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.dto.ClientRegistrationRequest;
-import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.service.ClientRegistrationService;
 import consulting.gazman.security.idp.oauth.service.OAuthClientService;
+import consulting.gazman.security.user.entity.*;
+import consulting.gazman.security.user.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.env.Environment;
@@ -16,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Component

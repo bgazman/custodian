@@ -1,8 +1,7 @@
 package consulting.gazman.security.idp.auth.service.impl;
 
 
-import consulting.gazman.security.client.user.service.UserRoleService;
-import consulting.gazman.security.client.user.service.impl.*;
+import consulting.gazman.security.user.service.UserRoleService;
 import consulting.gazman.security.idp.auth.dto.LoginRequest;
 import consulting.gazman.security.idp.auth.dto.LoginResponse;
 import consulting.gazman.security.idp.auth.dto.UserRegistrationRequest;
@@ -18,10 +17,11 @@ import consulting.gazman.security.idp.oauth.service.impl.JwtServiceImpl;
 import consulting.gazman.security.idp.oauth.service.impl.OAuthClientServiceImpl;
 import consulting.gazman.security.idp.oauth.utils.JwtUtils;
 import consulting.gazman.security.idp.oauth.utils.TokenUtils;
-import consulting.gazman.security.client.user.entity.GroupMembership;
-import consulting.gazman.security.client.user.entity.Role;
-import consulting.gazman.security.client.user.entity.User;
-import consulting.gazman.security.client.user.entity.UserRole;
+import consulting.gazman.security.user.entity.GroupMembership;
+import consulting.gazman.security.user.entity.Role;
+import consulting.gazman.security.user.entity.User;
+import consulting.gazman.security.user.entity.UserRole;
+import consulting.gazman.security.user.service.impl.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import consulting.gazman.security.common.exception.AppException;

@@ -46,22 +46,21 @@ public class IdpSecurityConfig {
     @Bean
     public SecurityFilterChain idpSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/**", "/oauth/token")
+                .securityMatcher("/auth/**", "/oauth/token", "/oauth/consent", "/oauth/consent-approve")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/oauth/token"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/oauth/token", "/oauth/consent", "/oauth/consent-approve"))
                 .authorizeHttpRequests(auth -> auth
                         // Permit all OPTIONS requests for CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Secure token endpoint with a specific role
                         .requestMatchers("/oauth/token").hasAuthority("ROLE_CLIENT")
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**", "/oauth/consent", "/oauth/consent-approve").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(basicAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

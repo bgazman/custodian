@@ -50,6 +50,7 @@ function OAuthCallback() {
                 }
 
                 const data = await response.json();
+
                 sessionStorage.setItem('access_token', data.access_token);
                 sessionStorage.setItem('refresh_token', data.refresh_token);
 

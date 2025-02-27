@@ -1,9 +1,9 @@
 package consulting.gazman.security.idp.auth.service.impl;
 
 import consulting.gazman.security.idp.auth.service.EmailVerificationService;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.common.exception.AppException;
-import consulting.gazman.security.client.user.service.UserService;
+import consulting.gazman.security.user.service.UserService;
 import consulting.gazman.security.common.service.impl.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package consulting.gazman.security.idp.oauth.service.impl;
 
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Token;
-import consulting.gazman.security.client.user.entity.User;
+import consulting.gazman.security.user.entity.User;
 import consulting.gazman.security.idp.oauth.repository.TokenRepository;
 import consulting.gazman.security.idp.oauth.service.TokenService;
 import consulting.gazman.security.idp.oauth.utils.TokenUtils;

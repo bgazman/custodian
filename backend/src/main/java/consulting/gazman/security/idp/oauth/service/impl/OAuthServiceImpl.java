@@ -1,32 +1,28 @@
 package consulting.gazman.security.idp.oauth.service.impl;
 
-import consulting.gazman.security.client.user.entity.User;
-import consulting.gazman.security.client.user.entity.UserRole;
-import consulting.gazman.security.client.user.service.*;
-import consulting.gazman.security.idp.auth.dto.LoginRequest;
-import consulting.gazman.security.idp.auth.dto.LoginResponse;
+import consulting.gazman.security.user.entity.User;
+import consulting.gazman.security.user.entity.UserRole;
 import consulting.gazman.security.idp.auth.service.AuthService;
 import consulting.gazman.security.idp.auth.service.impl.EmailVerificationServiceImpl;
 import consulting.gazman.security.idp.oauth.dto.*;
-import consulting.gazman.security.client.user.entity.GroupMembership;
+import consulting.gazman.security.user.entity.GroupMembership;
 import consulting.gazman.security.idp.oauth.entity.OAuthClient;
 import consulting.gazman.security.idp.oauth.entity.Token;
 import consulting.gazman.security.common.exception.AppException;
 import consulting.gazman.security.idp.oauth.service.*;
+import consulting.gazman.security.user.service.*;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import consulting.gazman.security.idp.oauth.utils.TokenUtils;
 
@@ -44,8 +40,10 @@ public class OAuthServiceImpl implements OAuthService {
     @Autowired UserService userService;
     @Autowired EmailVerificationServiceImpl emailVerificationServiceImpl;
     @Autowired private PasswordEncoder passwordEncoder;
-    @Autowired RoleService roleService;
-    @Autowired GroupService groupService;
+    @Autowired
+    RoleService roleService;
+    @Autowired
+    GroupService groupService;
     @Autowired OAuthClientService oAuthClientService;
     @Autowired TokenService tokenService;
 
